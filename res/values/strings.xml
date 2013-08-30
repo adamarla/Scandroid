@@ -9,5 +9,8 @@
     <string name="label_font">Arial</string>
     <string name="label_text">Gradians.com © 2013</string>
     <string name="start_button">Activate Camera</string>
+    <string name="payload_type">UPLOAD</string>
+    <string name="payload_type_grading">ANSWERS</string>
+    <string name="payload_type_typesetting">QUESTIONS</string>
     
 </resources>

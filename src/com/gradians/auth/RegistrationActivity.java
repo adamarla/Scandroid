@@ -1,4 +1,4 @@
-package com.gradians.collect;
+package com.gradians.auth;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
