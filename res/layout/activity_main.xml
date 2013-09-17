@@ -8,49 +8,61 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
-    <!-- Switch
-        android:id="@+id/tglPayloadType"
-        android:layout_width="wrap_content"        
-        android:layout_height="40dp"
-        android:layout_gravity="top|right"
-        android:text="@string/payload_type"
-        android:textOff="@string/payload_type_typesetting"
-        android:textOn="@string/payload_type_grading" /-->
-        
-    <TextView
-        android:id="@+id/tvGreeting"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/llSpinners"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|right"        
-        android:text=""
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
-
+        android:orientation="horizontal" 
+        android:layout_gravity="top" >
+        
+	    <Spinner
+	        android:id="@+id/spnrQuiz"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" 
+	        android:layout_weight="1" />
+	        
+	    <Spinner
+	        android:id="@+id/spnrQuestion"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" 
+	        android:layout_weight="3" />
+	                
+    </LinearLayout>
+    
     <ImageButton
         android:id="@+id/btnStart"
-        android:layout_width="102dp"
-        android:layout_height="102dp"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
         android:layout_gravity="center"
-        android:contentDescription="@string/start_button"
+        android:contentDescription="@string/start_button"        
         android:onClick="initiateCameraActivity"
         android:scaleType="fitXY"
         android:src="@drawable/ic_launcher" />
 
-    <TextView
+    <ToggleButton
+        android:id="@+id/tglAutoDetect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|right"
+        android:textOn="Auto Detect On"
+        android:textOff="Auto Detect Off"
+        android:onClick="onToggleClicked" />    
+    
+    <!-- TextView
         android:id="@+id/tvStart1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="96dp"
-        android:text="@string/start_label_text1" />
+        android:layout_marginBottom="112dp"
+        android:text="@string/start_label_text1" /-->
     
-    <TextView
+    <!-- TextView
         android:id="@+id/tvStart2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="76dp"
-        android:text="@string/start_label_text2" />
+        android:layout_marginBottom="96dp"
+        android:text="@string/start_label_text2" /-->
     
     <TextView
         android:id="@+id/tvCopyright"
@@ -58,5 +70,5 @@
         android:layout_height="wrap_content"
         android:text="@string/label_text" 
         android:layout_gravity="bottom|center_horizontal" />
-
+    
 </FrameLayout>

@@ -8,15 +8,11 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.gradians.collect.R;
-
-import android.accounts.AccountAuthenticatorActivity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -28,26 +24,17 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.view.MenuItem;
-import android.support.v4.app.NavUtils;
 
 /**
  * Activity which displays a login screen to the user, offering registration as
  * well.
  */
-public class RegistrationActivity extends AccountAuthenticatorActivity {
-    
-    public static final String TAG = "RegistrationActivity";
+public class LoginActivity extends Activity implements IConstants {
     
     /** POST parameter name for the user's account name */
-    public static final String PARAM_EMAIL = "email";
+    private static final String PARAM_EMAIL = "email";
     /** POST parameter name for the user's password */
-    public static final String PARAM_PASSWORD = "password";
-
-    /**
-     * The default email to populate the email field with.
-     */
-    public static final String EXTRA_EMAIL = "you@youremail.com";
+    private static final String PARAM_PASSWORD = "password";
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -67,13 +54,12 @@ public class RegistrationActivity extends AccountAuthenticatorActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.v(TAG, "LoginActivity.onCreate() -> ");
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_registration);
-        setupActionBar();
+        setContentView(R.layout.activity_login);
 
         // Set up the login form.
-        mEmail = getIntent().getStringExtra(EXTRA_EMAIL);
         mEmailView = (EditText) findViewById(R.id.email);
         mEmailView.setText(mEmail);
 
@@ -105,42 +91,37 @@ public class RegistrationActivity extends AccountAuthenticatorActivity {
                 });
     }
 
-    /**
-     * Set up the {@link android.app.ActionBar}, if the API is available.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    private void setupActionBar() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            // Show the Up button in the action bar.
-            getActionBar().setDisplayHomeAsUpEnabled(true);
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-        case android.R.id.home:
-            // This ID represents the Home or Up button. In the case of this
-            // activity, the Up button is shown. Use NavUtils to allow users
-            // to navigate up one level in the application structure. For
-            // more details, see the Navigation pattern on Android Design:
-            //
-            // http://developer.android.com/design/patterns/navigation.html#up-vs-back
-            //
-            // TODO: If Settings has multiple levels, Up should navigate up
-            // that hierarchy.
-            NavUtils.navigateUpFromSameTask(this);
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.registration, menu);
+        getMenuInflater().inflate(R.menu.login, menu);
         return true;
     }
+    
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.ECLAIR
+                && keyCode == KeyEvent.KEYCODE_BACK
+                && event.getRepeatCount() == 0) {
+            // Take care of calling this method on earlier versions of
+            // the platform where it doesn't exist.
+            onBackPressed();
+        }
+        
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.v(TAG, "LoginActivity.onBackPressed() -> ");
+        // This will be called either automatically for you on 2.0
+        // or later, or by the code above on earlier versions of the
+        // platform.
+        this.setResult(RESULT_CANCELED);
+        super.onBackPressed();
+        return;
+    }    
+    
 
     /**
      * Attempts to sign in or register the account specified by the login form.
@@ -246,18 +227,17 @@ public class RegistrationActivity extends AccountAuthenticatorActivity {
      * the user.
      */
     public class UserLoginTask extends AsyncTask<Void, Void, String> {
-        
         @Override
         protected String doInBackground(Void... params) {
-            
+            String result = null;
             try {
-                String charset = Charset.defaultCharset().name();            
-                String hostport = System.getProperty("user.name").equals("gutenberg")?
-                    "www.gradians.com": "10.10.0.4:3000";        
-                URL updateScan = new URL(String.format("http://%s/tokens", hostport));
-                String authParams = String.format("email=%s&password=%s", URLEncoder.encode(mEmail, charset),
-                        URLEncoder.encode(mPassword, charset));
-                HttpURLConnection conn = (HttpURLConnection)updateScan.openConnection();
+                String charset = Charset.defaultCharset().name();
+                URL createToken = new URL(String.format("http://%s/tokens", 
+                        WEB_APP_HOST_PORT));
+                String authParams = String.format("%s=%s&%s=%s", 
+                        PARAM_EMAIL, URLEncoder.encode(mEmail, charset),
+                        PARAM_PASSWORD, URLEncoder.encode(mPassword, charset));
+                HttpURLConnection conn = (HttpURLConnection)createToken.openConnection();
                 conn.setDoOutput(true); // Triggers HTTP POST
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
                 conn.setRequestProperty("Cache-Control", "no-cache");
@@ -267,29 +247,21 @@ public class RegistrationActivity extends AccountAuthenticatorActivity {
                 if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     InputStream istream = conn.getInputStream();
                     BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
-                    String json = ireader.readLine();
-                    
-                    JSONParser jsonParser = new JSONParser();
-                    JSONObject respObject = (JSONObject)jsonParser.parse(json);
-                    return (String)respObject.get("token");
-                    
-                } else {
-                        Log.e(TAG, "Error authenticating");
+                    result = ireader.readLine();
                 }
-            } catch (Exception e){
-                Log.e(TAG, "Execption Authenticating " + e.getMessage());
-            }
-            
-            // TODO: register the new account here.
-            return null;
+            } catch (Exception e){ }
+            return result;
         }
 
         @Override
-        protected void onPostExecute(final String authToken) {
+        protected void onPostExecute(final String result) {
             mAuthTask = null;
             showProgress(false);
 
-            if (authToken != null) {
+            if (result != null) {
+                final Intent intent = new Intent();
+                intent.putExtra(TAG, result);
+                setResult(RESULT_OK, intent);
                 finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
