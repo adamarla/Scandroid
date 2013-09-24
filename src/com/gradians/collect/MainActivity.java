@@ -43,13 +43,10 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                Toast.makeText(getApplicationContext(), 
-                        "Processing...",
-                        Toast.LENGTH_SHORT).show();
-                // uploadImageSMTP();
+                gradeables.adjust(quizPosn, questionPosn, triggerBtn == R.id.btnStartWS);
+                setWidgets();                
                 uploadImageHTTP();
             } else if (resultCode != RESULT_CANCELED) {
-                // Image capture failed, advise user
                 Toast.makeText(getApplicationContext(),
                         "Oops.. image capture failed. Please, try again",
                         Toast.LENGTH_SHORT).show();
@@ -90,7 +87,6 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        Log.v(TAG, requestCode + " " + resultCode + " " + resultData == null ? "null" : resultData);
         if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
                 String error = null;
@@ -98,27 +94,24 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
                     gradeables = new Gradeables(resultData);
                 } catch (Exception e) { 
                     error = e.getMessage() + "\n" + resultData;
-                }                
-                if (error == null) {
+                }
+                if (error == null) {                    
                     setWidgets();
+                    
                 } else {
                     Toast.makeText(getApplicationContext(),
                             "Oops, Scanbot stumbled :/ please try again",
                             Toast.LENGTH_SHORT).show();
-                    //TODO: Send error email
-                }                
+                    //TODO: Send error email                    
+                }
             } else {
                 initiateAuthActivity();
             }
         } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
-                if (resultData != null) {
-                    Spinner quizzes = (Spinner)findViewById(R.id.spnrQuiz);
-                    Spinner questions = (Spinner)findViewById(R.id.spnrQuestion);
-                    gradeables.adjust(quizzes.getSelectedItemPosition(), 
-                            questions.getSelectedItemPosition());
-                    setWidgets();
-                }                 
+                // Yay, nothing to do
+            } else {
+                //TODO: Send as email?
             }
         }
     }
@@ -174,13 +167,19 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
 
     @Override
     public void onNothingSelected(AdapterView<?> arg0) {
-        // TODO Auto-generated method stub
-        
+        // TODO Auto-generated method stub        
     }    
     
     public void initiateCameraActivity(View view) {
+        Log.v(TAG, "Button Id " + view.getId());
+        File image = null;
         try {
-            image = createImageFile();
+            triggerBtn = view.getId();
+            quizPosn = ((Spinner)findViewById(R.id.spnrQuiz)).
+                    getSelectedItemPosition();
+            questionPosn = ((Spinner)findViewById(R.id.spnrQuestion)).
+                    getSelectedItemPosition();
+            image = createImageFile(quizPosn, questionPosn, triggerBtn);
             Intent takePictureIntent =
                     new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
@@ -217,7 +216,7 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
     }
     
     private void autoMode(boolean state) {
-        ((ToggleButton)findViewById(R.id.tglAutoDetect)).setChecked(state);
+        //((ToggleButton)findViewById(R.id.tglAutoDetect)).setChecked(state);
         ((Spinner)findViewById(R.id.spnrQuestion)).setEnabled(!state);
         ((Spinner)findViewById(R.id.spnrQuiz)).setEnabled(!state);
     }      
@@ -236,42 +235,19 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
         }
     }    
 
-    @SuppressWarnings("unused")
-    private void uploadImageSMTP() {
-        // Image captured and saved to fileUri specified in the Intent
-        Intent emailIntent = new Intent(android.content.Intent.ACTION_SEND);
-        emailIntent.setType("application/image");
-        emailIntent.putExtra(android.content.Intent.EXTRA_EMAIL,
-                new String[] { "help@gradians.com" });
-        emailIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,
-                "Incoming...");
-        emailIntent.putExtra(android.content.Intent.EXTRA_TEXT,
-                "Sent from my smart Phone!");
-        emailIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(image));
-        startActivityForResult(Intent.createChooser(emailIntent, "Send"),
-                SEND_EMAIL_ACTIVITY_REQUEST_CODE);
-    }
-
     private void uploadImageHTTP() {
         File[] images = appDir.listFiles();
         new ImageUploadTask(this).execute(images);
     }
     
-    private File createImageFile() throws Exception {
+    private File createImageFile(int quizPosn, int questionPosn, int triggerBtn) throws Exception {
         if (!appDir.exists())
             appDir.mkdir();
-        String imageFileName = null;
-        ToggleButton mode = (ToggleButton)findViewById(R.id.tglAutoDetect);                
-        if (!mode.isEnabled()) {
-            Spinner quizzes = (Spinner)findViewById(R.id.spnrQuiz);
-            Spinner questions = (Spinner)findViewById(R.id.spnrQuestion);
-            imageFileName = String.format("%s.%s.jpg", KNOWN,
-                    gradeables.getQRCode(quizzes.getSelectedItemPosition(), 
-                    questions.getSelectedItemPosition()));
-        } else {
-            imageFileName = String.format("%s.%s.jpg", UNKNOWN,
-                    System.currentTimeMillis());
-        }
+        String prefix = triggerBtn == R.id.btnStartWS ? "QR" : "GR";
+        String id = triggerBtn == R.id.btnStartWS ? 
+                gradeables.getQRCode(quizPosn, questionPosn) : 
+                gradeables.getGRId(quizPosn, questionPosn);
+        String imageFileName = String.format("%s.%s.jpg", prefix, id);
         return new File(appDir, imageFileName);
     }
     
@@ -281,8 +257,9 @@ public class MainActivity extends Activity implements ITaskCompletedListener, IC
         ((Spinner)findViewById(resourceId)).setAdapter(adapter);
     }
     
+    private int quizPosn, questionPosn, triggerBtn;
     private Context context;
     private Gradeables gradeables;
-    private File image, appDir;
+    private File appDir;
     
 }

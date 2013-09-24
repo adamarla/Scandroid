@@ -26,15 +26,15 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
         OutputStream ostream = null;
         PrintWriter opstream = null;        
         String boundary =  null;
-        String param = null;        
+        String[] params = null;
+        String result = null;
         for (File image : images) {
             Log.v(TAG, image.getName());
-            param = image.getName().startsWith(KNOWN)? 
-                    image.getName().split("\\.")[1] : null;
+            params = image.getName().split("\\.");
             boundary = String.valueOf(System.currentTimeMillis());
             try {
-                url = new URL(String.format(BASE_URL, 
-                        BANK_HOST_PORT, param == null ? "" : "&id=" + param));
+                url = new URL(String.format(BASE_URL,
+                        BANK_HOST_PORT, params[0], params[1]));
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setDoOutput(true);
 
@@ -70,16 +70,17 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
                 
                 if (httpUrlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     image.delete();
+                    result = image.getName();
                 } else {
-                    param = null;//so we don't remove it from the Spinner (drop down)
-                }                
+                    result = null;
+                }
             } catch (Exception e) {
-                Log.v(TAG, e.getMessage());
+                result = null;
             } finally {
                 if (opstream != null) opstream.close();
             }
         }
-        return param;
+        return result;
     }
 
     @Override
@@ -91,5 +92,5 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
     private ITaskCompletedListener taskCompletedListener;
     
     private static final String CRLF = "\r\n", DASH_DASH = "--";
-    private static final String BASE_URL = "http://%s/Upload/scan%s";
+    private static final String BASE_URL = "http://%s/Upload/scan?type=%s&id=%s";
 }

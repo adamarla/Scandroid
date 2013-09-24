@@ -30,7 +30,7 @@
     </LinearLayout>
     
     <ImageButton
-        android:id="@+id/btnStart"
+        android:id="@+id/btnStartWS"
         android:layout_width="96dp"
         android:layout_height="96dp"
         android:layout_gravity="center"
@@ -38,15 +38,25 @@
         android:onClick="initiateCameraActivity"
         android:scaleType="fitXY"
         android:src="@drawable/ic_launcher" />
-
-    <ToggleButton
+    
+    <ImageButton
+        android:id="@+id/btnStartPP"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_gravity="center|right"
+        android:contentDescription="@string/start_button"        
+        android:onClick="initiateCameraActivity"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_launcher" />
+    
+    <!-- ToggleButton
         android:id="@+id/tglAutoDetect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
         android:textOn="Auto Detect On"
         android:textOff="Auto Detect Off"
-        android:onClick="onToggleClicked" />    
+        android:onClick="onToggleClicked" /-->    
     
     <!-- TextView
         android:id="@+id/tvStart1"

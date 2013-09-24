@@ -9,7 +9,5 @@ public interface IConstants {
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
     String ITEMS_KEY = "gradeables";
-    String KNOWN = "kn";
-    String UNKNOWN = "uk";
 
 }

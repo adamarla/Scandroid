@@ -33,8 +33,8 @@ public class Gradeables extends ArrayList<Quiz> implements IConstants {
         return names;
     }
     
-    public String[] getQuestionNames(int quizId) {
-        Quiz quiz = this.get(quizId);
+    public String[] getQuestionNames(int quizPosn) {
+        Quiz quiz = this.get(quizPosn);
         String[] names = quiz != null? new String[quiz.size()]:
             new String[0];
         for (int i = 0; i < quiz.size(); i++) {
@@ -43,14 +43,28 @@ public class Gradeables extends ArrayList<Quiz> implements IConstants {
         return names;
    }
     
-    public String getQRCode(int quizId, int questionId) {
-        return this.get(quizId).get(questionId).getQRCode();
+    public String getQRCode(int quizPosn, int questionPosn) {
+        return this.get(quizPosn).get(questionPosn).getQRCode();
     }
     
-    public void adjust(int quizId, int questionId) {
-        Quiz quiz = this.get(quizId);
-        quiz.remove(questionId);
-        if (quiz.size() == 0) this.remove(quizId);
+    public String getGRId(int quizPosn, int questionPosn) {
+        return this.get(quizPosn).get(questionPosn).getGRId();
+    }    
+    
+    public void adjust(int quizPosn, int questionPosn, boolean worksheet) {
+        Quiz quiz = this.get(quizPosn);
+        String qrcode = quiz.remove(questionPosn).getQRCode();
+        if (worksheet) {
+            //Also remove other questions on the same page (if any)
+            boolean[] toPop = new boolean[quiz.size()];
+            for (int i = 0; i < quiz.size(); i++) {
+                toPop[i] = quiz.get(i).getQRCode().equals(qrcode);
+            }
+            for (int i = 0; i < toPop.length; i++) {
+                if (toPop[i]) quiz.remove(i);
+            }
+        }
+        if (quiz.size() == 0) this.remove(quizPosn);
     }
     
     private void parse(String json) throws Exception {
@@ -68,13 +82,14 @@ public class Gradeables extends ArrayList<Quiz> implements IConstants {
         Quiz quiz = null;
         for (int i = 0; i < items.size(); i++) {
             JSONObject item = (JSONObject) items.get(i);
-            if (quizId == 0 || quizId != (Long)((JSONObject)item).get("id")) {
+            if (quizId == 0 || quizId != (Long)((JSONObject)item).get("quizId")) {
                 if (quiz != null) this.add(quiz);
-                quizId = (Long)((JSONObject)item).get("id");
+                quizId = (Long)((JSONObject)item).get("quizId");
                 quiz = new Quiz((String)((JSONObject)item).get("quiz"), quizId);
             }
-            quiz.add(new Question((String)((JSONObject)item).get("name"), 
-                    (String)((JSONObject)item).get("scan")));
+            quiz.add(new Question((String)((JSONObject)item).get("name"),
+                    (String)((JSONObject)item).get("scan"), 
+                    String.valueOf(((JSONObject)item).get("id"))));
         }
         this.add(quiz);
     }
@@ -97,15 +112,20 @@ class Quiz extends ArrayList<Question> {
         return name;
     }
     
+    public long getId() {
+        return id;
+    }
+    
     private String name;
     private long id;
 }
 
 class Question {
     
-    public Question(String name, String QRCode) {
+    public Question(String name, String QRCode, String GRId) {
         this.name = name;
         this.QRCode = QRCode;
+        this.GRId = GRId;
     }
     
     public String getName() {
@@ -116,10 +136,14 @@ class Question {
         return QRCode;
     }
     
+    public String getGRId() {
+        return GRId;
+    }
+    
     @Override
     public String toString() {
         return name;
     }
     
-    private String name, QRCode;    
+    private String name, QRCode, GRId;
 }
