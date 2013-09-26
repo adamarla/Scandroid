@@ -9,5 +9,7 @@ public interface IConstants {
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
     String ITEMS_KEY = "gradeables";
+    String WORKSHEET_PREFIX = "QR";
+    String PLAINPAPER_PREFIX = "GR";
 
 }

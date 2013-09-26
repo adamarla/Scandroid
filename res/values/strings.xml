@@ -10,6 +10,10 @@
     <string name="label_font">Helvetica</string>
     <string name="label_text">www.gradians.com © 2013</string>
     <string name="start_button">Activate Camera</string>
-    <string name="title_activity_verification">VerificationActivity</string>
+    <string name="title_stationary_type">I wrote this solution on</string>
+    <string-array name="stationary_options">
+        <item >Plain paper </item>
+        <item >Printed worksheet (QR Code)</item>
+    </string-array>
 
 </resources>
