@@ -9,7 +9,6 @@ import java.nio.charset.Charset;
 
 import android.app.Activity;
 import android.os.AsyncTask;
-import android.util.Log;
 
 public class VerificationTask extends AsyncTask<Void, Void, String> implements IConstants {
     

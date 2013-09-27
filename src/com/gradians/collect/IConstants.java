@@ -9,7 +9,14 @@ public interface IConstants {
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
     String ITEMS_KEY = "gradeables";
+    String QUIZ_ID_KEY = "quizId";
+    String QUIZ_NAME_KEY = "quiz";
+    String SCAN_KEY = "scan";
+    String GR_ID_KEY = "id";
     String WORKSHEET_PREFIX = "QR";
     String PLAINPAPER_PREFIX = "GR";
+    String APP_DIR_NAME = "Scanbot";
+    String IMG_EXT = ".jpeg";
+    String SENT_STATUS = "sentIds.txt";
 
 }

@@ -1,6 +1,7 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.io.FilenameFilter;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,10 +20,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 public class MainActivity extends FragmentActivity implements ITaskCompletedListener, IConstants, OnChildClickListener {
@@ -42,15 +41,28 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
+        Manifest manifest = (Manifest)elv.getExpandableListAdapter();
+        
+        if (manifest != null) 
+            try {
+                manifest.commit();
+            } catch (Exception e) {
+                handleError("Oops.. persist file thing failed", e.getMessage());
+            }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-//                gradeables.adjust(quizPosn, questionPosn, triggerBtn == R.id.btnStartWS);
                 ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
                 Manifest manifest = (Manifest)elv.getExpandableListAdapter();
                 manifest.adjust(groupPosition, childPosition, worksheet);
-                setWidgets();
-                uploadImageHTTP();
+                manifest.notifyDataSetChanged();
+                uploadImageHTTP();                
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(),
                         "Oops.. image capture failed. Please, try again",
@@ -61,32 +73,18 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                 Manifest manifest = null;
                 String error = null;
                 try {
-                    gradeables = new Gradeables(data.getStringExtra(TAG));
                     manifest = new Manifest(this, data.getStringExtra(TAG));
                 } catch (Exception e) { 
                     error = e.getMessage() + "\n" + data.getStringExtra(TAG);
                 }                
                 if (error == null) {                    
-                    SharedPreferences prefs = this.getSharedPreferences(TAG, 
-                            Context.MODE_PRIVATE);
-                    Editor edit = prefs.edit();
-                    edit.putString(TOKEN_KEY, manifest.getAuthToken());
-                    edit.putString(NAME_KEY, manifest.getName());
-                    edit.putString(EMAIL_KEY, manifest.getEmail());
-                    edit.commit();
-                    
-                    setWidgets();
-                    ((ExpandableListView)this.findViewById(R.id.elvQuiz)).setAdapter(manifest);
+                    setPreferences(manifest);                    
+                    setWidgets(manifest);
                 } else {
-                    Toast.makeText(getApplicationContext(),
-                            "Oops, Scanbot stumbled :/ please try again",
-                            Toast.LENGTH_SHORT).show();
-                    //TODO: Send error email
+                    handleError("Oops, Auth activity request failed", error);
                 }                
             } else if (resultCode != Activity.RESULT_CANCELED){
-                Toast.makeText(getApplicationContext(),
-                        "Oops, Scanbot stumbled :/ please try again",
-                        Toast.LENGTH_SHORT).show();
+                handleError("Oops, Auth activity cancelled", "");
             } else {
                 this.finish();
             }
@@ -100,19 +98,14 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                 Manifest manifest = null;
                 String error = null;
                 try {
-                    gradeables = new Gradeables(resultData);
                     manifest = new Manifest(this, resultData);
                 } catch (Exception e) { 
                     error = e.getMessage() + "\n" + resultData;
                 }
-                if (error == null) {                    
-                    setWidgets();
-                    ((ExpandableListView)this.findViewById(R.id.elvQuiz)).setAdapter(manifest);
+                if (error == null) {
+                    setWidgets(manifest);
                 } else {
-                    Toast.makeText(getApplicationContext(),
-                            "Oops, sorry :/ please try again",
-                            Toast.LENGTH_SHORT).show();
-                    //TODO: Send error email                    
+                    handleError("Oops, Verify auth task failed", error);
                 }
             } else {
                 initiateAuthActivity();
@@ -122,9 +115,8 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                 File image = null;
                 String error = null;
                 try {
-                    worksheet = resultData.startsWith("QR");                    
-                    String imageFileName = resultData + ".jpg";                    
-                    if (!appDir.exists()) appDir.mkdir();
+                    worksheet = resultData.startsWith("QR");
+                    String imageFileName = resultData + IMG_EXT;
                     image = new File(appDir, imageFileName);
                 } catch (Exception e) {
                     error = e.getMessage() + "\n" + resultData;
@@ -137,10 +129,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                     startActivityForResult(takePictureIntent,
                             CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
                 } else {
-                    Toast.makeText(context,
-                            "Ooops, sorry, our bad :/ please try again",
-                            Toast.LENGTH_SHORT).show();
-                    //TODO: Send error email
+                    handleError("Oops, Chose stationary dialog failed", error);
                 }
             } 
         } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {
@@ -176,6 +165,26 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         newFragment.show(getSupportFragmentManager(), "stationaryType");
         return true;
     }
+    
+    private void setWidgets(Manifest manifest) {
+        setTitle(String.format(TITLE, manifest.getName()));
+        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
+        if (manifest.getGroupCount() > 0)
+            elv.setAdapter(manifest);
+        if (manifest.getGroupCount() == 1) {
+            elv.expandGroup(0);
+        }
+    }
+
+    private void setPreferences(Manifest manifest) {
+        SharedPreferences prefs = this.getSharedPreferences(TAG, 
+                Context.MODE_PRIVATE);
+        Editor edit = prefs.edit();
+        edit.putString(TOKEN_KEY, manifest.getAuthToken());
+        edit.putString(NAME_KEY, manifest.getName());
+        edit.putString(EMAIL_KEY, manifest.getEmail());
+        edit.commit();       
+    }
 
     private void initiateAuthActivity() {
         Intent checkAuthIntent = new Intent(context, 
@@ -184,12 +193,9 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
     }
 
-    private void setWidgets() {        
-        setTitle("Scanbot - Hello, " + gradeables.getName() + "!");
-    }
-
     private void initApp() {
-        appDir = new File(getExternalFilesDir(null), "Scandroid");
+        appDir = new File(getExternalFilesDir(null), APP_DIR_NAME);
+        if (!appDir.exists()) appDir.mkdir();
         context = getApplicationContext();
         SharedPreferences prefs = getSharedPreferences(TAG, 
                 Context.MODE_PRIVATE);
@@ -200,32 +206,29 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             String token = prefs.getString(TOKEN_KEY, null);
             new VerificationTask(email, token, this).execute();
         }
-//        ((ListView)this.findViewById(R.id.lvQuiz)).setOnItemClickListener(this);
-        ((ExpandableListView)this.findViewById(R.id.elvQuiz)).setOnChildClickListener(this);
+        ((ExpandableListView)this.findViewById(R.id.elvQuiz)).
+            setOnChildClickListener(this);
     }    
 
     private void uploadImageHTTP() {
-        File[] images = appDir.listFiles();
+        File[] images = appDir.listFiles(new ImageFilter());
         new ImageUploadTask(this).execute(images);
     }
     
-    private void setSpinner(String[] items, int resourceId) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, 
-                android.R.layout.simple_spinner_item, items);        
-        ((Spinner)findViewById(resourceId)).setAdapter(adapter);
-    }
-        
-    private void setList(String[] items, int resourceId) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, 
-                android.R.layout.simple_list_item_1, items);        
-        ((ExpandableListView)findViewById(resourceId)).setAdapter(adapter);
+    private void handleError(String message, String error) {
+        Toast.makeText(getApplicationContext(),
+                message,
+                Toast.LENGTH_SHORT).show();
+        Log.v(TAG, error);
+        //TODO Send error message email?
     }
     
     private Context context;
     private int groupPosition, childPosition;
     private boolean worksheet;
-    private Gradeables gradeables;
     private File appDir;
+    
+    private final String TITLE = "Scanbot - Hello %s !";
     
 }
 
@@ -243,10 +246,10 @@ class PickStationaryTypeDialog extends DialogFragment implements IConstants {
         builder.setTitle(R.string.title_stationary_type)
                .setItems(R.array.stationary_options, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int which) {
-                       listener.onTaskResult(ITaskCompletedListener.CHOOSE_STATIONARY_TYPE_REQUEST_CODE, 
-                               Activity.RESULT_OK, which == 0 ? 
-                                       String.format(FORMAT, PLAINPAPER_PREFIX, grId): 
-                                       String.format(FORMAT, WORKSHEET_PREFIX, qrCode));
+                       listener.onTaskResult(ITaskCompletedListener.CHOOSE_STATIONARY_TYPE_REQUEST_CODE,
+                           Activity.RESULT_OK, which == 0 ? 
+                               String.format(FORMAT, PLAINPAPER_PREFIX, grId): 
+                               String.format(FORMAT, WORKSHEET_PREFIX, qrCode));
                }
         });
         return builder.create();
@@ -255,5 +258,14 @@ class PickStationaryTypeDialog extends DialogFragment implements IConstants {
     ITaskCompletedListener listener;
     String qrCode, grId;
     final String FORMAT = "%s.%s";
+    
+}
+
+class ImageFilter implements FilenameFilter, IConstants {
+
+    @Override
+    public boolean accept(File dir, String filename) {
+        return filename.endsWith(IMG_EXT);
+    }
     
 }
