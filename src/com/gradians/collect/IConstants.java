@@ -2,8 +2,8 @@ package com.gradians.collect;
 
 public interface IConstants {
     
-    String WEB_APP_HOST_PORT = "10.10.0.2:3000";
-    String BANK_HOST_PORT = "10.10.0.2:8080";
+    String WEB_APP_HOST_PORT = "gradians.com";
+    String BANK_HOST_PORT = "109.74.201.62:8080";
     String TAG = "com.gradians.collect";
     String TOKEN_KEY = "token";
     String NAME_KEY = "name";

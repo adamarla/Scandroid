@@ -216,10 +216,10 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }
     
     private void handleError(String message, String error) {
-        Toast.makeText(getApplicationContext(),
-                message,
-                Toast.LENGTH_SHORT).show();
-        Log.v(TAG, error);
+//        Toast.makeText(getApplicationContext(),
+//                message,
+//                Toast.LENGTH_SHORT).show();
+//        Log.v(TAG, error);
         //TODO Send error message email?
     }
     

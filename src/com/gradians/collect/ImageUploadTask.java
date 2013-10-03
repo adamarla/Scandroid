@@ -10,7 +10,6 @@ import java.net.URL;
 
 import android.app.Activity;
 import android.os.AsyncTask;
-import android.util.Log;
 
 public class ImageUploadTask extends AsyncTask<File, Void, String> implements IConstants {
     
@@ -29,7 +28,7 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
         String[] params = null;
         String result = null;
         for (File image : images) {
-            Log.v(TAG, image.getName());
+            
             params = image.getName().split("\\.");
             boundary = String.valueOf(System.currentTimeMillis());
             try {
