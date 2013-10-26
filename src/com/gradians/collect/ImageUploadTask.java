@@ -69,12 +69,9 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
                 
                 if (httpUrlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     image.delete();
-                    result = image.getName();
-                } else {
-                    result = null;
                 }
             } catch (Exception e) {
-                result = null;
+                result = e.getMessage();
             } finally {
                 if (opstream != null) opstream.close();
             }
@@ -85,7 +82,7 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
     @Override
     protected void onPostExecute(String result) {
         taskCompletedListener.onTaskResult(ITaskCompletedListener.UPLOAD_IMAGE_TASK_RESULT_CODE,
-                result != null ? Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
+                result == null ? Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
     }
     
     private ITaskCompletedListener taskCompletedListener;

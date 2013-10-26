@@ -57,16 +57,18 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             convertView = inflater.inflate(R.layout.layout_question, parent, false);
         }
         
-        Question question = (Question)getChild(groupPosition,childPosition);
+        Question question = (Question)getChild(groupPosition, childPosition);
         ((TextView)convertView.findViewById(R.id.tvQuestion)).
             setText(question.toString());
         
-        if (getSentStatus(question)) {
-            ((ImageView)convertView.findViewById(R.id.ivStationary)).
-            setImageResource(android.R.drawable.ic_lock_lock);
+        String status = getSentStatus(question);        
+        ImageView iv = ((ImageView)convertView.findViewById(R.id.ivState));
+        if (status.equals(MARKED)) {
+            iv.setImageResource(android.R.drawable.checkbox_on_background);
+        } else if (status.equals(UNMARKED)) {
+            iv.setImageResource(android.R.drawable.checkbox_off_background);
         } else {
-            ((ImageView)convertView.findViewById(R.id.ivStationary)).
-            setImageResource(android.R.drawable.ic_menu_camera);
+            iv.setImageResource(android.R.drawable.ic_secure);
         }
         return convertView;    
     }
@@ -111,45 +113,63 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
 
     @Override
     public boolean isChildSelectable(int groupPosition, int childPosition) {
-        return !getSentStatus(quizzes.get(groupPosition).get(childPosition));
+        Question q = quizzes.get(groupPosition).get(childPosition);
+        return !getSentStatus(q).equals(SENT);
     }
     
-    public void adjust(int quizPosn, int questionPosn, boolean worksheet) {
-        Quiz quiz = quizzes.get(quizPosn);        
+    public void checkUncheck(int quizPosn, int questionPosn) {
+        Quiz quiz = quizzes.get(quizPosn);
         Question question = quiz.get(questionPosn);
-        markAsSent(question);
-        
-        if (worksheet) {
-            String qrcode = question.getQRCode();
-            //Also mark other questions on the same page (if any)
-            for (Question q : quiz) {
-                if (q.getQRCode().equals(qrcode)) {
-                    markAsSent(q);
-                }
+        setSentStatus(question, getSentStatus(question).equals(MARKED)?
+                UNMARKED : MARKED);        
+    }
+
+    public String[] getSelected() {
+        ArrayList<String> selected = new ArrayList<String>();
+        String key = null;
+        Enumeration<Object> keys = state.keys();
+        while (keys.hasMoreElements()) {
+            key = (String)keys.nextElement();
+            if (state.get(key).equals(MARKED)) {
+                selected.add(key);
             }
         }
+        return selected.toArray(new String[selected.size()]);
     }
+    
+    public void markAsSent() {
+        String key = null;
+        Enumeration<Object> keys = state.keys();
+        while (keys.hasMoreElements()) {
+            key = (String)keys.nextElement();
+            if (state.get(key).equals(MARKED)) {
+                state.put(key, SENT);
+            }
+        }
+    }    
     
     public void commit() throws Exception {
         File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
-        File file = new File(dir, SENT_STATUS);
-        sentStatus.store(new FileOutputStream(file), null);
+        state.store(new FileOutputStream(new File(dir, STATE)), null);
     }
     
-    private void parse(String json) throws Exception {        
-        this.quizzes = new ArrayList<Quiz>();
-        
+    private void parse(String json) throws Exception {
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject;
         respObject = (JSONObject)jsonParser.parse(json);
         token = (String)respObject.get(TOKEN_KEY);
         name = (String)respObject.get(NAME_KEY);
         email = (String)respObject.get(EMAIL_KEY);        
-        JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
+        JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);        
         
-        this.sentStatus = new Properties();        
-        long quizId = 0;
-        Quiz quiz = null;
+        File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
+        Properties lastState = new Properties();
+        File file = new File(dir, STATE); file.createNewFile(); //creates if needed
+        lastState.load(new FileInputStream(file));
+        
+        quizzes = new ArrayList<Quiz>();
+        state = new Properties();
+        long quizId = 0; Quiz quiz = null;
         for (int i = 0; i < items.size(); i++) {
             JSONObject item = (JSONObject) items.get(i);
             if (quizId == 0 || quizId != (Long)((JSONObject)item).get(QUIZ_ID_KEY)) {
@@ -159,44 +179,32 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             }
             Question question = new Question((String)((JSONObject)item).get(NAME_KEY),
                     (String)((JSONObject)item).get(SCAN_KEY),
-                    String.valueOf(((JSONObject)item).get(GR_ID_KEY)));            
+                    String.valueOf(((JSONObject)item).get(GR_ID_KEY)));
             quiz.add(question);
-            sentStatus.put(question.getGRId(), "false");
+            setSentStatus(question, lastState.getProperty(question.getGRId(), UNMARKED));
         }
         if (quiz != null) quizzes.add(quiz);
-
-        File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
-        File file = new File(dir, SENT_STATUS); file.createNewFile();
-        Properties lastState = new Properties();
-        lastState.load(new FileInputStream(file));
-
-        String grId = null;
-        Enumeration keys = lastState.keys();
-        while (keys.hasMoreElements()) {
-            grId = (String)keys.nextElement();
-            if (sentStatus.containsKey(grId)) {
-                sentStatus.put(grId, lastState.get(grId));
-            }
-        }
     }
     
-    private boolean getSentStatus(Question question) {
-        return Boolean.parseBoolean(sentStatus.getProperty(question.getGRId()));
+    private void setSentStatus(Question question, String value) {
+        state.put(question.getGRId(), String.valueOf(value));
     }
     
-    private void markAsSent(Question question) {
-        sentStatus.put(question.getGRId(), "true");
+    private String getSentStatus(Question question) {
+        return state.getProperty(question.getGRId());
     }
     
     private String name, email, token;
-    private Properties sentStatus;    
+    private Properties state;
     private ArrayList<Quiz> quizzes;
     
     private LayoutInflater inflater;
     private Context context;
-    
+        
     private static final String 
-        TOKEN_KEY = "token", NAME_KEY = "name", EMAIL_KEY = "email";
+        TOKEN_KEY = "token", NAME_KEY = "name", EMAIL_KEY = "email",
+        UNMARKED = "U", MARKED = "M", SENT = "S";
+
     
 }
 

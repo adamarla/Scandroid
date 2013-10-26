@@ -8,13 +8,11 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,9 +40,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     @Override
     protected void onPause() {
         super.onPause();
-        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
-        Manifest manifest = (Manifest)elv.getExpandableListAdapter();
-        
+        Manifest manifest = getManifest();        
         if (manifest != null) 
             try {
                 manifest.commit();
@@ -57,33 +53,30 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
-                Manifest manifest = (Manifest)elv.getExpandableListAdapter();
-                manifest.adjust(groupPosition, childPosition, worksheet);
-                manifest.notifyDataSetChanged();
-                uploadImageHTTP();                
+                File[] images = appDir.listFiles(new ImageFilter());
+                new ImageUploadTask(this).execute(images);
+                Toast.makeText(context, "Uploading... ", 
+                        Toast.LENGTH_LONG).show();
             } else if (resultCode != RESULT_CANCELED) {
-                Toast.makeText(getApplicationContext(),
-                        "Oops.. image capture failed. Please, try again",
+                Toast.makeText(getApplicationContext(), 
+                        "Oops.. image capture failed. Please try again",
                         Toast.LENGTH_SHORT).show();
             }
         } else if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Manifest manifest = null;
-                String error = null;
                 try {
                     manifest = new Manifest(this, data.getStringExtra(TAG));
-                } catch (Exception e) { 
-                    error = e.getMessage() + "\n" + data.getStringExtra(TAG);
-                }                
-                if (error == null) {                    
                     setPreferences(manifest);                    
-                    setWidgets(manifest);
-                } else {
-                    handleError("Oops, Auth activity request failed", error);
+                    setManifest(manifest);
+                } catch (Exception e) { 
+                    handleError("Oops, Auth activity request failed", 
+                            data.getStringExtra(TAG));
                 }                
             } else if (resultCode != Activity.RESULT_CANCELED){
-                handleError("Oops, Auth activity cancelled", "");
+                Toast.makeText(getApplicationContext(),
+                        "Oops.. auth check failed. Please try again",
+                        Toast.LENGTH_SHORT).show();
             } else {
                 this.finish();
             }
@@ -92,47 +85,26 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
+        Manifest manifest = null;
         if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
-                Manifest manifest = null;
-                String error = null;
                 try {
                     manifest = new Manifest(this, resultData);
+                    setManifest(manifest);
                 } catch (Exception e) { 
-                    error = e.getMessage() + "\n" + resultData;
-                }
-                if (error == null) {
-                    setWidgets(manifest);
-                } else {
-                    handleError("Oops, Verify auth task failed", error);
+                    handleError("Oops, Verify auth task failed", resultData);
                 }
             } else {
                 initiateAuthActivity();
             }
-        } else if (requestCode == CHOOSE_STATIONARY_TYPE_REQUEST_CODE) {
+        } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {            
             if (resultCode == RESULT_OK) {
-                File image = null;
-                String error = null;
-                try {
-                    worksheet = resultData.startsWith("QR");
-                    String imageFileName = resultData + IMG_EXT;
-                    image = new File(appDir, imageFileName);
-                } catch (Exception e) {
-                    error = e.getMessage() + "\n" + resultData;
-                }
-                if (error == null) {
-                    Intent takePictureIntent =
-                            new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
-                            Uri.fromFile(image));
-                    startActivityForResult(takePictureIntent,
-                            CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-                } else {
-                    handleError("Oops, Chose stationary dialog failed", error);
-                }
-            } 
-        } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {
-            if (resultCode == RESULT_OK) { }             
+                manifest = getManifest();
+                manifest.markAsSent();
+                manifest.notifyDataSetChanged();
+            } else {
+                handleError("Uh-oh, image upload failed", resultData);
+            }
         }
     }
     
@@ -156,23 +128,33 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     @Override
     public boolean onChildClick(ExpandableListView parent, View v,
             int groupPosition, int childPosition, long id) {
-        this.groupPosition = groupPosition; this.childPosition = childPosition;
-        Manifest manifest = (Manifest)parent.getExpandableListAdapter();
-        Question question = (Question)manifest.getChild(groupPosition, childPosition);
-        DialogFragment newFragment = new PickStationaryTypeDialog(this, 
-                question.getQRCode(), question.getGRId());
-        newFragment.show(getSupportFragmentManager(), "stationaryType");
+        Manifest manifest = getManifest();
+        manifest.checkUncheck(groupPosition, childPosition);
+        manifest.notifyDataSetChanged();
         return true;
     }
     
-    private void setWidgets(Manifest manifest) {
-        setTitle(String.format(TITLE, manifest.getName()));
-        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
-        if (manifest.getGroupCount() > 0)
-            elv.setAdapter(manifest);
-        if (manifest.getGroupCount() == 1) {
-            elv.expandGroup(0);
-        }
+    public void initiateCameraActivity(View view) {
+        Manifest manifest = getManifest();
+        String[] selected = manifest.getSelected();
+        
+        String grIDs = "";
+        for (String grID : selected) grIDs = grIDs + grID + "-";
+        grIDs = grIDs.substring(0, grIDs.length()-1);
+        
+        String imageFileName = String.format("GR.%s.jpeg", grIDs, IMG_EXT);
+        File image = new File(appDir, imageFileName);
+        
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(image));
+        startActivityForResult(takePictureIntent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+    }    
+    
+    private void initiateAuthActivity() {
+        Intent checkAuthIntent = new Intent(context, 
+                com.gradians.collect.LoginActivity.class);
+        checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
     }
 
     private void setPreferences(Manifest manifest) {
@@ -183,13 +165,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         edit.putString(NAME_KEY, manifest.getName());
         edit.putString(EMAIL_KEY, manifest.getEmail());
         edit.commit();       
-    }
-
-    private void initiateAuthActivity() {
-        Intent checkAuthIntent = new Intent(context, 
-                com.gradians.collect.LoginActivity.class);
-        checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
     }
 
     private void initApp() {
@@ -207,56 +182,56 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         }
         ((ExpandableListView)this.findViewById(R.id.elvQuiz)).
             setOnChildClickListener(this);
-    }    
+        handleError("try 123", "456");
+    }
+    
+    private Manifest getManifest() {
+        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
+        return (Manifest)elv.getExpandableListAdapter();
+    }
 
-    private void uploadImageHTTP() {
-        File[] images = appDir.listFiles(new ImageFilter());
-        new ImageUploadTask(this).execute(images);
+    private void setManifest(Manifest manifest) {
+        setTitle(String.format(TITLE, manifest.getName()));
+        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
+        if (manifest.getGroupCount() > 0) {
+            elv.setAdapter(manifest);
+            elv.expandGroup(0);
+            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);
+        }
+    }
+
+    private void handleError(String msg, String err) {
+        this.error = err; this.message = msg;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Help us, report it...")
+               .setTitle("Oops, we hit an error!");
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                   public void onClick(DialogInterface dialog, int id) {
+                       // User clicked OK button
+                       Intent intent = new Intent(Intent.ACTION_SEND);
+                       intent.setType("text/plain");
+                       intent.putExtra(Intent.EXTRA_EMAIL, "help@gradians.com");
+                       intent.putExtra(Intent.EXTRA_SUBJECT, message);
+                       intent.putExtra(Intent.EXTRA_TEXT, error);
+                       /* Send it off to the Activity-Chooser */
+                       context.startActivity(Intent.createChooser(intent, "Send mail..."));
+                   }
+               });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                   public void onClick(DialogInterface dialog, int id) {
+                       // User cancelled the dialog
+                       Toast.makeText(context, "Okay, not sending!", Toast.LENGTH_SHORT).show();
+                   }
+               });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
     
-    private void handleError(String message, String error) {
-//        Toast.makeText(getApplicationContext(),
-//                message,
-//                Toast.LENGTH_SHORT).show();
-//        Log.v(TAG, error);
-        //TODO Send error message email?
-    }
-    
+    private String error, message;
     private Context context;
-    private int groupPosition, childPosition;
-    private boolean worksheet;
     private File appDir;
     
     private final String TITLE = "Scanbot - Hello %s !";
-    
-}
-
-class PickStationaryTypeDialog extends DialogFragment implements IConstants {
-    
-    public PickStationaryTypeDialog(ITaskCompletedListener listener, String qrCode, String grId) {
-        this.listener = listener;
-        this.qrCode = qrCode;
-        this.grId = grId;
-    }
-    
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {        
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(R.string.title_stationary_type)
-               .setItems(R.array.stationary_options, new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int which) {
-                       listener.onTaskResult(ITaskCompletedListener.CHOOSE_STATIONARY_TYPE_REQUEST_CODE,
-                           Activity.RESULT_OK, which == 0 ? 
-                               String.format(FORMAT, PLAINPAPER_PREFIX, grId): 
-                               String.format(FORMAT, WORKSHEET_PREFIX, qrCode));
-               }
-        });
-        return builder.create();
-    }
-    
-    ITaskCompletedListener listener;
-    String qrCode, grId;
-    final String FORMAT = "%s.%s";
     
 }
 

@@ -14,7 +14,7 @@
         android:paddingLeft="25dp" />
     
     <ImageView
-        android:id="@+id/ivStationary"
+        android:id="@+id/ivState"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"

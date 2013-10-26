@@ -78,11 +78,14 @@
         android:text="@string/label_text" 
         android:layout_gravity="bottom|center_horizontal" /-->
 
-    <!-- ListView
-        android:id="@+id/lvQuiz"
+    <ImageButton
+        android:id="@+id/btnClick"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" 
-        android:minHeight="?android:attr/listPreferredItemHeight"/-->
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:contentDescription="@string/camera_button"
+        android:onClick="initiateCameraActivity"
+        android:src="@android:drawable/ic_menu_camera" />
 
     <ExpandableListView
         android:id="@+id/elvQuiz"
