@@ -184,7 +184,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         }
         ((ExpandableListView)this.findViewById(R.id.elvQuiz)).
             setOnChildClickListener(this);
-        handleError("try 123", "456");
     }
     
     private Manifest getManifest() {
@@ -225,8 +224,8 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                        Toast.makeText(context, "Okay, not sending!", Toast.LENGTH_SHORT).show();
                    }
                });
-        AlertDialog dialog = builder.create();
-        dialog.show();
+//        AlertDialog dialog = builder.create();
+//        dialog.show();
     }
     
     private String error, message;
