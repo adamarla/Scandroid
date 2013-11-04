@@ -33,7 +33,7 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
             boundary = String.valueOf(System.currentTimeMillis());
             try {
                 url = new URL(String.format(BASE_URL,
-                        BANK_HOST_PORT, params[0], params[1]));
+                        BANK_HOST_PORT, params[0], params[1], params[2]));
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setDoOutput(true);
 
@@ -88,5 +88,6 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
     private ITaskCompletedListener taskCompletedListener;
     
     private static final String CRLF = "\r\n", DASH_DASH = "--";
-    private static final String BASE_URL = "http://%s/Upload/scan?type=%s&id=%s";
+    private static final String BASE_URL = "http://%s/Upload/scan?type=%s&id=%s&staging=%s";
+    
 }

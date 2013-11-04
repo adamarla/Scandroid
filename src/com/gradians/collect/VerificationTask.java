@@ -23,7 +23,8 @@ public class VerificationTask extends AsyncTask<Void, Void, String> implements I
         String result = null;
         try {
             String charset = Charset.defaultCharset().name();
-            URL verifyToken = new URL(String.format(BASE_URL, WEB_APP_HOST_PORT,
+            URL verifyToken = new URL(String.format(BASE_URL, 
+                    WEB_APP_HOST_PORT[LoginActivity.SOURCE_SYS_INDEX],
                     PARAM_EMAIL, email,
                     PARAM_TOKEN, token));
             HttpURLConnection conn = (HttpURLConnection)verifyToken.openConnection();

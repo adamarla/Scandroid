@@ -17,7 +17,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.View;
@@ -35,6 +34,8 @@ public class LoginActivity extends Activity implements IConstants {
     private static final String PARAM_EMAIL = "email";
     /** POST parameter name for the user's password */
     private static final String PARAM_PASSWORD = "password";
+    /** Globalish kind of variable this one */
+    public static int SOURCE_SYS_INDEX = -1;
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -54,7 +55,7 @@ public class LoginActivity extends Activity implements IConstants {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.v(TAG, "LoginActivity.onCreate() -> ");
+        
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_login);
@@ -113,7 +114,6 @@ public class LoginActivity extends Activity implements IConstants {
 
     @Override
     public void onBackPressed() {
-        Log.v(TAG, "LoginActivity.onBackPressed() -> ");
         // This will be called either automatically for you on 2.0
         // or later, or by the code above on earlier versions of the
         // platform.
@@ -176,7 +176,10 @@ public class LoginActivity extends Activity implements IConstants {
             mLoginStatusMessageView.setText(R.string.login_progress_signing_in);
             showProgress(true);
             mAuthTask = new UserLoginTask();
-            mAuthTask.execute((Void) null);
+            if (SOURCE_SYS_INDEX == -1)
+                mAuthTask.execute(WEB_APP_HOST_PORT);
+            else
+                mAuthTask.execute(WEB_APP_HOST_PORT[SOURCE_SYS_INDEX]);
         }
     }
 
@@ -226,30 +229,38 @@ public class LoginActivity extends Activity implements IConstants {
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<Void, Void, String> {
+    public class UserLoginTask extends AsyncTask<String, Void, String> {
         @Override
-        protected String doInBackground(Void... params) {
+        protected String doInBackground(String... params) {
             String result = null;
-            try {
-                String charset = Charset.defaultCharset().name();
-                URL createToken = new URL(String.format("http://%s/tokens", 
-                        WEB_APP_HOST_PORT));
-                String authParams = String.format("%s=%s&%s=%s", 
-                        PARAM_EMAIL, URLEncoder.encode(mEmail, charset),
-                        PARAM_PASSWORD, URLEncoder.encode(mPassword, charset));
-                HttpURLConnection conn = (HttpURLConnection)createToken.openConnection();
-                conn.setDoOutput(true); // Triggers HTTP POST
-                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
-                conn.setRequestProperty("Cache-Control", "no-cache");
-                conn.getOutputStream().write(authParams.getBytes(charset));
-                conn.getOutputStream().close();
+            
+            for (String hostport : params) {
+                try {
+                    String charset = Charset.defaultCharset().name();
+                    URL createToken = new URL(String.format("http://%s/tokens", 
+                            hostport));
+                    String authParams = String.format("%s=%s&%s=%s", 
+                            PARAM_EMAIL, URLEncoder.encode(mEmail, charset),
+                            PARAM_PASSWORD, URLEncoder.encode(mPassword, charset));
+                    HttpURLConnection conn = (HttpURLConnection)createToken.openConnection();
+                    conn.setDoOutput(true); // Triggers HTTP POST
+                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
+                    conn.setRequestProperty("Cache-Control", "no-cache");
+                    conn.getOutputStream().write(authParams.getBytes(charset));
+                    conn.getOutputStream().close();
 
-                if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    InputStream istream = conn.getInputStream();
-                    BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
-                    result = ireader.readLine();
-                }
-            } catch (Exception e){ }
+                    int code = conn.getResponseCode();
+                    if (code == HttpURLConnection.HTTP_OK) {
+                        SOURCE_SYS_INDEX = SOURCE_SYS_INDEX == -1 ? 0 : 1;
+                        InputStream istream = conn.getInputStream();
+                        BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
+                        result = ireader.readLine();                        
+                        break;
+                    } else if (code == HttpURLConnection.HTTP_NO_CONTENT) {
+                        continue;
+                    }
+                } catch (Exception e){ }
+            }            
             return result;
         }
 

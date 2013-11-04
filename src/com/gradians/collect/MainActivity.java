@@ -142,7 +142,9 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         for (String grID : selected) grIDs = grIDs + grID + "-";
         grIDs = grIDs.substring(0, grIDs.length()-1);
         
-        String imageFileName = String.format("GR.%s.jpeg", grIDs, IMG_EXT);
+        String staging = BANK_STAGING_DIR[LoginActivity.SOURCE_SYS_INDEX];
+        
+        String imageFileName = String.format("GR.%s.%s.jpeg", grIDs, staging, IMG_EXT);
         File image = new File(appDir, imageFileName);
         
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
