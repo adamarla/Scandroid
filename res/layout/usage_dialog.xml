@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/txtDirections"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="5dp"
+        android:height="40dp"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:text="@string/labelDirections" />
+    
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="0.2dp"
+        android:id="@+id/separator"
+        android:visibility="visible"
+        android:background="@android:color/white"/>
+    
+    <TextView
+        android:id="@+id/txtSelect"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@android:drawable/ic_menu_agenda"
+        android:drawablePadding="10dp"
+        android:height="40dp"
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:text="@string/labelSelect" />
+
+    <TextView
+        android:id="@+id/txtClick"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@android:drawable/ic_menu_camera"
+        android:drawablePadding="10dp"
+        android:height="40dp"
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:text="@string/labelClick" />
+    
+</LinearLayout>

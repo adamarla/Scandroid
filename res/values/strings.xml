@@ -7,5 +7,8 @@
     <string name="label_font">Helvetica</string>
     <string name="camera_button">Touch to activate Camera</string>
     <string name="label_text">www.gradians.com © 2013</string>
+    <string name="labelSelect">Select completed question(s)</string>
+    <string name="labelClick">Photograph solution(s)</string>
+    <string name="labelDirections">To send solutions using Scanbot</string>
 
 </resources>

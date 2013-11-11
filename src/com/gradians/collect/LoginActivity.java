@@ -12,7 +12,9 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,8 +36,6 @@ public class LoginActivity extends Activity implements IConstants {
     private static final String PARAM_EMAIL = "email";
     /** POST parameter name for the user's password */
     private static final String PARAM_PASSWORD = "password";
-    /** Globalish kind of variable this one */
-    public static int SOURCE_SYS_INDEX = -1;
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -176,10 +176,13 @@ public class LoginActivity extends Activity implements IConstants {
             mLoginStatusMessageView.setText(R.string.login_progress_signing_in);
             showProgress(true);
             mAuthTask = new UserLoginTask();
-            if (SOURCE_SYS_INDEX == -1)
+            SharedPreferences prefs = getSharedPreferences(TAG, 
+                    Context.MODE_PRIVATE);
+            int sourceIndex = prefs.getInt(SOURCE_SYS_IDX, -1); 
+            if (sourceIndex == -1)
                 mAuthTask.execute(WEB_APP_HOST_PORT);
             else
-                mAuthTask.execute(WEB_APP_HOST_PORT[SOURCE_SYS_INDEX]);
+                mAuthTask.execute(WEB_APP_HOST_PORT[sourceIndex]);
         }
     }
 
@@ -233,7 +236,7 @@ public class LoginActivity extends Activity implements IConstants {
         @Override
         protected String doInBackground(String... params) {
             String result = null;
-            
+            source = 0;
             for (String hostport : params) {
                 try {
                     String charset = Charset.defaultCharset().name();
@@ -251,12 +254,12 @@ public class LoginActivity extends Activity implements IConstants {
 
                     int code = conn.getResponseCode();
                     if (code == HttpURLConnection.HTTP_OK) {
-                        SOURCE_SYS_INDEX = SOURCE_SYS_INDEX == -1 ? 0 : 1;
                         InputStream istream = conn.getInputStream();
                         BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
-                        result = ireader.readLine();                        
+                        result = ireader.readLine();
                         break;
                     } else if (code == HttpURLConnection.HTTP_NO_CONTENT) {
+                        source = 1;
                         continue;
                     }
                 } catch (Exception e){ }
@@ -272,6 +275,7 @@ public class LoginActivity extends Activity implements IConstants {
             if (result != null) {
                 final Intent intent = new Intent();
                 intent.putExtra(TAG, result);
+                intent.putExtra(SOURCE_SYS_IDX, source);
                 setResult(RESULT_OK, intent);
                 finish();
             } else {
@@ -285,5 +289,7 @@ public class LoginActivity extends Activity implements IConstants {
             mAuthTask = null;
             showProgress(false);
         }
+        
+        private int source;
     }
 }

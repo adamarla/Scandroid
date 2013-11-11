@@ -17,5 +17,5 @@ public interface IConstants {
     String APP_DIR_NAME = "Scanbot";
     String IMG_EXT = ".jpeg";
     String STATE = "state.txt";
-
+    String SOURCE_SYS_IDX = "source";
 }

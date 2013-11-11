@@ -112,9 +112,9 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     }
 
     @Override
-    public boolean isChildSelectable(int groupPosition, int childPosition) {
+    public boolean isChildSelectable(int groupPosition, int childPosition) {        
         Question q = quizzes.get(groupPosition).get(childPosition);
-        return !getSentStatus(q).equals(SENT);
+        return !(frozen || getSentStatus(q).equals(SENT));
     }
     
     public void checkUncheck(int quizPosn, int questionPosn) {
@@ -153,6 +153,14 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         state.store(new FileOutputStream(new File(dir, STATE)), null);
     }
     
+    public void freeze() {
+        frozen = true;
+    }
+    
+    public void unfreeze() {
+        frozen = false;
+    }
+    
     private void parse(String json) throws Exception {
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject;
@@ -184,6 +192,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             setSentStatus(question, lastState.getProperty(question.getGRId(), UNMARKED));
         }
         if (quiz != null) quizzes.add(quiz);
+        frozen = false;
     }
     
     private void setSentStatus(Question question, String value) {
@@ -194,6 +203,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return state.getProperty(question.getGRId());
     }
     
+    private boolean frozen;
     private String name, email, token;
     private Properties state;
     private ArrayList<Quiz> quizzes;
@@ -223,20 +233,11 @@ class Quiz extends ArrayList<Question> {
         return id;
     }
     
-    public void userPlainPaper(boolean plainPaper) {
-        this.plainPaper = plainPaper;
-    }
-    
-    public boolean usedPlainPaper() {
-        return plainPaper;
-    }
-    
     @Override
     public String toString() {
         return name;
     }
     
-    private boolean plainPaper;
     private String name;
     private long id;
     
