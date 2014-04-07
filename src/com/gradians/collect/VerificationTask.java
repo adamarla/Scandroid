@@ -12,10 +12,9 @@ import android.os.AsyncTask;
 
 public class VerificationTask extends AsyncTask<Void, Void, String> implements IConstants {
     
-    public VerificationTask(String email, String token, int sourceSysIndex, ITaskCompletedListener taskCompletedListener) {
+    public VerificationTask(String email, String token, ITaskCompletedListener taskCompletedListener) {
         this.email = email;
         this.token = token;
-        this.sourceSysIndex = sourceSysIndex;
         this.taskCompletedListener = taskCompletedListener;
     }
     
@@ -24,8 +23,8 @@ public class VerificationTask extends AsyncTask<Void, Void, String> implements I
         String result = null;
         try {
             String charset = Charset.defaultCharset().name();
-            URL verifyToken = new URL(String.format(BASE_URL, 
-                    WEB_APP_HOST_PORT[sourceSysIndex],
+            URL verifyToken = new URL(String.format(BASE_URL,
+                    WEB_APP_HOST_PORT,
                     PARAM_EMAIL, email,
                     PARAM_TOKEN, token));
             HttpURLConnection conn = (HttpURLConnection)verifyToken.openConnection();
@@ -47,9 +46,8 @@ public class VerificationTask extends AsyncTask<Void, Void, String> implements I
     protected void onPostExecute(String result) {
         taskCompletedListener.onTaskResult(ITaskCompletedListener.VERIFY_AUTH_TASK_RESULT_CODE,
                 result != null ? Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
-    }        
+    }
 
-    private int sourceSysIndex;
     private String email, token;
     private ITaskCompletedListener taskCompletedListener;
     

@@ -150,7 +150,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     
     public void commit() throws Exception {
         File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
-        state.store(new FileOutputStream(new File(dir, STATE)), null);
+        state.store(new FileOutputStream(new File(dir, this.getEmail())), null);
     }
     
     public void freeze() {
@@ -172,7 +172,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         
         File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
         Properties lastState = new Properties();
-        File file = new File(dir, STATE); file.createNewFile(); //creates if needed
+        File file = new File(dir, email); file.createNewFile(); //creates if needed
         lastState.load(new FileInputStream(file));
         
         quizzes = new ArrayList<Quiz>();

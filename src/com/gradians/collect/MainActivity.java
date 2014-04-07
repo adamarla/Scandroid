@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -58,10 +59,11 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             if (resultCode == RESULT_OK) {
                 File[] images = appDir.listFiles(new ImageFilter());
                 new ImageUploadTask(this).execute(images);
+                peedee = ProgressDialog.show(this, "Uploading", "Please wait...");
+                peedee.setIndeterminate(true);
+                peedee.setIcon(ProgressDialog.STYLE_SPINNER);
                 manifest = getManifest();
-                manifest.freeze();                
-                Toast.makeText(context, "Uploading... ", 
-                        Toast.LENGTH_LONG).show();
+                manifest.freeze();
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
                         "Oops.. image capture failed. Please try again",
@@ -71,7 +73,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             if (resultCode == RESULT_OK) {
                 try {
                     manifest = new Manifest(this, data.getStringExtra(TAG));
-                    setPreferences(manifest, data.getIntExtra(SOURCE_SYS_IDX, 0));
+                    setPreferences(manifest);
                     setManifest(manifest);
                     displayUsageAlert();
                 } catch (Exception e) { 
@@ -102,7 +104,8 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             } else {
                 initiateAuthActivity();
             }
-        } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {            
+        } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {
+            peedee.dismiss();
             if (resultCode == RESULT_OK) {
                 manifest = getManifest();
                 manifest.markAsSent();
@@ -118,11 +121,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     public boolean onOptionsItemSelected(MenuItem item) {
       switch (item.getItemId()) {
       case R.id.action_sign_out:
-          SharedPreferences prefs = getSharedPreferences(TAG, 
-                  Context.MODE_PRIVATE);
-          Editor edit = prefs.edit();
-          edit.clear();
-          edit.commit();
           initiateAuthActivity();
         break;
       default:
@@ -155,11 +153,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         for (String grID : selected) grIDs = grIDs + grID + "-";
         grIDs = grIDs.substring(0, grIDs.length()-1);
         
-        SharedPreferences prefs = getSharedPreferences(TAG, 
-                Context.MODE_PRIVATE);
-        String staging = BANK_STAGING_DIR[prefs.getInt(SOURCE_SYS_IDX, 0)];
-        
-        String imageFileName = String.format("GR.%s.%s.jpeg", grIDs, staging, IMG_EXT);
+        String imageFileName = String.format("GR.%s.%s", grIDs, IMG_EXT);
         File image = new File(appDir, imageFileName);
         
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -168,20 +162,28 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }    
     
     private void initiateAuthActivity() {
+        resetPreferences();
         Intent checkAuthIntent = new Intent(context, 
                 com.gradians.collect.LoginActivity.class);
         checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
     }
+    
+    private void resetPreferences() {
+        SharedPreferences prefs = getSharedPreferences(TAG, 
+                Context.MODE_PRIVATE);
+        Editor edit = prefs.edit();
+        edit.clear();
+        edit.commit();        
+    }
 
-    private void setPreferences(Manifest manifest, int systemIndex) {
+    private void setPreferences(Manifest manifest) {
         SharedPreferences prefs = this.getSharedPreferences(TAG, 
                 Context.MODE_PRIVATE);
         Editor edit = prefs.edit();
         edit.putString(TOKEN_KEY, manifest.getAuthToken());
         edit.putString(NAME_KEY, manifest.getName());
         edit.putString(EMAIL_KEY, manifest.getEmail());
-        edit.putInt(SOURCE_SYS_IDX, systemIndex);
         edit.commit();       
     }
 
@@ -195,9 +197,8 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         if (token == null) {
             initiateAuthActivity();
         } else {
-            String email = prefs.getString(EMAIL_KEY, null);            
-            int sourceIndex = prefs.getInt(SOURCE_SYS_IDX, 0);
-            new VerificationTask(email, token, sourceIndex, this).execute();
+            String email = prefs.getString(EMAIL_KEY, null);
+            new VerificationTask(email, token, this).execute();
         }
         ((ExpandableListView)this.findViewById(R.id.elvQuiz)).
             setOnChildClickListener(this);
@@ -231,7 +232,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     private void handleError(String msg, String err) {
         this.error = err; this.message = msg;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Help us, report it...")
+        builder.setMessage("Help us, report it..?")
                .setTitle("Oops, we hit an error!");
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                    public void onClick(DialogInterface dialog, int id) {
@@ -258,6 +259,8 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     private String error, message;
     private Context context;
     private File appDir;
+    
+    private ProgressDialog peedee;
     
     private final String TITLE = "Scanbot - Hello %s !";
     
