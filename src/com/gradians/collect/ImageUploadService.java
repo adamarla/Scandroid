@@ -2,33 +2,38 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import android.app.Activity;
-import android.os.AsyncTask;
+import android.app.IntentService;
+import android.content.Intent;
+import android.util.Log;
 
-public class ImageUploadTask extends AsyncTask<File, Void, String> implements IConstants {
-    
-    public ImageUploadTask(ITaskCompletedListener taskCompletedListener) {
-        this.taskCompletedListener = taskCompletedListener;
-    }        
+public class ImageUploadService extends IntentService implements IConstants {
+
+    public ImageUploadService() {
+        super("ImageUploadService");
+        // TODO Auto-generated constructor stub
+    }
 
     @Override
-    protected String doInBackground(File... images) {
-        
+    protected void onHandleIntent(Intent intent) {
+        File imagesDir = this.getApplicationContext().getDir(APP_DIR_NAME, MODE_PRIVATE);
+        File[] images = imagesDir.listFiles(new ImageFilter());
+
         URL url = null;
         HttpURLConnection httpUrlConnection = null;
         OutputStream ostream = null;
         PrintWriter opstream = null;        
         String boundary =  null;
         String[] params = null;
-        String result = null;
         for (File image : images) {
             
+            Log.d(TAG, "uploading file " + image.getName());
             params = image.getName().split("\\.");
             boundary = String.valueOf(System.currentTimeMillis());
             try {
@@ -40,7 +45,8 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
                 httpUrlConnection.setRequestMethod("POST");
                 httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
                 httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
-                httpUrlConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+                httpUrlConnection.setRequestProperty("Content-Type", 
+                        "multipart/form-data;boundary=" + boundary);
                 
                 ostream = httpUrlConnection.getOutputStream();
                 opstream = new PrintWriter(ostream); 
@@ -71,23 +77,23 @@ public class ImageUploadTask extends AsyncTask<File, Void, String> implements IC
                     image.delete();
                 }
             } catch (Exception e) {
-                result = e.getMessage();
+                Log.d(TAG, e.getMessage());
             } finally {
                 if (opstream != null) opstream.close();
             }
-        }
-        return result;
+        }        
     }
 
-    @Override
-    protected void onPostExecute(String result) {
-        taskCompletedListener.onTaskResult(ITaskCompletedListener.UPLOAD_IMAGE_TASK_RESULT_CODE,
-                result == null ? Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
-    }
-    
-    private ITaskCompletedListener taskCompletedListener;
-    
     private static final String CRLF = "\r\n", DASH_DASH = "--";
     private static final String URL = "http://%s/Upload/scan?type=%s&id=%s";
+    
+}
+
+class ImageFilter implements FilenameFilter, IConstants {
+
+    @Override
+    public boolean accept(File dir, String filename) {
+        return filename.endsWith(IMG_EXT);
+    }
     
 }

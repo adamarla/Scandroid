@@ -10,5 +10,7 @@
     <string name="labelSelect">Select completed question(s)</string>
     <string name="labelClick">Photograph solution(s)</string>
     <string name="labelDirections">To send solutions using Scanbot</string>
+    <string name="title_activity_camera">CameraActivity</string>
+    <string name="click_button">Button to save image</string>
 
 </resources>

@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,8 +24,8 @@ import org.json.simple.parser.JSONParser;
 public class Manifest extends BaseExpandableListAdapter implements IConstants {
     
     public Manifest(Context context, String json) throws Exception {
-        this.context = context;
         this.inflater = LayoutInflater.from(context);
+        this.appDir = context.getDir(APP_DIR_NAME, Context.MODE_PRIVATE);
         parse(json);
     }
     
@@ -61,7 +62,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         ((TextView)convertView.findViewById(R.id.tvQuestion)).
             setText(question.toString());
         
-        String status = getSentStatus(question);        
+        String status = getSentStatus(question);
         ImageView iv = ((ImageView)convertView.findViewById(R.id.ivState));
         if (status.equals(MARKED)) {
             iv.setImageResource(android.R.drawable.checkbox_on_background);
@@ -149,8 +150,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     }    
     
     public void commit() throws Exception {
-        File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
-        state.store(new FileOutputStream(new File(dir, this.getEmail())), null);
+        state.store(new FileOutputStream(new File(appDir, this.getEmail())), null);
     }
     
     public void freeze() {
@@ -170,11 +170,10 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         email = (String)respObject.get(EMAIL_KEY);        
         JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);        
         
-        File dir = new File(context.getExternalFilesDir(null), APP_DIR_NAME);
         Properties lastState = new Properties();
-        File file = new File(dir, email); file.createNewFile(); //creates if needed
+        File file = new File(appDir, email); file.createNewFile(); //creates if needed
         lastState.load(new FileInputStream(file));
-        
+
         quizzes = new ArrayList<Quiz>();
         state = new Properties();
         long quizId = 0; Quiz quiz = null;
@@ -206,10 +205,10 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     private boolean frozen;
     private String name, email, token;
     private Properties state;
+    private File appDir;
     private ArrayList<Quiz> quizzes;
     
     private LayoutInflater inflater;
-    private Context context;
         
     private static final String 
         TOKEN_KEY = "token", NAME_KEY = "name", EMAIL_KEY = "email",

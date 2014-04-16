@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="6"
-    android:versionName="2.3.1" >
+    android:versionCode="7"
+    android:versionName="2.4" >
 
     <uses-sdk
         android:minSdkVersion="8"
         android:targetSdkVersion="18" />
 
     <uses-feature android:name="android.hardware.camera" />
-
+    
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
 
     <application
@@ -19,6 +21,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppBaseTheme" >
+        
         <activity
             android:name="com.gradians.collect.MainActivity"
             android:label="@string/app_name"
@@ -28,12 +31,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
         <activity
             android:name="com.gradians.collect.LoginActivity"
             android:label="@string/title_activity_login"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
+        
+        <activity
+            android:name="com.gradians.collect.CameraActivity"
+            android:label="@string/title_activity_camera"
+            android:screenOrientation="portrait"
+            android:parentActivityName="com.gradians.collect.MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.gradians.collect.MainActivity" />
+        </activity>
+        
+        <service
+            android:name="com.gradians.collect.ImageUploadService"
+            android:enabled="true" >           
+        </service>
     </application>
 
 </manifest>

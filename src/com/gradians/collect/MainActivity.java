@@ -1,11 +1,6 @@
 package com.gradians.collect;
 
-import java.io.File;
-import java.io.FilenameFilter;
-
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -15,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -31,6 +27,17 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initApp();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        // TODO Auto-generated method stub
+        super.onStop();
     }
 
     @Override
@@ -57,13 +64,12 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         Manifest manifest = null;
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                File[] images = appDir.listFiles(new ImageFilter());
-                new ImageUploadTask(this).execute(images);
-                peedee = ProgressDialog.show(this, "Uploading", "Please wait...");
-                peedee.setIndeterminate(true);
-                peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+                Intent uploadIntent = new Intent(context,
+                        com.gradians.collect.ImageUploadService.class);
+                startService(uploadIntent);
                 manifest = getManifest();
-                manifest.freeze();
+                manifest.markAsSent();
+                manifest.notifyDataSetChanged();                
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
                         "Oops.. image capture failed. Please try again",
@@ -75,8 +81,12 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                     manifest = new Manifest(this, data.getStringExtra(TAG));
                     setPreferences(manifest);
                     setManifest(manifest);
-                    displayUsageAlert();
-                } catch (Exception e) { 
+                    Toast.makeText(context, 
+                            "Select question(s), then take a picture!", 
+                            Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.e(TAG, e.toString());
+                    Log.e(TAG, e.getMessage());
                     handleError("Oops, Auth activity request failed", 
                             data.getStringExtra(TAG));
                 }                
@@ -90,10 +100,10 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         }
     }
     
-    @Override
-    public void onTaskResult(int requestCode, int resultCode, String resultData) {
+    public void onTaskResult(int requestCode, int resultCode, String resultData) {        
         Manifest manifest = null;
         if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
+            peedee.dismiss();
             if (resultCode == RESULT_OK) {
                 try {
                     manifest = new Manifest(this, resultData);
@@ -154,12 +164,13 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         grIDs = grIDs.substring(0, grIDs.length()-1);
         
         String imageFileName = String.format("GR.%s.%s", grIDs, IMG_EXT);
-        File image = new File(appDir, imageFileName);
         
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(image));
+        //Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        Intent takePictureIntent = new Intent(context,
+                com.gradians.collect.CameraActivity.class);
+        takePictureIntent.putExtra(TAG, imageFileName);
         startActivityForResult(takePictureIntent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);           
-    }    
+    }
     
     private void initiateAuthActivity() {
         resetPreferences();
@@ -188,15 +199,18 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }
 
     private void initApp() {
-        appDir = new File(getExternalFilesDir(null), APP_DIR_NAME);
-        if (!appDir.exists()) appDir.mkdir();
         context = getApplicationContext();
         SharedPreferences prefs = getSharedPreferences(TAG, 
                 Context.MODE_PRIVATE);
+        
         String token = prefs.getString(TOKEN_KEY, null);        
         if (token == null) {
             initiateAuthActivity();
         } else {
+            peedee = ProgressDialog.show(this, "Initializing Scanbot", "Please wait...");
+            peedee.setIndeterminate(true);
+            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+            
             String email = prefs.getString(EMAIL_KEY, null);
             new VerificationTask(email, token, this).execute();
         }
@@ -210,6 +224,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }
 
     private void setManifest(Manifest manifest) {
+        Log.d(TAG, "setManifest() ->");
         setTitle(String.format(TITLE, manifest.getName()));
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
         if (manifest.getGroupCount() > 0) {
@@ -217,6 +232,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             elv.expandGroup(0);
             elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);
         }
+        Log.d(TAG, "setManifest() <-");
     }
     
     private void displayUsageAlert() {
@@ -258,19 +274,10 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     
     private String error, message;
     private Context context;
-    private File appDir;
-    
     private ProgressDialog peedee;
     
     private final String TITLE = "Scanbot - Hello %s !";
+
     
 }
 
-class ImageFilter implements FilenameFilter, IConstants {
-
-    @Override
-    public boolean accept(File dir, String filename) {
-        return filename.endsWith(IMG_EXT);
-    }
-    
-}
