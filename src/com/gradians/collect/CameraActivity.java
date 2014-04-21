@@ -62,7 +62,6 @@ public class CameraActivity extends Activity implements IConstants {
 
     @Override
     protected void onPause() {
-        // TODO Auto-generated method stub
         super.onPause();
         releaseCamera();
     }
@@ -75,7 +74,6 @@ public class CameraActivity extends Activity implements IConstants {
     }
     
     private void releaseCamera() {
-        Log.d(TAG, "Release Camera");
         if (camera != null) {
             camera.release();
             camera = null;
@@ -97,7 +95,7 @@ public class CameraActivity extends Activity implements IConstants {
     private Camera camera;
 }
 
-class PictureWriter implements PictureCallback, IConstants {
+class PictureWriter implements PictureCallback {
         
     public PictureWriter(File picture, Activity caller) {
         this.caller = caller;
@@ -106,17 +104,11 @@ class PictureWriter implements PictureCallback, IConstants {
 
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
-        // TODO Auto-generated method stub
-        Log.d(TAG, "onPictureTake() ->");
         try {
-            Log.d(TAG, picture.getAbsolutePath());
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
-          } catch (Exception error) {
-              Log.e(TAG, error.getMessage());
-          }        
-        Log.d(TAG, "onPictureTake() <-");
+          } catch (Exception error) { }
         caller.finish();
     }
     

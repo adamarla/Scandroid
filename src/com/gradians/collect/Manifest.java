@@ -5,15 +5,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Properties;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.json.simple.JSONArray;
@@ -22,8 +22,8 @@ import org.json.simple.parser.JSONParser;
 
 
 public class Manifest extends BaseExpandableListAdapter implements IConstants {
-    
-    public Manifest(Context context, String json) throws Exception {
+    public Manifest(Context context, String json, OnClickListener l) throws Exception {
+        this.listener = l;
         this.inflater = LayoutInflater.from(context);
         this.appDir = context.getDir(APP_DIR_NAME, Context.MODE_PRIVATE);
         parse(json);
@@ -58,19 +58,36 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             convertView = inflater.inflate(R.layout.layout_question, parent, false);
         }
         
-        Question question = (Question)getChild(groupPosition, childPosition);
-        ((TextView)convertView.findViewById(R.id.tvQuestion)).
-            setText(question.toString());
-        
-        String status = getSentStatus(question);
-        ImageView iv = ((ImageView)convertView.findViewById(R.id.ivState));
-        if (status.equals(MARKED)) {
-            iv.setImageResource(android.R.drawable.checkbox_on_background);
-        } else if (status.equals(UNMARKED)) {
-            iv.setImageResource(android.R.drawable.checkbox_off_background);
-        } else {
-            iv.setImageResource(android.R.drawable.ic_secure);
-        }
+        Question[] row = (Question[])getChild(groupPosition, childPosition);        
+        for (int i = 0; i < row.length; i++) {
+            if (row[i] != null) {
+                TextView tv = null;
+                switch(i) {
+                case 0:
+                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion1));
+                    break;
+                case 1:
+                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion2));
+                    break;
+                case 2:
+                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion3));
+                    break;
+                case 3:
+                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion4));
+                    break;
+                }
+                tv.setText(row[i].getName());
+                tv.setOnClickListener(listener);
+                String status = getSentStatus(row[i]);
+                if (status.equals(MARKED)) {
+                    tv.setBackgroundResource(R.drawable.unselected);
+                } else if (status.equals(UNMARKED)) {
+                    tv.setBackgroundResource(R.drawable.selected);
+                } else {
+                    tv.setBackgroundResource(R.drawable.sent);
+                }
+            }
+        }        
         return convertView;    
     }
 
@@ -113,16 +130,27 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     }
 
     @Override
-    public boolean isChildSelectable(int groupPosition, int childPosition) {        
-        Question q = quizzes.get(groupPosition).get(childPosition);
-        return !(frozen || getSentStatus(q).equals(SENT));
+    public boolean isChildSelectable(int groupPosition, int childPosition) {
+//        Question q = quizzes.get(groupPosition).get(childPosition);
+//        return !(frozen || getSentStatus(q).equals(SENT));
+        return false;
+    }
+    
+    public void checkUncheck(String name) {
+        Question q = this.questionsByName.get(name);
+        String status = this.getSentStatus(q);
+        if (status.equals(UNMARKED)) {
+            this.setSentStatus(q, MARKED);
+        } else if (status.equals(MARKED)) {
+            this.setSentStatus(q, UNMARKED);
+        }
     }
     
     public void checkUncheck(int quizPosn, int questionPosn) {
-        Quiz quiz = quizzes.get(quizPosn);
-        Question question = quiz.get(questionPosn);
-        setSentStatus(question, getSentStatus(question).equals(MARKED)?
-                UNMARKED : MARKED);        
+//        Quiz quiz = quizzes.get(quizPosn);
+//        Question question = quiz.get(questionPosn);
+//        setSentStatus(question, getSentStatus(question).equals(MARKED)?
+//                UNMARKED : MARKED);        
     }
 
     public String[] getSelected() {
@@ -153,14 +181,6 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         state.store(new FileOutputStream(new File(appDir, this.getEmail())), null);
     }
     
-    public void freeze() {
-        frozen = true;
-    }
-    
-    public void unfreeze() {
-        frozen = false;
-    }
-    
     private void parse(String json) throws Exception {
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject;
@@ -174,9 +194,10 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         File file = new File(appDir, email); file.createNewFile(); //creates if needed
         lastState.load(new FileInputStream(file));
 
+        questionsByName = new HashMap<String, Question>();
         quizzes = new ArrayList<Quiz>();
         state = new Properties();
-        long quizId = 0; Quiz quiz = null;
+        long quizId = 0; Quiz quiz = null; Question[] row = null;
         for (int i = 0; i < items.size(); i++) {
             JSONObject item = (JSONObject) items.get(i);
             if (quizId == 0 || quizId != (Long)((JSONObject)item).get(QUIZ_ID_KEY)) {
@@ -185,13 +206,16 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 quiz = new Quiz((String)((JSONObject)item).get(QUIZ_NAME_KEY), quizId);
             }
             Question question = new Question((String)((JSONObject)item).get(NAME_KEY),
-                    (String)((JSONObject)item).get(SCAN_KEY),
                     String.valueOf(((JSONObject)item).get(GR_ID_KEY)));
-            quiz.add(question);
+            if (i%ITEMS_PER_ROW == 0) {
+                row = new Question[ITEMS_PER_ROW];
+                quiz.add(row);
+            }
+            questionsByName.put(question.getName(), question);
+            row[i%ITEMS_PER_ROW] = question;
             setSentStatus(question, lastState.getProperty(question.getGRId(), UNMARKED));
         }
         if (quiz != null) quizzes.add(quiz);
-        frozen = false;
     }
     
     private void setSentStatus(Question question, String value) {
@@ -202,22 +226,25 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return state.getProperty(question.getGRId());
     }
     
-    private boolean frozen;
     private String name, email, token;
     private Properties state;
     private File appDir;
     private ArrayList<Quiz> quizzes;
+    private HashMap<String, Question> questionsByName;
     
-    private LayoutInflater inflater;
-        
+    private LayoutInflater inflater;        
+    private OnClickListener listener;
+    
+    private final int ITEMS_PER_ROW = 4;
     private static final String 
-        TOKEN_KEY = "token", NAME_KEY = "name", EMAIL_KEY = "email",
+        TOKEN_KEY = "token", NAME_KEY = "name", EMAIL_KEY = "email";
+    private static final String
         UNMARKED = "U", MARKED = "M", SENT = "S";
 
     
 }
 
-class Quiz extends ArrayList<Question> {
+class Quiz extends ArrayList<Question[]> {
     
     public Quiz(String name, long id) {
         this.name = name;
@@ -245,18 +272,13 @@ class Quiz extends ArrayList<Question> {
 
 class Question {
     
-    public Question(String name, String QRCode, String GRId) {
+    public Question(String name, String GRId) {
         this.name = name;
-        this.QRCode = QRCode;
         this.GRId = GRId;
     }
     
     public String getName() {
         return name;
-    }
-    
-    public String getQRCode() {
-        return QRCode;
     }
     
     public String getGRId() {
@@ -268,6 +290,6 @@ class Question {
         return name;
     }
     
-    private String name, QRCode, GRId;
+    private String name, GRId;
     
 }

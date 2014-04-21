@@ -12,32 +12,24 @@ import android.content.SharedPreferences.Editor;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
+import android.widget.ExpandableListView.OnGroupClickListener;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends FragmentActivity implements ITaskCompletedListener, IConstants, OnChildClickListener {
+public class MainActivity extends FragmentActivity implements ITaskCompletedListener, IConstants, OnChildClickListener, 
+    OnGroupClickListener, OnClickListener {
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initApp();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-    }
-
-    @Override
-    protected void onStop() {
-        // TODO Auto-generated method stub
-        super.onStop();
     }
 
     @Override
@@ -78,7 +70,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         } else if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    manifest = new Manifest(this, data.getStringExtra(TAG));
+                    manifest = new Manifest(this, data.getStringExtra(TAG), this);
                     setPreferences(manifest);
                     setManifest(manifest);
                     Toast.makeText(context, 
@@ -106,7 +98,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             peedee.dismiss();
             if (resultCode == RESULT_OK) {
                 try {
-                    manifest = new Manifest(this, resultData);
+                    manifest = new Manifest(this, resultData, this);
                     setManifest(manifest);
                 } catch (Exception e) { 
                     handleError("Oops, Verify auth task failed", resultData);
@@ -120,7 +112,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                 manifest = getManifest();
                 manifest.markAsSent();
                 manifest.notifyDataSetChanged();
-                manifest.unfreeze();
             } else {
                 handleError("Uh-oh, image upload failed", resultData);
             }
@@ -140,14 +131,24 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }    
     
     @Override
+    public boolean onGroupClick(ExpandableListView parent, View v,
+            int groupPosition, long id) {
+        return false;
+    }
+
+    @Override
     public boolean onChildClick(ExpandableListView parent, View v,
             int groupPosition, int childPosition, long id) {
-        Manifest manifest = getManifest();
-        manifest.checkUncheck(groupPosition, childPosition);
-        manifest.notifyDataSetChanged();
-        return true;
+        return false;
     }
     
+    @Override
+    public void onClick(View v) {
+        Manifest manifest = getManifest();
+        manifest.checkUncheck(((TextView)v).getText().toString());
+        manifest.notifyDataSetChanged();
+    }
+
     public void initiateCameraActivity(View view) {
         Manifest manifest = getManifest();
         String[] selected = manifest.getSelected();        
@@ -165,7 +166,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         
         String imageFileName = String.format("GR.%s.%s", grIDs, IMG_EXT);
         
-        //Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         Intent takePictureIntent = new Intent(context,
                 com.gradians.collect.CameraActivity.class);
         takePictureIntent.putExtra(TAG, imageFileName);
@@ -214,8 +214,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             String email = prefs.getString(EMAIL_KEY, null);
             new VerificationTask(email, token, this).execute();
         }
-        ((ExpandableListView)this.findViewById(R.id.elvQuiz)).
-            setOnChildClickListener(this);
     }
     
     private Manifest getManifest() {
@@ -224,27 +222,17 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }
 
     private void setManifest(Manifest manifest) {
-        Log.d(TAG, "setManifest() ->");
         setTitle(String.format(TITLE, manifest.getName()));
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
+        //elv.setOnChildClickListener(this);
+        elv.setOnGroupClickListener(this);
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
             elv.expandGroup(0);
             elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);
         }
-        Log.d(TAG, "setManifest() <-");
     }
     
-    private void displayUsageAlert() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        LayoutInflater inflater = getLayoutInflater();
-        builder.setView(inflater.inflate(R.layout.usage_dialog, null));
-        AlertDialog dialog = builder.create();
-        dialog.setCancelable(true);
-        dialog.setCanceledOnTouchOutside(true);
-        dialog.show();
-    }
-
     private void handleError(String msg, String err) {
         this.error = err; this.message = msg;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
