@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -60,22 +61,24 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         
         Question[] row = (Question[])getChild(groupPosition, childPosition);        
         for (int i = 0; i < row.length; i++) {
+            
+            TextView tv = null;
+            switch(i) {
+            case 0:
+                tv = ((TextView)convertView.findViewById(R.id.tvQuestion1));
+                break;
+            case 1:
+                tv = ((TextView)convertView.findViewById(R.id.tvQuestion2));
+                break;
+            case 2:
+                tv = ((TextView)convertView.findViewById(R.id.tvQuestion3));
+                break;
+            case 3:
+                tv = ((TextView)convertView.findViewById(R.id.tvQuestion4));
+                break;
+            }
+            
             if (row[i] != null) {
-                TextView tv = null;
-                switch(i) {
-                case 0:
-                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion1));
-                    break;
-                case 1:
-                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion2));
-                    break;
-                case 2:
-                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion3));
-                    break;
-                case 3:
-                    tv = ((TextView)convertView.findViewById(R.id.tvQuestion4));
-                    break;
-                }
                 tv.setText(row[i].getName());
                 tv.setOnClickListener(listener);
                 String status = getSentStatus(row[i]);
@@ -86,6 +89,9 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 } else {
                     tv.setBackgroundResource(R.drawable.sent);
                 }
+            } else {
+                tv.setText("");
+                tv.setBackgroundColor(Color.BLACK);
             }
         }        
         return convertView;    
