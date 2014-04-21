@@ -7,8 +7,8 @@
     
     <FrameLayout
         android:id="@+id/camera_preview"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1" />
 
     <ImageButton
@@ -18,6 +18,6 @@
         android:layout_gravity="center"
         android:contentDescription="@string/click_button"
         android:onClick="captureImage"
-        android:src="@android:drawable/ic_menu_send" />
+        android:src="@android:drawable/ic_menu_save" />
 
 </LinearLayout>
