@@ -28,7 +28,7 @@
             android:layout_height="60dp"
             android:layout_gravity="center"
             android:contentDescription="@string/camera_button"
-            android:onClick="initiateCameraActivity"
+            android:onClick="initiatePreviewActivity"
             android:src="@android:drawable/ic_menu_slideshow" />
                 
         <ImageButton
@@ -38,7 +38,7 @@
             android:layout_height="60dp"
             android:layout_gravity="center"
             android:contentDescription="@string/camera_button"
-            android:onClick="initiateCameraActivity"
+            android:onClick="initiateSendActivity"
             android:src="@android:drawable/ic_menu_send" />
         
     </LinearLayout>

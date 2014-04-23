@@ -9,5 +9,7 @@
     <string name="label_text">www.gradians.com © 2013</string>
     <string name="title_activity_camera">CameraActivity</string>
     <string name="click_button">Button to save image</string>
+    <string name="title_activity_preview">Preview</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>

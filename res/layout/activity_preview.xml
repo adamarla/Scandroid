@@ -3,21 +3,21 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CameraActivity" >
-    
-    <FrameLayout
-        android:id="@+id/camera_preview"
+    tools:context=".PreviewActivity" >
+
+    <android.support.v4.view.ViewPager 
+        android:id="@+id/vpPreview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
-
+            
     <ImageButton
         android:id="@+id/btnCapture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:contentDescription="@string/click_button"
-        android:onClick="takePicture"
-        android:src="@android:drawable/ic_menu_save" />
-
+        android:onClick="retakePicture"
+        android:src="@android:drawable/ic_menu_delete" />
+    
 </LinearLayout>

@@ -13,6 +13,7 @@ public interface IConstants {
     String QUIZ_NAME_KEY = "quiz";
     String SCAN_KEY = "scan";
     String GR_ID_KEY = "id";
-    String APP_DIR_NAME = "Scanbot";
+    String IMG_DIR_NAME = "images";
+    String MANIFEST_DIR_NAME = "manifests"; 
     String IMG_EXT = "jpeg";
 }

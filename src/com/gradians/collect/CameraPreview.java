@@ -27,13 +27,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceCreated(SurfaceHolder holder) {
         // TODO Auto-generated method stub
         // The Surface has been created, now tell the camera where to draw the preview.
+        Camera.Parameters params = camera.getParameters();
+        params.setRotation(90);
+        params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+        camera.stopPreview();
         try {
-            camera.setPreviewDisplay(holder);
+            camera.setParameters(params);
             camera.setDisplayOrientation(90);
-            camera.startPreview();
+            camera.setPreviewDisplay(holder);
         } catch (Exception e) { 
             Log.e("scanbot", e.getMessage());
         }
+        camera.startPreview();
     }
 
     @Override

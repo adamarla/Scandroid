@@ -2,7 +2,6 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -22,23 +21,28 @@ public class ImageUploadService extends IntentService implements IConstants {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        File imagesDir = this.getApplicationContext().getDir(APP_DIR_NAME, MODE_PRIVATE);
-        File[] images = imagesDir.listFiles(new ImageFilter());
+        File imagesDir = this.getApplicationContext().getDir(IMG_DIR_NAME, MODE_PRIVATE);
+        File[] images = imagesDir.listFiles();
 
         URL url = null;
         HttpURLConnection httpUrlConnection = null;
         OutputStream ostream = null;
         PrintWriter opstream = null;        
         String boundary =  null;
-        String[] params = null;
+        String[] tokens = null;
+        String ids = "";
         for (File image : images) {
             
             Log.d(TAG, "uploading file " + image.getName());
-            params = image.getName().split("\\.");
+            tokens = image.getName().split("-");
+            for (int i = 0; i < tokens.length; i+=2) {
+                ids += (tokens[i+1] + "-");
+            }
+            ids = ids.substring(0, ids.length()-1);
             boundary = String.valueOf(System.currentTimeMillis());
             try {
                 url = new URL(String.format(URL,
-                        BANK_HOST_PORT, params[0], params[1]));
+                        BANK_HOST_PORT, ids));
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setDoOutput(true);
 
@@ -85,15 +89,6 @@ public class ImageUploadService extends IntentService implements IConstants {
     }
 
     private static final String CRLF = "\r\n", DASH_DASH = "--";
-    private static final String URL = "http://%s/Upload/scan?type=%s&id=%s";
-    
-}
-
-class ImageFilter implements FilenameFilter, IConstants {
-
-    @Override
-    public boolean accept(File dir, String filename) {
-        return filename.endsWith(IMG_EXT);
-    }
+    private static final String URL = "http://%s/Upload/scan?type=GR&id=%s";
     
 }

@@ -56,11 +56,8 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         Manifest manifest = null;
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                Intent uploadIntent = new Intent(context,
-                        com.gradians.collect.ImageUploadService.class);
-                startService(uploadIntent);
                 manifest = getManifest();
-                manifest.markAsSent();
+                manifest.updateSaved();
                 manifest.notifyDataSetChanged();                
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
@@ -73,12 +70,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
                     manifest = new Manifest(this, data.getStringExtra(TAG), this);
                     setPreferences(manifest);
                     setManifest(manifest);
-                    Toast.makeText(context, 
-                            "Select question(s), then take a picture!", 
-                            Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
-                    Log.e(TAG, e.toString());
-                    Log.e(TAG, e.getMessage());
                     handleError("Oops, Auth activity request failed", 
                             data.getStringExtra(TAG));
                 }                
@@ -89,7 +81,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             } else {
                 this.finish();
             }
-        }
+        }     
     }
     
     public void onTaskResult(int requestCode, int resultCode, String resultData) {        
@@ -106,16 +98,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             } else {
                 initiateAuthActivity();
             }
-        } else if (requestCode == UPLOAD_IMAGE_TASK_RESULT_CODE) {
-            peedee.dismiss();
-            if (resultCode == RESULT_OK) {
-                manifest = getManifest();
-                manifest.markAsSent();
-                manifest.notifyDataSetChanged();
-            } else {
-                handleError("Uh-oh, image upload failed", resultData);
-            }
-        }
+        } 
     }
     
     @Override
@@ -144,32 +127,45 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     
     @Override
     public void onClick(View v) {
-        Manifest manifest = getManifest();
-        manifest.checkUncheck(((TextView)v).getText().toString());
+        Manifest manifest = getManifest();        
+        manifest.checkUncheck((String)((TextView)v).getTag());
         manifest.notifyDataSetChanged();
+    }
+
+    public void initiateSendActivity(View view) {
+        Intent uploadIntent = new Intent(context,
+              com.gradians.collect.ImageUploadService.class);
+        startService(uploadIntent);
+        Manifest manifest = getManifest();
+        manifest.updateSent();
+        manifest.notifyDataSetChanged();
+    }
+    
+    public void initiatePreviewActivity(View view) {
+        Intent previewIntent = new Intent(context,
+                com.gradians.collect.PreviewActivity.class);
+        startActivity(previewIntent);
     }
 
     public void initiateCameraActivity(View view) {
         Manifest manifest = getManifest();
-        String[] selected = manifest.getSelected();        
+        String[] selected = manifest.getSelected();
         if (selected.length == 0) {
-            Toast t = Toast.makeText(context, 
+            Toast.makeText(context, 
                     "Select at least one question to send its solution", 
-                    Toast.LENGTH_SHORT);
-            t.setGravity(Gravity.CENTER, 0, 0);
-            t.show();
-            return;
-        }        
-        String grIDs = "";
-        for (String grID : selected) grIDs = grIDs + grID + "-";
-        grIDs = grIDs.substring(0, grIDs.length()-1);
-        
-        String imageFileName = String.format("GR.%s.%s", grIDs, IMG_EXT);
-        
-        Intent takePictureIntent = new Intent(context,
-                com.gradians.collect.CameraActivity.class);
-        takePictureIntent.putExtra(TAG, imageFileName);
-        startActivityForResult(takePictureIntent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);           
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            String selections = "";
+            for (String selection : selected) {
+                selections += (selection + "-");
+            }
+            selections = selections.substring(0, selections.length()-1);
+            Intent takePictureIntent = new Intent(context,
+                    com.gradians.collect.CameraActivity.class);
+            takePictureIntent.putExtra(TAG, selections);
+            startActivityForResult(takePictureIntent, 
+                    CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+        }
     }
     
     private void initiateAuthActivity() {
@@ -224,12 +220,11 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     private void setManifest(Manifest manifest) {
         setTitle(String.format(TITLE, manifest.getName()));
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
-        //elv.setOnChildClickListener(this);
         elv.setOnGroupClickListener(this);
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
             elv.expandGroup(0);
-            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);
+            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);            
         }
     }
     

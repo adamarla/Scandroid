@@ -30,7 +30,7 @@ public class CameraActivity extends Activity implements IConstants {
         } catch (Exception e) {
             finish();
         }
-        File appDir = this.getApplicationContext().getDir(APP_DIR_NAME, MODE_PRIVATE);        
+        File appDir = this.getApplicationContext().getDir(IMG_DIR_NAME, MODE_PRIVATE);        
         picture = new File(appDir, this.getIntent().getStringExtra(TAG));
         preview = new CameraPreview(this, camera);
         ((FrameLayout)findViewById(R.id.camera_preview)).addView(preview);
@@ -66,7 +66,7 @@ public class CameraActivity extends Activity implements IConstants {
         releaseCamera();
     }
 
-    public void captureImage(View view) {
+    public void takePicture(View view) {
         // get an picture from the camera
         camera.takePicture(null, null, new PictureWriter(picture, this));
         final Intent intent = new Intent();
@@ -108,7 +108,9 @@ class PictureWriter implements PictureCallback {
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
-          } catch (Exception error) { }
+          } catch (Exception error) { 
+              Log.e("scanbot", error.getMessage());
+          }
         caller.finish();
     }
     
