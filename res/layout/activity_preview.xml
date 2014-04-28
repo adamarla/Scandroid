@@ -10,14 +10,34 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
-            
-    <ImageButton
-        android:id="@+id/btnCapture"
+        
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:contentDescription="@string/click_button"
-        android:onClick="retakePicture"
-        android:src="@android:drawable/ic_menu_delete" />
+        android:layout_gravity="bottom|center">                
+    
+	    <ImageButton
+	        android:id="@+id/btnDelete"
+            android:layout_weight="1"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="left"
+	        android:contentDescription="@string/delete_button"
+	        android:onClick="retakePicture"
+	        android:src="@android:drawable/ic_menu_delete" />
+    
+        <ImageButton
+            android:id="@+id/btnDone"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:contentDescription="@string/revert_button"
+            android:onClick="goBack"
+            android:src="@android:drawable/ic_menu_revert" />
+            
+	</LinearLayout>
+	
     
 </LinearLayout>

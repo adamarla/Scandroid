@@ -8,38 +8,44 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_gravity="top|center">
         	    
         <ImageButton
 	        android:id="@+id/btnClick"
-	        android:layout_weight="2"
+	        android:layout_weight="1"
             android:layout_width="0dp"
 	        android:layout_height="60dp"
-	        android:layout_gravity="center"
 	        android:contentDescription="@string/camera_button"
 	        android:onClick="initiateCameraActivity"
 	        android:src="@android:drawable/ic_menu_camera" />
+        
+        <ImageButton
+            android:id="@+id/btnClear"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:contentDescription="@string/clear_button"
+            android:onClick="clearSelection"
+            android:src="@android:drawable/ic_menu_close_clear_cancel" />
         
         <ImageButton
             android:id="@+id/btnPreview"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="60dp"
-            android:layout_gravity="center"
-            android:contentDescription="@string/camera_button"
+            android:contentDescription="@string/preview_button"
             android:onClick="initiatePreviewActivity"
-            android:src="@android:drawable/ic_menu_slideshow" />
+            android:src="@android:drawable/ic_menu_gallery" />
                 
         <ImageButton
             android:id="@+id/btnSend"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="60dp"
-            android:layout_gravity="center"
-            android:contentDescription="@string/camera_button"
+            android:contentDescription="@string/send_button"
             android:onClick="initiateSendActivity"
-            android:src="@android:drawable/ic_menu_send" />
+            android:src="@android:drawable/ic_menu_upload" />
         
     </LinearLayout>
     

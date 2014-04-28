@@ -1,16 +1,19 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 public class PreviewActivity extends FragmentActivity implements IConstants {
 
@@ -19,17 +22,18 @@ public class PreviewActivity extends FragmentActivity implements IConstants {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_preview);
         
-        File imagesDir = this.getApplicationContext().getDir(IMG_DIR_NAME, MODE_PRIVATE);
-        PreviewAdapter adapter = new PreviewAdapter(imagesDir, this.getSupportFragmentManager());
+        picturesDir  = new File(this.getIntent().getStringExtra(TAG));        
+        adapter = new PreviewAdapter(picturesDir, this.getSupportFragmentManager());
         
-        ViewPager vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
+        vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
         vpPreview.setAdapter(adapter);
+        
         adapter.notifyDataSetChanged();
+        delete = new HashSet<String>();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.preview, menu);
         return true;
@@ -46,12 +50,37 @@ public class PreviewActivity extends FragmentActivity implements IConstants {
         }
         return super.onOptionsItemSelected(item);
     }
+    
+    @Override
+    public void onBackPressed() {
+        Iterator<String> it = delete.iterator();
+        while (it.hasNext()) {
+            (new File(picturesDir, it.next())).delete();
+        }
+        Intent deletions = new Intent();
+        deletions.putExtra(TAG, delete.toArray(new String[delete.size()]));
+        this.setResult(RESULT_OK, deletions);
+        super.onBackPressed();
+    }
 
     public void retakePicture(View view) {
-        Log.d("scanbot", "retakePicture() ->" + view.getId());
-        // get an picture from the camera
-    }    
-
+        int index = vpPreview.getCurrentItem();
+        PreviewFragment pf = (PreviewFragment)adapter.instantiateItem(vpPreview, index);
+        TextView tv = ((TextView)pf.getView().findViewById(R.id.tvPreview));
+        String key = String.valueOf(tv.getTag(R.id.preview_key));
+        if (delete.contains(key)) {
+            pf.undelete();
+            delete.remove(key);
+        } else {
+            pf.delete();
+            delete.add(key);
+        }
+    }
+    
+    public void goBack(View view) {
+        onBackPressed();
+    }
+    
     
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -62,6 +91,11 @@ public class PreviewActivity extends FragmentActivity implements IConstants {
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
     }
+    
+    private HashSet<String> delete;
+    private File picturesDir;    
+    private PreviewAdapter adapter;
+    private ViewPager vpPreview;
 
 }
 

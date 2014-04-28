@@ -16,7 +16,6 @@ public class ImageUploadService extends IntentService implements IConstants {
 
     public ImageUploadService() {
         super("ImageUploadService");
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -29,12 +28,10 @@ public class ImageUploadService extends IntentService implements IConstants {
         OutputStream ostream = null;
         PrintWriter opstream = null;        
         String boundary =  null;
-        String[] tokens = null;
-        String ids = "";
         for (File image : images) {
             
-            Log.d(TAG, "uploading file " + image.getName());
-            tokens = image.getName().split("-");
+            String[] tokens = image.getName().split("-");
+            String ids = "";
             for (int i = 0; i < tokens.length; i+=2) {
                 ids += (tokens[i+1] + "-");
             }

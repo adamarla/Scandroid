@@ -8,6 +8,10 @@ import android.view.SurfaceView;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 
+    public CameraPreview(Context context) {
+        super(context);//constructor to be used by Editor only
+    }
+    
     @SuppressWarnings("deprecation")
     public CameraPreview(Context context, Camera camera) {
         super(context);
@@ -20,12 +24,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
             int height) {
-        // TODO Auto-generated method stub
+        // Nothing to be done
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        // TODO Auto-generated method stub
         // The Surface has been created, now tell the camera where to draw the preview.
         Camera.Parameters params = camera.getParameters();
         params.setRotation(90);
@@ -43,7 +46,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        // TODO Auto-generated method stub
+        // Nothing to be done
     }
     
     private Camera camera;

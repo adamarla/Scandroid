@@ -16,7 +16,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
-        android:contentDescription="@string/click_button"
+        android:contentDescription="@string/capture_button"
         android:onClick="takePicture"
         android:src="@android:drawable/ic_menu_save" />
 

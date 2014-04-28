@@ -14,6 +14,6 @@ public interface IConstants {
     String SCAN_KEY = "scan";
     String GR_ID_KEY = "id";
     String IMG_DIR_NAME = "images";
-    String MANIFEST_DIR_NAME = "manifests"; 
-    String IMG_EXT = "jpeg";
+    String MANIFEST_DIR_NAME = "manifests";
+    
 }

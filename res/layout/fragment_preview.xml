@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/llPreview"
+        android:id="@+id/rlPreview"
         android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="match_parent">
@@ -13,16 +13,15 @@
         
     <TextView
         android:id="@+id/tvPreview"
-        android:layout_gravity="bottom|center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/ivPreview"
         android:layout_alignTop="@+id/ivPreview"
-        android:layout_alignRight="@+id/ivPreview"
         android:layout_alignBottom="@+id/ivPreview"
+        android:layout_alignLeft="@+id/ivPreview"
+        android:layout_alignRight="@+id/ivPreview"
         android:layout_margin="1dp"
         android:gravity="center"
-        android:textSize="20sp"
+        android:textSize="35sp"
         android:textColor="#000000"/>
             
 </RelativeLayout>

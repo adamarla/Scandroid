@@ -79,29 +79,25 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             
             if (row[i] != null) {
                 tv.setText(row[i].getName());
-                tv.setTag(groupPosition + "," + childPosition + "," + i);
-                tv.setOnClickListener(listener);
-                char status = getSentStatus(row[i]);
+                tv.setTag(row[i].getGRId());
+                char status = stateLocation.get(row[i].getGRId()).toString().charAt(0);
                 switch(status) {
                 case MARKED:
-                    tv.setBackgroundResource(R.drawable.unselected);
-                    break;
-                case UNMARKED:
+                    tv.setOnClickListener(listener);
                     tv.setBackgroundResource(R.drawable.selected);
                     break;
+                case UNMARKED:
+                    tv.setOnClickListener(listener);
+                    tv.setBackgroundResource(R.drawable.unselected);
+                    break;
                 case SAVED:
+                    tv.setClickable(false);
                     tv.setBackgroundResource(R.drawable.saved);
                     break;
                 case SENT:
+                    tv.setClickable(false);
                     tv.setBackgroundResource(R.drawable.sent);                    
                 }
-//                if (status == MARKED) {
-//                    tv.setBackgroundResource(R.drawable.unselected);
-//                } else if (status == UNMARKED) {
-//                    tv.setBackgroundResource(R.drawable.selected);
-//                } else {
-//                    tv.setBackgroundResource(R.drawable.sent);
-//                }
             } else {
                 tv.setText("");
                 tv.setBackgroundColor(Color.BLACK);
@@ -154,62 +150,75 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     }
     
     public void checkUncheck(String tag) {
-        String[] positions = tag.split(",");
-        int quiz = Integer.parseInt(positions[0]);
-        int row = Integer.parseInt(positions[1]);
-        int question = Integer.parseInt(positions[2]);
-        
-        Question q = quizzes.get(quiz).get(row)[question];
-        char status = this.getSentStatus(q);
+        String stateLocString = stateLocation.getProperty(tag);
+        char status = stateLocString.charAt(0);
         switch (status) {
         case UNMARKED:
-            this.setSentStatus(q, MARKED);
+            stateLocation.setProperty(tag, stateLocString.replace(UNMARKED, MARKED));
             break;
         case MARKED:
-            this.setSentStatus(q, UNMARKED);
+            stateLocation.setProperty(tag, stateLocString.replace(MARKED, UNMARKED));
+            break;
+        case SAVED:// for re-takes
+            stateLocation.setProperty(tag, stateLocString.replace(SAVED, UNMARKED));
         }
-//        if (status == UNMARKED) {
-//            this.setSentStatus(q, MARKED);
-//        } else if (status == MARKED) {
-//            this.setSentStatus(q, UNMARKED);
-//        }
+        this.notifyDataSetChanged();
     }
     
-    public String[] getSelected() {
-        ArrayList<String> selected = new ArrayList<String>();
-        for (Quiz quiz : quizzes) {
-            for (Question[] row : quiz) {
-                for (Question question : row) {
-                    if (question == null) continue;
-                    if (getSentStatus(question) == MARKED) {
-                        selected.add(String.format("%s-%s", 
-                                question.getName().replace("-", ""), 
-                                question.getGRId()));
-                    }
-                }
-            }
-        }
-//        String key = null;
-//        Enumeration<Object> keys = state.keys();
-//        while (keys.hasMoreElements()) {
-//            key = (String)keys.nextElement();
-//            if (state.get(key).equals(MARKED)) {
-//                selected.add(key);
-//            }
-//        }
-        return selected.toArray(new String[selected.size()]);
+    public Question[] getSelected() {
+        return this.itemsWithStatus(MARKED);
     }
     
-    public void updateSaved() {
+    public void clearSelected() {
+        this.changeStatus(MARKED, UNMARKED);
+    }    
+    
+    public void saveSelected() {
         this.changeStatus(MARKED, SAVED);
     }
     
-    public void updateSent() {
+    public void sendSaved() {
         this.changeStatus(SAVED, SENT);
     }
     
     public void commit() throws Exception {
-        state.store(new FileOutputStream(new File(manifestDir, this.getEmail())), null);
+        stateLocation.store(new FileOutputStream(new File(manifestDir, this.getEmail())), null);
+    }
+    
+    private Question getQuestionAt(String locString) {
+        String[] tokens = locString.split(",");
+        int[] idx = new int[3];
+        idx[0] = Integer.parseInt(tokens[1]);
+        idx[1] = Integer.parseInt(tokens[2]);
+        idx[2] = Integer.parseInt(tokens[3]);
+        return quizzes.get(idx[0]).get(idx[1])[idx[2]];
+    }
+
+    private Question[] itemsWithStatus(char status) {
+        ArrayList<Question> selected = new ArrayList<Question>();
+        String key = null, stateLocString = null;
+        Enumeration<Object> keys = stateLocation.keys();
+        while (keys.hasMoreElements()) {
+            key = (String)keys.nextElement();
+            stateLocString = stateLocation.getProperty(key);
+            if (stateLocString.charAt(0) == status) {
+                selected.add(this.getQuestionAt(stateLocString));
+            }
+        }
+        return selected.toArray(new Question[selected.size()]);
+    }
+    
+    private void changeStatus(char from, char to) {
+        String key = null, stateLocString = null;
+        Enumeration<Object> keys = stateLocation.keys();
+        while (keys.hasMoreElements()) {
+            key = (String)keys.nextElement();
+            stateLocString = stateLocation.getProperty(key);
+            if (stateLocString.charAt(0) == from) {
+                stateLocation.put(key, stateLocString.replace(from, to));
+            }
+        }
+        this.notifyDataSetChanged();
     }
     
     private void parse(String json) throws Exception {
@@ -221,13 +230,13 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         email = (String)respObject.get(EMAIL_KEY);        
         JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);        
         
-        Properties lastState = new Properties();
+        Properties lastStateLocation = new Properties();
         File file = new File(manifestDir, email); file.createNewFile(); //creates if needed
-        lastState.load(new FileInputStream(file));
-
+        lastStateLocation.load(new FileInputStream(file));
+    
         quizzes = new ArrayList<Quiz>();
-        state = new Properties();
-        long quizId = 0; Quiz quiz = null; Question[] row = null;
+        stateLocation = new Properties();
+        long quizId = 0; Quiz quiz = null; Question[] row = null; String stateLoc = null;
         for (int i = 0; i < items.size(); i++) {
             JSONObject item = (JSONObject) items.get(i);
             if (quizId == 0 || quizId != (Long)((JSONObject)item).get(QUIZ_ID_KEY)) {
@@ -243,39 +252,16 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 quiz.add(row);
             }
             row[i%ITEMS_PER_ROW] = question;
-            setSentStatus(question,
-                    lastState.getProperty(question.getGRId(), String.valueOf(UNMARKED)).charAt(0));
+            stateLoc = String.format("%s,%s,%s,%s", 
+                    UNMARKED, quizzes.size(), (quiz.size()-1), (i%ITEMS_PER_ROW));
+            stateLocation.put(question.getGRId(), 
+                    lastStateLocation.getProperty(question.getGRId(), stateLoc));
         }
         if (quiz != null) quizzes.add(quiz);
     }
-    
-    private void changeStatus(char from, char to) {
-        ArrayList<String> selected = new ArrayList<String>();
-        for (Quiz quiz : quizzes) {
-            for (Question[] row : quiz) {
-                for (Question question : row) {
-                    if (question == null) continue;
-                    if (getSentStatus(question) == from) {
-                        setSentStatus(question, to);
-                        selected.add(String.format("%s-%s", 
-                                question.getName(),
-                                question.getGRId()));
-                    }
-                }
-            }
-        }        
-    }
 
-    private void setSentStatus(Question question, char value) {
-        state.put(question.getGRId(), String.valueOf(value));
-    }
-    
-    private char getSentStatus(Question question) {
-        return state.getProperty(question.getGRId()).charAt(0);
-    }
-    
     private String name, email, token;
-    private Properties state;
+    private Properties stateLocation;
     private File manifestDir;
     private ArrayList<Quiz> quizzes;
     

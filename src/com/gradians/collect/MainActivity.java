@@ -1,5 +1,7 @@
 package com.gradians.collect;
 
+import java.io.File;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -9,9 +11,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.support.v4.app.FragmentActivity;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,7 +21,7 @@ import android.widget.ExpandableListView.OnGroupClickListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends FragmentActivity implements ITaskCompletedListener, IConstants, OnChildClickListener, 
+public class MainActivity extends Activity implements ITaskResult, IConstants, OnChildClickListener, 
     OnGroupClickListener, OnClickListener {
     
     @Override
@@ -42,7 +41,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     @Override
     protected void onPause() {
         super.onPause();
-        Manifest manifest = getManifest();        
         if (manifest != null) 
             try {
                 manifest.commit();
@@ -53,12 +51,9 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Manifest manifest = null;
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                manifest = getManifest();
-                manifest.updateSaved();
-                manifest.notifyDataSetChanged();                
+                manifest.saveSelected();
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
                         "Oops.. image capture failed. Please try again",
@@ -81,14 +76,31 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             } else {
                 this.finish();
             }
-        }     
+        } else if (requestCode == PREVIEW_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                String[] retakes = data.getStringArrayExtra(TAG);
+                for (String ids : retakes) {
+                    String[] tokens = ids.split("-");
+                    for (int i = 0; i < tokens.length; i += 2) {
+                        manifest.checkUncheck(tokens[i+1]);
+                    }
+                }
+            } else if (resultCode != RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(), 
+                        "Oops.. image capture failed. Please try again",
+                        Toast.LENGTH_SHORT).show();                    
+            }
+        } else if (requestCode == UPLOAD_IMAGE_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                manifest.sendSaved();
+            }
+        }
     }
     
-    public void onTaskResult(int requestCode, int resultCode, String resultData) {        
-        Manifest manifest = null;
+    public void onTaskResult(int requestCode, int resultCode, String resultData) {
         if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
             peedee.dismiss();
-            if (resultCode == RESULT_OK) {
+            if (resultCode == RESULT_OK) {  
                 try {
                     manifest = new Manifest(this, resultData, this);
                     setManifest(manifest);
@@ -98,7 +110,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
             } else {
                 initiateAuthActivity();
             }
-        } 
+        }
     }
     
     @Override
@@ -126,43 +138,60 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
     }
     
     @Override
-    public void onClick(View v) {
-        Manifest manifest = getManifest();        
-        manifest.checkUncheck((String)((TextView)v).getTag());
-        manifest.notifyDataSetChanged();
+    public void onClick(View view) {
+        manifest.checkUncheck((String)((TextView)view).getTag());
+    }
+    
+    public void clearSelection(View view) {
+        manifest.clearSelected();
     }
 
     public void initiateSendActivity(View view) {
-        Intent uploadIntent = new Intent(context,
-              com.gradians.collect.ImageUploadService.class);
-        startService(uploadIntent);
-        Manifest manifest = getManifest();
-        manifest.updateSent();
-        manifest.notifyDataSetChanged();
+        File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
+        if (previewDir.listFiles().length == 0) {
+            Toast.makeText(context, 
+                    "No images to be sent", 
+                    Toast.LENGTH_SHORT).show();
+        } else  {
+            Intent uploadIntent = new Intent(context,
+                    com.gradians.collect.ImageUploadService.class);
+            startService(uploadIntent);
+        }
     }
     
     public void initiatePreviewActivity(View view) {
-        Intent previewIntent = new Intent(context,
-                com.gradians.collect.PreviewActivity.class);
-        startActivity(previewIntent);
+        File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
+        if (previewDir.listFiles().length == 0) {
+            Toast.makeText(context, 
+                    "Nothing to preview", 
+                    Toast.LENGTH_SHORT).show();
+        } else {
+            Intent previewIntent = new Intent(context,
+                    com.gradians.collect.PreviewActivity.class);
+            previewIntent.putExtra(TAG,
+                    this.getDir(IMG_DIR_NAME, MODE_PRIVATE).getAbsolutePath());
+            startActivityForResult(previewIntent, 
+                    PREVIEW_ACTIVITY_REQUEST_CODE);
+        }
     }
 
     public void initiateCameraActivity(View view) {
-        Manifest manifest = getManifest();
-        String[] selected = manifest.getSelected();
+        Question[] selected = manifest.getSelected();
         if (selected.length == 0) {
             Toast.makeText(context, 
-                    "Select at least one question to send its solution", 
+                    "Please select at least one question to send its solution", 
                     Toast.LENGTH_SHORT).show();
         } else {
-            String selections = "";
-            for (String selection : selected) {
-                selections += (selection + "-");
+            String filename = "";
+            for (Question q : selected) {
+                filename += (q.getName() + "-" + q.getGRId()) + "-";
             }
-            selections = selections.substring(0, selections.length()-1);
+            filename = filename.substring(0, filename.length()-1);
             Intent takePictureIntent = new Intent(context,
                     com.gradians.collect.CameraActivity.class);
-            takePictureIntent.putExtra(TAG, selections);
+            takePictureIntent.putExtra(TAG,
+                    (new File(this.getDir(IMG_DIR_NAME, MODE_PRIVATE),
+                            filename)).getAbsolutePath());
             startActivityForResult(takePictureIntent, 
                     CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
         }
@@ -203,7 +232,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         if (token == null) {
             initiateAuthActivity();
         } else {
-            peedee = ProgressDialog.show(this, "Initializing Scanbot", "Please wait...");
+            peedee = ProgressDialog.show(this, "Initializing ", "Please wait...");
             peedee.setIndeterminate(true);
             peedee.setIcon(ProgressDialog.STYLE_SPINNER);
             
@@ -212,11 +241,6 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         }
     }
     
-    private Manifest getManifest() {
-        ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
-        return (Manifest)elv.getExpandableListAdapter();
-    }
-
     private void setManifest(Manifest manifest) {
         setTitle(String.format(TITLE, manifest.getName()));
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
@@ -224,7 +248,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
             elv.expandGroup(0);
-            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);            
+            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);
         }
     }
     
@@ -255,6 +279,7 @@ public class MainActivity extends FragmentActivity implements ITaskCompletedList
 //        dialog.show();
     }
     
+    private Manifest manifest;
     private String error, message;
     private Context context;
     private ProgressDialog peedee;

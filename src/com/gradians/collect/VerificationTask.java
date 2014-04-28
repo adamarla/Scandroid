@@ -12,10 +12,10 @@ import android.os.AsyncTask;
 
 public class VerificationTask extends AsyncTask<Void, Void, String> implements IConstants {
     
-    public VerificationTask(String email, String token, ITaskCompletedListener taskCompletedListener) {
+    public VerificationTask(String email, String token, ITaskResult caller) {
         this.email = email;
         this.token = token;
-        this.taskCompletedListener = taskCompletedListener;
+        this.caller = caller;
     }
     
     @Override
@@ -43,13 +43,13 @@ public class VerificationTask extends AsyncTask<Void, Void, String> implements I
     }
 
     @Override
-    protected void onPostExecute(String result) {
-        taskCompletedListener.onTaskResult(ITaskCompletedListener.VERIFY_AUTH_TASK_RESULT_CODE,
+    protected void onPostExecute(String result) {        
+        caller.onTaskResult(ITaskResult.VERIFY_AUTH_TASK_RESULT_CODE,
                 result != null ? Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
     }
 
     private String email, token;
-    private ITaskCompletedListener taskCompletedListener;
+    private ITaskResult caller;
     
     private final String BASE_URL = "http://%s/tokens/verify?%s=%s&%s=%s";
     
