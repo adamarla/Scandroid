@@ -149,7 +149,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return false;
     }
     
-    public void checkUncheck(String tag) {
+    public void checkUncheck(String tag) {        
         String stateLocString = stateLocation.getProperty(tag);
         char status = stateLocString.charAt(0);
         switch (status) {
@@ -236,7 +236,8 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     
         quizzes = new ArrayList<Quiz>();
         stateLocation = new Properties();
-        long quizId = 0; Quiz quiz = null; Question[] row = null; String stateLoc = null;
+        long quizId = 0; Quiz quiz = null; Question[] row = null; 
+        String stateLoc = null, lastStateLoc = null;
         for (int i = 0; i < items.size(); i++) {
             JSONObject item = (JSONObject) items.get(i);
             if (quizId == 0 || quizId != (Long)((JSONObject)item).get(QUIZ_ID_KEY)) {
@@ -252,21 +253,24 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 quiz.add(row);
             }
             row[i%ITEMS_PER_ROW] = question;
+            lastStateLoc = lastStateLocation.getProperty(question.getGRId());
             stateLoc = String.format("%s,%s,%s,%s", 
-                    UNMARKED, quizzes.size(), (quiz.size()-1), (i%ITEMS_PER_ROW));
-            stateLocation.put(question.getGRId(), 
-                    lastStateLocation.getProperty(question.getGRId(), stateLoc));
+                    lastStateLoc == null ? UNMARKED : lastStateLoc.charAt(0), 
+                    quizzes.size(), (quiz.size()-1), (i%ITEMS_PER_ROW));
+            stateLocation.put(question.getGRId(), stateLoc);
         }
         if (quiz != null) quizzes.add(quiz);
     }
 
     private String name, email, token;
+    
     private Properties stateLocation;
-    private File manifestDir;
     private ArrayList<Quiz> quizzes;
     
     private LayoutInflater inflater;        
     private OnClickListener listener;
+    
+    private File manifestDir;
     
     private final int ITEMS_PER_ROW = 4;
     private static final String 

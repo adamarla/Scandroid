@@ -144,6 +144,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     
     public void clearSelection(View view) {
         manifest.clearSelected();
+        
     }
 
     public void initiateSendActivity(View view) {
@@ -163,7 +164,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
         if (previewDir.listFiles().length == 0) {
             Toast.makeText(context, 
-                    "Nothing to preview", 
+                    "Need to photograph a solution first", 
                     Toast.LENGTH_SHORT).show();
         } else {
             Intent previewIntent = new Intent(context,
@@ -179,7 +180,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         Question[] selected = manifest.getSelected();
         if (selected.length == 0) {
             Toast.makeText(context, 
-                    "Please select at least one question to send its solution", 
+                    "Need to select a question first", 
                     Toast.LENGTH_SHORT).show();
         } else {
             String filename = "";

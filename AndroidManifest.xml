@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="7"
-    android:versionName="2.4" >
+    android:versionCode="8"
+    android:versionName="2.5" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -45,10 +45,12 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.gradians.collect.MainActivity" />
         </activity>
+
         <service
             android:name="com.gradians.collect.ImageUploadService"
             android:enabled="true" >
         </service>
+
         <activity
             android:name="com.gradians.collect.PreviewActivity"
             android:label="@string/title_activity_preview"
