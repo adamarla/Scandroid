@@ -1,50 +1,54 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     tools:context=".MainActivity" >
     
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|center">
+        android:layout_height="wrap_content">
+        <!-- android:layout_gravity="top|center"-->
         	    
-        <ImageButton
-	        android:id="@+id/btnClick"
-	        android:layout_weight="1"
-            android:layout_width="0dp"
-	        android:layout_height="60dp"
-	        android:contentDescription="@string/camera_button"
-	        android:onClick="initiateCameraActivity"
-	        android:src="@android:drawable/ic_menu_camera" />
-        
-        <ImageButton
-            android:id="@+id/btnClear"
+        <ImageButton 
+            android:id="@+id/btnWs"
+            android:tag="main_button"
             android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:contentDescription="@string/clear_button"
-            android:onClick="clearSelection"
-            android:src="@android:drawable/ic_menu_close_clear_cancel" />
+            android:layout_height="0dp" 
+            android:contentDescription="@string/ws_button" 
+            android:onClick="initiateDownload" 
+            android:src="@android:drawable/ic_menu_edit" />
+        
+        <ImageButton
+	        android:id="@+id/btnClick"
+            android:tag="main_button" 
+	        android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+	        android:contentDescription="@string/camera_button"
+	        android:onClick="initiateCamera"
+	        android:src="@android:drawable/ic_menu_camera" />                
         
         <ImageButton
             android:id="@+id/btnPreview"
+            android:tag="main_button" 
             android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="0dp" 
             android:contentDescription="@string/preview_button"
-            android:onClick="initiatePreviewActivity"
+            android:onClick="initiatePreview"
             android:src="@android:drawable/ic_menu_gallery" />
                 
         <ImageButton
             android:id="@+id/btnSend"
+            android:tag="main_button" 
             android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="0dp" 
             android:contentDescription="@string/send_button"
-            android:onClick="initiateSendActivity"
+            android:onClick="initiateSend"
             android:src="@android:drawable/ic_menu_upload" />
         
     </LinearLayout>
@@ -52,9 +56,14 @@
     <ExpandableListView
         android:id="@+id/elvQuiz"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" >
-    </ExpandableListView>
+        android:layout_height="wrap_content" />
+        <!-- android:layout_gravity="top"-->
     
+    <!-- ExpandableListView
+        android:id="@+id/elvQuiz"
+        android:layout_gravity="top"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" /-->
     
 </LinearLayout>

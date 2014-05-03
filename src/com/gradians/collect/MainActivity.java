@@ -18,6 +18,8 @@ import android.view.View.OnClickListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnChildClickListener;
 import android.widget.ExpandableListView.OnGroupClickListener;
+import android.widget.ImageButton;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +30,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
         initApp();
     }
 
@@ -142,29 +145,53 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         manifest.checkUncheck((String)((TextView)view).getTag());
     }
     
-    public void clearSelection(View view) {
-        manifest.clearSelected();
-        
+    public void initiateDownload(View view) {
+        Intent viewPDFsIntent = new Intent(context,
+                com.gradians.collect.ViewWorksheetActivity.class);
+        Quiz quiz = null;
+        String[] name_path_ids = new String[manifest.getGroupCount()];
+        for (int i = 0; i < name_path_ids.length; i++) {
+            quiz = (Quiz)manifest.getGroup(i);
+            name_path_ids[i] = String.format("%s-%s-%s", 
+                quiz.getName(), quiz.getPath(), quiz.getId());
+        }
+        viewPDFsIntent.putExtra(TAG, name_path_ids);
+        startActivity(viewPDFsIntent);
     }
 
-    public void initiateSendActivity(View view) {
+    public void initiateSend(View view) {
         File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
         if (previewDir.listFiles().length == 0) {
             Toast.makeText(context, 
                     "No images to be sent", 
                     Toast.LENGTH_SHORT).show();
-        } else  {
-            Intent uploadIntent = new Intent(context,
-                    com.gradians.collect.ImageUploadService.class);
-            startService(uploadIntent);
+        } else {            
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Ok to upload?")
+                   .setMessage("this action is not reversible");
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                       public void onClick(DialogInterface dialog, int id) {
+                           // User clicked OK button
+                           Intent uploadIntent = new Intent(context,
+                                   com.gradians.collect.ImageUploadService.class);
+                           startService(uploadIntent);
+                       }
+                   });
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                       public void onClick(DialogInterface dialog, int id) {
+                           // User cancelled the dialog
+                       }
+                   });
+            AlertDialog dialog = builder.create();
+            dialog.show();            
         }
     }
     
-    public void initiatePreviewActivity(View view) {
+    public void initiatePreview(View view) {
         File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
         if (previewDir.listFiles().length == 0) {
             Toast.makeText(context, 
-                    "Need to photograph a solution first", 
+                    "No images to preview", 
                     Toast.LENGTH_SHORT).show();
         } else {
             Intent previewIntent = new Intent(context,
@@ -176,11 +203,11 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         }
     }
 
-    public void initiateCameraActivity(View view) {
+    public void initiateCamera(View view) {
         Question[] selected = manifest.getSelected();
         if (selected.length == 0) {
             Toast.makeText(context, 
-                    "Need to select a question first", 
+                    "No questions selected", 
                     Toast.LENGTH_SHORT).show();
         } else {
             String filename = "";
@@ -243,13 +270,26 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     }
     
     private void setManifest(Manifest manifest) {
+        
+        ImageButton[] ibtns = new ImageButton[4];
+        ibtns[0] = (ImageButton)this.findViewById(R.id.btnWs);
+        ibtns[1] = (ImageButton)this.findViewById(R.id.btnClick);
+        ibtns[2] = (ImageButton)this.findViewById(R.id.btnPreview);
+        ibtns[3] = (ImageButton)this.findViewById(R.id.btnSend);
+        LayoutParams lp;
+        for (ImageButton ibtn : ibtns) {            
+            lp = (LayoutParams)ibtn.getLayoutParams();
+            lp.height = ibtn.getWidth();
+            ibtn.setLayoutParams(lp);
+        }
+                
         setTitle(String.format(TITLE, manifest.getName()));
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
         elv.setOnGroupClickListener(this);
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
             elv.expandGroup(0);
-            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_MULTIPLE);
+            elv.setChoiceMode(ExpandableListView.CHOICE_MODE_SINGLE);
         }
     }
     

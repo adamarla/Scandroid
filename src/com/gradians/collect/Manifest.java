@@ -8,12 +8,13 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
 import org.json.simple.JSONArray;
@@ -58,6 +59,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             convertView = inflater.inflate(R.layout.layout_question, parent, false);
         }
         
+        //int height = ((TextView)convertView.findViewById(R.id.tvQuestion1)).getWidth();
         Question[] row = (Question[])getChild(groupPosition, childPosition);        
         for (int i = 0; i < row.length; i++) {
             
@@ -76,6 +78,10 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 tv = ((TextView)convertView.findViewById(R.id.tvQuestion4));
                 break;
             }
+            
+            LayoutParams lp = (LayoutParams)tv.getLayoutParams();
+            lp.height = parent.getWidth()/4;
+            tv.setLayoutParams(lp);
             
             if (row[i] != null) {
                 tv.setText(row[i].getName());
@@ -96,13 +102,13 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                     break;
                 case SENT:
                     tv.setClickable(false);
-                    tv.setBackgroundResource(R.drawable.sent);                    
+                    tv.setBackgroundResource(R.drawable.sent);
                 }
             } else {
                 tv.setText("");
-                tv.setBackgroundColor(Color.BLACK);
+                tv.setBackgroundResource(R.drawable.sent);
             }
-        }        
+        }
         return convertView;    
     }
 
@@ -134,8 +140,11 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         }
 
         Quiz quiz = (Quiz)getGroup(groupPosition);
-        ((TextView)convertView.findViewById(R.id.tvQuiz)).
-            setText(quiz.toString());        
+        TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
+        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)tv.getLayoutParams();
+        lp.height = parent.getWidth()/4;
+        tv.setLayoutParams(lp);
+        tv.setText(quiz.toString());
         return convertView;
     }
 
@@ -236,27 +245,33 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     
         quizzes = new ArrayList<Quiz>();
         stateLocation = new Properties();
-        long quizId = 0; Quiz quiz = null; Question[] row = null; 
+        Quiz quiz = null; Question[] row = null;
         String stateLoc = null, lastStateLoc = null;
+        long quizId = 0; int padding = 0, position = 0;
         for (int i = 0; i < items.size(); i++) {
+            
             JSONObject item = (JSONObject) items.get(i);
-            if (quizId == 0 || quizId != (Long)((JSONObject)item).get(QUIZ_ID_KEY)) {
+            if (quizId == 0 || quizId != (Long)item.get(QUIZ_ID_KEY)) {
                 if (quiz != null) quizzes.add(quiz);
-                quizId = (Long)((JSONObject)item).get(QUIZ_ID_KEY);
-                quiz = new Quiz((String)((JSONObject)item).get(QUIZ_NAME_KEY), quizId);
+                quizId = (Long)item.get(QUIZ_ID_KEY);
+                quiz = new Quiz(((String)item.get(QUIZ_NAME_KEY)).replace("-", " "),
+                        (String)item.get(QUIZ_PATH_KEY), quizId);
+                padding = i%ITEMS_PER_ROW;
             }
-            Question question = new Question(
-                    ((String)((JSONObject)item).get(NAME_KEY)).replace("-", ""),
-                    String.valueOf(((JSONObject)item).get(GR_ID_KEY)));
-            if (i%ITEMS_PER_ROW == 0) {
+            
+            Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
+                    String.valueOf(item.get(GR_ID_KEY)));
+            position = (i-padding)%ITEMS_PER_ROW; 
+            if (position == 0) {
                 row = new Question[ITEMS_PER_ROW];
                 quiz.add(row);
-            }
-            row[i%ITEMS_PER_ROW] = question;
+            }            
+            row[position] = question;
+            
             lastStateLoc = lastStateLocation.getProperty(question.getGRId());
             stateLoc = String.format("%s,%s,%s,%s", 
                     lastStateLoc == null ? UNMARKED : lastStateLoc.charAt(0), 
-                    quizzes.size(), (quiz.size()-1), (i%ITEMS_PER_ROW));
+                    quizzes.size(), quiz.size()-1, position);            
             stateLocation.put(question.getGRId(), stateLoc);
         }
         if (quiz != null) quizzes.add(quiz);
@@ -283,9 +298,10 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
 
 class Quiz extends ArrayList<Question[]> {
     
-    public Quiz(String name, long id) {
+    public Quiz(String name, String path, long id) {
         this.name = name;
         this.id = id;
+        this.path = path;
     }
     
     public String getName() {
@@ -296,12 +312,16 @@ class Quiz extends ArrayList<Question[]> {
         return id;
     }
     
+    public String getPath() {
+        return path;
+    }
+    
     @Override
     public String toString() {
         return name;
     }
     
-    private String name;
+    private String name, path;
     private long id;
     
     private static final long serialVersionUID = 1L;

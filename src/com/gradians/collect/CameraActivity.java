@@ -2,9 +2,12 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.List;
 
 import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
+import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
@@ -29,11 +32,14 @@ public class CameraActivity extends Activity implements IConstants {
             camera = Camera.open();
         } catch (Exception e) {
             finish();
-        }
+        }        
+        camera.setParameters(configureParams(camera.getParameters()));
+        camera.setDisplayOrientation(PORTRAIT);
         
-        picture = new File(this.getIntent().getStringExtra(TAG));        
         preview = new CameraPreview(this, camera);
         ((FrameLayout)findViewById(R.id.camera_preview)).addView(preview);
+        
+        picture = new File(this.getIntent().getStringExtra(TAG));        
     }
     
     @Override
@@ -89,10 +95,37 @@ public class CameraActivity extends Activity implements IConstants {
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
     }
+    
+    private Camera.Parameters configureParams(Camera.Parameters params) {
+        params.setRotation(PORTRAIT);
+        params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+        Size s = getOptimalSize(params);
+        params.setPictureSize(s.width, s.height);
+        return params;
+    }    
+
+    private Size getOptimalSize(Parameters params) {
+        Size match = null;
+        List<Size> availableSizes = camera.getParameters().getSupportedPictureSizes();
+        for (int[] ps : PREFERRED_SIZE) {
+            for (Size s : availableSizes) {
+                if (ps[0] == s.width && ps[1] == s.height) {
+                    match = s;
+                    break;
+                }
+            }            
+            if (match != null) break;
+        }        
+        return match;
+    }
 
     private File picture;
     private CameraPreview preview;
     private Camera camera;
+    
+    private final int PORTRAIT = 90;
+    private final int[][] PREFERRED_SIZE = {{2048, 1536}, {1600, 1200}, {1280, 960}, {640, 480}};
+    
 }
 
 class PictureWriter implements PictureCallback, IConstants {

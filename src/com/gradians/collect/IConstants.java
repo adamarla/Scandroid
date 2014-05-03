@@ -11,9 +11,11 @@ public interface IConstants {
     String ITEMS_KEY = "gradeables";
     String QUIZ_ID_KEY = "quizId";
     String QUIZ_NAME_KEY = "quiz";
+    String QUIZ_PATH_KEY = "locn";
     String SCAN_KEY = "scan";
     String GR_ID_KEY = "id";
     String IMG_DIR_NAME = "images";
     String MANIFEST_DIR_NAME = "manifests";
+    String WS_DIR_NAME = "worksheets";
     
 }
