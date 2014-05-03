@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -8,16 +8,18 @@
     <FrameLayout
         android:id="@+id/camera_preview"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="match_parent" />
 
     <ImageButton
         android:id="@+id/btnCapture"
-        android:layout_width="match_parent"
+        android:alpha="0.25"
+        android:layout_centerInParent="true"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
+        android:layout_margin="1dp"
+        android:gravity="center"
         android:contentDescription="@string/capture_button"
         android:onClick="takePicture"
         android:src="@android:drawable/ic_menu_save" />
 
-</LinearLayout>
+</RelativeLayout>

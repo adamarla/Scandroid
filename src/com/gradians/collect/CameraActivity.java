@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
 
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
@@ -98,6 +99,7 @@ public class CameraActivity extends Activity implements IConstants {
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
         params.setRotation(PORTRAIT);
+        params.setPictureFormat(ImageFormat.JPEG);
         params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
         Size s = getOptimalSize(params);
         params.setPictureSize(s.width, s.height);
@@ -124,7 +126,7 @@ public class CameraActivity extends Activity implements IConstants {
     private Camera camera;
     
     private final int PORTRAIT = 90;
-    private final int[][] PREFERRED_SIZE = {{2048, 1536}, {1600, 1200}, {1280, 960}, {640, 480}};
+    private final int[][] PREFERRED_SIZE = {{800, 600}, {1280, 960}, {640, 480}};
     
 }
 

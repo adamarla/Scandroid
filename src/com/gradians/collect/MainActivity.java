@@ -15,23 +15,36 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.ExpandableListView;
-import android.widget.ExpandableListView.OnChildClickListener;
-import android.widget.ExpandableListView.OnGroupClickListener;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements ITaskResult, IConstants, OnChildClickListener, 
-    OnGroupClickListener, OnClickListener {
+public class MainActivity extends Activity implements ITaskResult, IConstants, OnClickListener {
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
-        initApp();
+        LinearLayout ll = (LinearLayout)this.findViewById(R.id.llMain);
+        final ViewTreeObserver vto = ll.getViewTreeObserver();
+        if (vto.isAlive()) {
+            vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() { 
+                @SuppressWarnings("deprecation")
+                @Override 
+                public void onGlobalLayout() {
+                    if (vto.isAlive()) {
+                        vto.removeGlobalOnLayoutListener(this);
+                    }
+                    setUpButtons();
+                } 
+            });
+        }
+        initialize();
     }
 
     @Override
@@ -127,7 +140,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
       }
       return super.onOptionsItemSelected(item);
     }    
-    
+    /*
     @Override
     public boolean onGroupClick(ExpandableListView parent, View v,
             int groupPosition, long id) {
@@ -139,7 +152,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
             int groupPosition, int childPosition, long id) {
         return false;
     }
-    
+    */
     @Override
     public void onClick(View view) {
         manifest.checkUncheck((String)((TextView)view).getTag());
@@ -251,7 +264,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         edit.commit();       
     }
 
-    private void initApp() {
+    private void initialize() {        
         context = getApplicationContext();
         SharedPreferences prefs = getSharedPreferences(TAG, 
                 Context.MODE_PRIVATE);
@@ -269,8 +282,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         }
     }
     
-    private void setManifest(Manifest manifest) {
-        
+    private void setUpButtons() {
         ImageButton[] ibtns = new ImageButton[4];
         ibtns[0] = (ImageButton)this.findViewById(R.id.btnWs);
         ibtns[1] = (ImageButton)this.findViewById(R.id.btnClick);
@@ -279,13 +291,14 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         LayoutParams lp;
         for (ImageButton ibtn : ibtns) {            
             lp = (LayoutParams)ibtn.getLayoutParams();
-            lp.height = ibtn.getWidth();
+            lp.height = ibtn.getMeasuredWidth();
             ibtn.setLayoutParams(lp);
         }
-                
+    }
+
+    private void setManifest(Manifest manifest) {        
         setTitle(String.format(TITLE, manifest.getName()));
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
-        elv.setOnGroupClickListener(this);
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
             elv.expandGroup(0);
