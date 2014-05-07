@@ -57,9 +57,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             boolean isLastChild, View convertView, ViewGroup parent) {
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.layout_question, parent, false);
-        }
-        
-        //int height = ((TextView)convertView.findViewById(R.id.tvQuestion1)).getWidth();
+        }        
         Question[] row = (Question[])getChild(groupPosition, childPosition);        
         for (int i = 0; i < row.length; i++) {
             
@@ -106,7 +104,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 }
             } else {
                 tv.setText("");
-                tv.setBackgroundResource(R.drawable.sent);
+                tv.setBackgroundResource(R.drawable.blank);
             }
         }
         return convertView;    

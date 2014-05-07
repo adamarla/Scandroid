@@ -13,7 +13,7 @@
     <string name="send_button">Send</string>
     <string name="capture_button">Capture</string>
     <string name="delete_button">Delete</string>
-    <string name="revert_button">Revert</string>
+    <string name="zoom_button">Zoom</string>
     <string name="title_activity_preview">Preview</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_view_quiz">View Questions</string>

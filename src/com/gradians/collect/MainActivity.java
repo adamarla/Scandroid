@@ -30,18 +30,16 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        LinearLayout ll = (LinearLayout)this.findViewById(R.id.llMain);
-        final ViewTreeObserver vto = ll.getViewTreeObserver();
+        final LinearLayout ll = (LinearLayout)this.findViewById(R.id.llMain);
+        ViewTreeObserver vto = ll.getViewTreeObserver();
         if (vto.isAlive()) {
             vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() { 
                 @SuppressWarnings("deprecation")
                 @Override 
                 public void onGlobalLayout() {
-                    if (vto.isAlive()) {
-                        vto.removeGlobalOnLayoutListener(this);
-                    }
-                    setUpButtons();
-                } 
+                    ll.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    setUpMainButtons();
+                }
             });
         }
         initialize();
@@ -282,7 +280,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         }
     }
     
-    private void setUpButtons() {
+    private void setUpMainButtons() {
         ImageButton[] ibtns = new ImageButton[4];
         ibtns[0] = (ImageButton)this.findViewById(R.id.btnWs);
         ibtns[1] = (ImageButton)this.findViewById(R.id.btnClick);

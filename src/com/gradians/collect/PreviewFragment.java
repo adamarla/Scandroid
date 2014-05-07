@@ -84,23 +84,21 @@ public class PreviewFragment extends Fragment {
 
 class PreviewAdapter extends FragmentStatePagerAdapter {
 
-    public PreviewAdapter(File imagesDir, FragmentManager fragmentManager) {
+    public PreviewAdapter(File[] images, FragmentManager fragmentManager) {
         super(fragmentManager);
-        this.images = imagesDir.listFiles();
+        this.images = images;
     }
         
      @Override
     public int getCount() {
-        // TODO Auto-generated method stub
         return images.length;
     }
 
     @Override
     public Fragment getItem(int position) {
-        // TODO Auto-generated method stub
         Uri uri = Uri.fromFile(images[position]);
         return PreviewFragment.newInstance(uri.toString());
     }
     
-     private File[] images;
+    private File[] images;
 }

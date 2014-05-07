@@ -100,7 +100,7 @@ public class CameraActivity extends Activity implements IConstants {
     private Camera.Parameters configureParams(Camera.Parameters params) {
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
-        params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+        params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
         Size s = getOptimalSize(params);
         params.setPictureSize(s.width, s.height);
         return params;

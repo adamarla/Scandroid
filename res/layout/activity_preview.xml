@@ -3,21 +3,56 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".PreviewActivity" >
-
-    <android.support.v4.view.ViewPager 
-        android:id="@+id/vpPreview"
+    
+    <ViewSwitcher 
+        android:id="@+id/vsPreview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent">
+	    <android.support.v4.view.ViewPager 
+	        android:id="@+id/vpPreview"
+	        android:layout_width="match_parent"
+	        android:layout_height="match_parent">
+	    </android.support.v4.view.ViewPager>
+        <ScrollView 
+            android:id="@+id/svFullPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <HorizontalScrollView 
+                android:id="@+id/hsvFullPreview"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content">
+       		    <ImageView
+			        android:id="@+id/ivFullPreview"
+			        android:layout_width="wrap_content"
+			        android:layout_height="wrap_content"
+			        android:adjustViewBounds="false"
+			        android:scaleType="matrix"
+			        android:contentDescription="@string/title_activity_preview"/>
+       		</HorizontalScrollView>    
+        </ScrollView>
+    </ViewSwitcher>
     
     <ImageButton
-        android:id="@+id/btnDelete"
-        android:layout_centerInParent="true"
+        android:id="@+id/btnZoom"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="1dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:contentDescription="@string/zoom_button"
+        android:onClick="adjustZoom"
+        android:src="@android:drawable/ic_menu_zoom" />
+            
+    <ImageButton
+        android:id="@+id/btnDelete"
+        android:layout_alignLeft="@id/btnZoom"
+        android:layout_below="@id/btnZoom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:gravity="center"
         android:contentDescription="@string/delete_button"
         android:onClick="retakePicture"
-        android:src="@android:drawable/ic_menu_delete" />        
-        
+        android:src="@android:drawable/ic_menu_delete" />
+    
 </RelativeLayout>

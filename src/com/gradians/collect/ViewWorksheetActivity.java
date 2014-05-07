@@ -1,5 +1,6 @@
 package com.gradians.collect;
 
+import java.io.File;
 import java.util.HashSet;
 
 import android.app.DownloadManager;
@@ -111,19 +112,31 @@ public class ViewWorksheetActivity extends ListActivity implements OnItemClickLi
         Cursor cursor = dm.query(query);
         int col = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
         for(cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-            uri = cursor.getString(col);
-            if (uri.endsWith(id))
+            if (cursor.getString(col).endsWith(id)) {
+                uri = cursor.getString(col);
                 break;
+            }
         }
         return uri;
     }
 
     private boolean isDownloading(Cursor cursor, String id) {
         boolean isDownloading = false;
-        int col = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
+        int status_col_idx = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+        int uri_col_idx = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
+        String uri = ""; int status = 0;
         for(cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
-            isDownloading = isDownloading || cursor.getString(col).endsWith(id);
+            uri = cursor.getString(uri_col_idx);
+            status = cursor.getInt(status_col_idx);
+            if (uri.endsWith(id)) {
+                isDownloading = true;
+                break;
+            }
         }
+        
+        if (status == DownloadManager.STATUS_SUCCESSFUL)
+            isDownloading = (new File(Uri.parse(uri).getPath())).exists();
+        
         return isDownloading;
     }
 
@@ -187,9 +200,7 @@ class ViewQuizAdapter extends ArrayAdapter<String> {
                 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
  
         String[] tokens = name_path_ids[position].split("-");
-        String name, id;
-        name = tokens[0];
-        id   = tokens[2];
+        String name = tokens[0],id = tokens[2];
         
         View rowView = inflater.inflate(R.layout.layout_worksheet, parent, false);
         TextView textView = (TextView) rowView.findViewById(R.id.tvWsName);
