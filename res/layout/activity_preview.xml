@@ -26,7 +26,7 @@
 			        android:layout_width="wrap_content"
 			        android:layout_height="wrap_content"
 			        android:adjustViewBounds="false"
-			        android:scaleType="matrix"
+			        android:scaleType="center"
 			        android:contentDescription="@string/title_activity_preview"/>
        		</HorizontalScrollView>    
         </ScrollView>

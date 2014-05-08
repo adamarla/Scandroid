@@ -117,7 +117,18 @@ public class CameraActivity extends Activity implements IConstants {
                 }
             }            
             if (match != null) break;
-        }        
+        }
+        
+        if (match == null) {
+            Size s;
+            for (int i = availableSizes.size(); i > 0; i--) {
+                s = availableSizes.get(i);
+                if (s.width * 3 == s.height * 4) {
+                    match = s;
+                    break;
+                }
+            }            
+        }
         return match;
     }
 
@@ -126,7 +137,7 @@ public class CameraActivity extends Activity implements IConstants {
     private Camera camera;
     
     private final int PORTRAIT = 90;
-    private final int[][] PREFERRED_SIZE = {{800, 600}, {1280, 960}, {640, 480}};
+    private final int[][] PREFERRED_SIZE = {{800, 600}, {1280, 960}, {960, 720}, {1600, 1200}};
     
 }
 

@@ -5,7 +5,8 @@ import java.util.HashSet;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -87,7 +88,8 @@ public class PreviewActivity extends FragmentActivity implements IConstants {
             vsPreview.showPrevious();
         } else {
             ImageView iv = (ImageView)this.findViewById(R.id.ivFullPreview);
-            iv.setImageURI(Uri.fromFile(images[position]));
+            Bitmap bmap = BitmapFactory.decodeFile(images[position].getPath());
+            iv.setImageBitmap(bmap);
             vsPreview.showNext();
         }
         zoom = !zoom;        
