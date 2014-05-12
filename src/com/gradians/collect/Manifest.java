@@ -55,9 +55,11 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     @Override
     public View getChildView(int groupPosition, int childPosition,
             boolean isLastChild, View convertView, ViewGroup parent) {
+        
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.layout_question, parent, false);
-        }        
+        }
+        
         Question[] row = (Question[])getChild(groupPosition, childPosition);        
         for (int i = 0; i < row.length; i++) {
             
@@ -79,8 +81,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             
             LayoutParams lp = (LayoutParams)tv.getLayoutParams();
             lp.height = parent.getWidth()/4;
-            tv.setLayoutParams(lp);
-            
+            tv.setLayoutParams(lp);            
             if (row[i] != null) {
                 tv.setText(row[i].getName());
                 tv.setTag(row[i].getGRId());
@@ -104,6 +105,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 }
             } else {
                 tv.setText("");
+                tv.setClickable(false);
                 tv.setBackgroundResource(R.drawable.blank);
             }
         }
@@ -171,6 +173,10 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         }
         this.notifyDataSetChanged();
     }
+    
+    public Question[] getSaved() {
+        return this.itemsWithStatus(SAVED);
+    }    
     
     public Question[] getSelected() {
         return this.itemsWithStatus(MARKED);
@@ -286,11 +292,9 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     private File manifestDir;
     
     private final int ITEMS_PER_ROW = 4;
-    private static final String 
-        TOKEN_KEY = "token", NAME_KEY = "name", EMAIL_KEY = "email";
-    private static final char
+    private final char
         UNMARKED = 'U', MARKED = 'M', SAVED = 'D', SENT = 'S';
-
+    private final String MANIFEST_DIR_NAME = "manifests";
     
 }
 

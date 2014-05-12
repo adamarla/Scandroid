@@ -14,9 +14,9 @@
         <ImageButton 
             android:id="@+id/btnWs"
             android:tag="main_button"
-            android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="0dp" 
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:contentDescription="@string/ws_button" 
             android:onClick="initiateDownload" 
             android:src="@android:drawable/ic_menu_edit" />
@@ -24,19 +24,19 @@
         <ImageButton
 	        android:id="@+id/btnClick"
             android:tag="main_button" 
-	        android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="0dp"
-	        android:contentDescription="@string/camera_button"
-	        android:onClick="initiateCamera"
-	        android:src="@android:drawable/ic_menu_camera" />                
+	        android:layout_weight="1"
+            android:contentDescription="@string/camera_button"
+            android:onClick="initiateCamera"
+            android:src="@android:drawable/ic_menu_camera" />                
         
         <ImageButton
             android:id="@+id/btnPreview"
             android:tag="main_button" 
-            android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="0dp" 
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:contentDescription="@string/preview_button"
             android:onClick="initiatePreview"
             android:src="@android:drawable/ic_menu_gallery" />
@@ -44,9 +44,9 @@
         <ImageButton
             android:id="@+id/btnSend"
             android:tag="main_button" 
-            android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="0dp" 
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:contentDescription="@string/send_button"
             android:onClick="initiateSend"
             android:src="@android:drawable/ic_menu_upload" />

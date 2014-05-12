@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -89,6 +90,15 @@ public class PreviewActivity extends FragmentActivity implements IConstants {
         } else {
             ImageView iv = (ImageView)this.findViewById(R.id.ivFullPreview);
             Bitmap bmap = BitmapFactory.decodeFile(images[position].getPath());
+            float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
+            float scalingFactor = 1.5f;
+            DisplayMetrics dmetrics = this.getApplicationContext().
+                    getResources().getDisplayMetrics();
+            if (bmap.getWidth() < dmetrics.widthPixels*scalingFactor) {
+                bmap = Bitmap.createScaledBitmap(bmap, 
+                        (int)(dmetrics.widthPixels*scalingFactor),
+                        (int)(dmetrics.widthPixels*scalingFactor/bmapAspectRatio), false);
+            }
             iv.setImageBitmap(bmap);
             vsPreview.showNext();
         }

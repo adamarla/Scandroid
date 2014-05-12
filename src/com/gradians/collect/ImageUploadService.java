@@ -20,8 +20,7 @@ public class ImageUploadService extends IntentService implements IConstants {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        File imagesDir = this.getApplicationContext().getDir(IMG_DIR_NAME, MODE_PRIVATE);
-        File[] images = imagesDir.listFiles();
+        File[] images = (new File(intent.getStringExtra(TAG))).listFiles();
 
         URL url = null;
         HttpURLConnection httpUrlConnection = null;
@@ -78,7 +77,7 @@ public class ImageUploadService extends IntentService implements IConstants {
                     image.delete();
                 }
             } catch (Exception e) {
-                Log.d(TAG, e.getMessage());
+                Log.e(TAG, e.getMessage());
             } finally {
                 if (opstream != null) opstream.close();
             }

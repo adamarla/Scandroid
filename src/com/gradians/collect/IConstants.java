@@ -5,6 +5,7 @@ public interface IConstants {
     String WEB_APP_HOST_PORT = "www.gradians.com";
     String BANK_HOST_PORT = "109.74.201.62:8080";
     String TAG = "com.gradians.collect";
+    String TAG_ID = "com.gradians.collect.ID";
     String TOKEN_KEY = "token";
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
@@ -14,8 +15,5 @@ public interface IConstants {
     String QUIZ_PATH_KEY = "locn";
     String SCAN_KEY = "scan";
     String GR_ID_KEY = "id";
-    String IMG_DIR_NAME = "images";
-    String MANIFEST_DIR_NAME = "manifests";
-    String WS_DIR_NAME = "worksheets";
     
 }

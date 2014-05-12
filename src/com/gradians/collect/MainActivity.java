@@ -67,6 +67,11 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
+                Question[] selected = manifest.getSelected();
+                int frame = data.getIntExtra(TAG, selected.length);
+                for (int i = frame; i < selected.length; i++) {
+                    manifest.checkUncheck(selected[i].getGRId());
+                }
                 manifest.saveSelected();
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
@@ -101,14 +106,10 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
                 }
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
-                        "Oops.. image capture failed. Please try again",
+                        "Oops.. image preview failed. Please try again",
                         Toast.LENGTH_SHORT).show();                    
             }
-        } else if (requestCode == UPLOAD_IMAGE_ACTIVITY_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                manifest.sendSaved();
-            }
-        }
+        } 
     }
     
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
@@ -137,20 +138,8 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         break;
       }
       return super.onOptionsItemSelected(item);
-    }    
-    /*
-    @Override
-    public boolean onGroupClick(ExpandableListView parent, View v,
-            int groupPosition, long id) {
-        return false;
     }
-
-    @Override
-    public boolean onChildClick(ExpandableListView parent, View v,
-            int groupPosition, int childPosition, long id) {
-        return false;
-    }
-    */
+    
     @Override
     public void onClick(View view) {
         manifest.checkUncheck((String)((TextView)view).getTag());
@@ -163,29 +152,31 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         String[] name_path_ids = new String[manifest.getGroupCount()];
         for (int i = 0; i < name_path_ids.length; i++) {
             quiz = (Quiz)manifest.getGroup(i);
-            name_path_ids[i] = String.format("%s-%s-%s", 
+            name_path_ids[i] = String.format("%s-%s-%s",
                 quiz.getName(), quiz.getPath(), quiz.getId());
         }
-        viewPDFsIntent.putExtra(TAG, name_path_ids);
+        viewPDFsIntent.putExtra(TAG_ID, name_path_ids);
         startActivity(viewPDFsIntent);
     }
 
     public void initiateSend(View view) {
-        File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
+        final File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
         if (previewDir.listFiles().length == 0) {
             Toast.makeText(context, 
-                    "No images to be sent", 
+                    "Nothing to be submitted", 
                     Toast.LENGTH_SHORT).show();
         } else {            
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Ok to upload?")
-                   .setMessage("this action is not reversible");
+            builder.setTitle("Ready to submit?")
+                   .setMessage("This action is not reversible!");
             builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                        public void onClick(DialogInterface dialog, int id) {
                            // User clicked OK button
                            Intent uploadIntent = new Intent(context,
                                    com.gradians.collect.ImageUploadService.class);
+                           uploadIntent.putExtra(TAG, previewDir.getAbsolutePath());
                            startService(uploadIntent);
+                           manifest.sendSaved();
                        }
                    });
             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -199,16 +190,15 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     }
     
     public void initiatePreview(View view) {
-        File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
-        if (previewDir.listFiles().length == 0) {
+        if (manifest.getSaved().length == 0) {
             Toast.makeText(context, 
                     "No images to preview", 
-                    Toast.LENGTH_SHORT).show();
+                    Toast.LENGTH_SHORT).show();            
         } else {
+            File previewDir = this.getDir(IMG_DIR_NAME, MODE_PRIVATE);
             Intent previewIntent = new Intent(context,
                     com.gradians.collect.PreviewActivity.class);
-            previewIntent.putExtra(TAG,
-                    this.getDir(IMG_DIR_NAME, MODE_PRIVATE).getAbsolutePath());
+            previewIntent.putExtra(TAG, previewDir.getPath());
             startActivityForResult(previewIntent, 
                     PREVIEW_ACTIVITY_REQUEST_CODE);
         }
@@ -221,16 +211,15 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
                     "No questions selected", 
                     Toast.LENGTH_SHORT).show();
         } else {
-            String filename = "";
+            String[] name_ids = new String[selected.length]; int i = 0;
             for (Question q : selected) {
-                filename += (q.getName() + "-" + q.getGRId()) + "-";
+                name_ids[i++] = q.getName() + "-" + q.getGRId();
             }
-            filename = filename.substring(0, filename.length()-1);
             Intent takePictureIntent = new Intent(context,
                     com.gradians.collect.CameraActivity.class);
-            takePictureIntent.putExtra(TAG,
-                    (new File(this.getDir(IMG_DIR_NAME, MODE_PRIVATE),
-                            filename)).getAbsolutePath());
+            takePictureIntent.putExtra(TAG, 
+                    this.getDir(IMG_DIR_NAME, MODE_PRIVATE).getPath());
+            takePictureIntent.putExtra(TAG_ID, name_ids);
             startActivityForResult(takePictureIntent, 
                     CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
         }
@@ -241,7 +230,8 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         Intent checkAuthIntent = new Intent(context, 
                 com.gradians.collect.LoginActivity.class);
         checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
+        startActivityForResult(checkAuthIntent, 
+                AUTH_ACTIVITY_REQUEST_CODE);
     }
     
     private void resetPreferences() {
@@ -271,7 +261,8 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         if (token == null) {
             initiateAuthActivity();
         } else {
-            peedee = ProgressDialog.show(this, "Initializing ", "Please wait...");
+            peedee = ProgressDialog.show(this, "Initializing ", 
+                    "Please wait...");
             peedee.setIndeterminate(true);
             peedee.setIcon(ProgressDialog.STYLE_SPINNER);
             
@@ -337,7 +328,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
     private ProgressDialog peedee;
     
     private final String TITLE = "Scanbot - Hello %s !";
-
+    private final String IMG_DIR_NAME = "images";
     
 }
 

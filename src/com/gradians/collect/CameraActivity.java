@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.support.v4.app.NavUtils;
 import android.annotation.TargetApi;
 import android.content.Intent;
@@ -37,10 +38,15 @@ public class CameraActivity extends Activity implements IConstants {
         camera.setParameters(configureParams(camera.getParameters()));
         camera.setDisplayOrientation(PORTRAIT);
         
-        preview = new CameraPreview(this, camera);
-        ((FrameLayout)findViewById(R.id.camera_preview)).addView(preview);
+        ((FrameLayout)findViewById(R.id.camera_preview)).
+            addView(new CameraPreview(this, camera));
         
-        picture = new File(this.getIntent().getStringExtra(TAG));        
+        imagesDir = new File(this.getIntent().getStringExtra(TAG));
+        name_ids = this.getIntent().getStringArrayExtra(TAG_ID);     
+        frame = 0;
+        
+        TextView tv = (TextView)this.findViewById(R.id.tvCameraPreview);
+        tv.setText(name_ids[frame].split("-")[0]);
     }
     
     @Override
@@ -73,11 +79,31 @@ public class CameraActivity extends Activity implements IConstants {
         releaseCamera();
     }
 
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        intent.putExtra(TAG, frame);
+        setResult(RESULT_OK, intent);
+        super.onBackPressed();
+    }
+
     public void takePicture(View view) {
         // get an picture from the camera
-        camera.takePicture(null, null, new PictureWriter(picture, this));
-        final Intent intent = new Intent();
-        setResult(RESULT_OK, intent);
+        File picture = new File(imagesDir, name_ids[frame]);
+        camera.takePicture(null, null, 
+                new PictureWriter(this, picture));
+    }
+    
+    public void moveToNext() {
+        if (frame == name_ids.length-1) {
+            Intent intent = new Intent();
+            setResult(RESULT_OK, intent);
+            finish();
+        } else {
+            TextView tv = (TextView)this.findViewById(R.id.tvCameraPreview);
+            tv.setText(name_ids[++frame].split("-")[0]);
+            camera.stopPreview(); camera.startPreview();
+        }
     }
     
     private void releaseCamera() {
@@ -86,7 +112,7 @@ public class CameraActivity extends Activity implements IConstants {
             camera = null;
         }        
     }
-
+    
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
      */
@@ -132,8 +158,9 @@ public class CameraActivity extends Activity implements IConstants {
         return match;
     }
 
-    private File picture;
-    private CameraPreview preview;
+    private File imagesDir;
+    private String[] name_ids;
+    private int frame;
     private Camera camera;
     
     private final int PORTRAIT = 90;
@@ -143,9 +170,9 @@ public class CameraActivity extends Activity implements IConstants {
 
 class PictureWriter implements PictureCallback, IConstants {
         
-    public PictureWriter(File picture, Activity caller) {
-        this.caller = caller;
+    public PictureWriter(CameraActivity activity, File picture) {
         this.picture = picture;
+        this.activity = activity;
     }
 
     @Override
@@ -154,13 +181,13 @@ class PictureWriter implements PictureCallback, IConstants {
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
-          } catch (Exception error) { 
-              Log.e(TAG, error.getMessage());
-          }
-        caller.finish();
+        } catch (Exception error) {
+            Log.e(TAG, error.getMessage());
+        }
+        activity.moveToNext();
     }
     
-    private Activity caller;
+    private CameraActivity activity;
     private File picture;
 
 }
