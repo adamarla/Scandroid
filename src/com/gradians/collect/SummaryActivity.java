@@ -161,7 +161,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
     }
        
     private void triggerDownloads() {        
-        boolean somethingToDownload = false;
         for (int j = 0; j < manifest.getGroupCount(); j++) {
             Quiz quiz = (Quiz)manifest.getGroup(j);
             Question[] questions = quiz.getQuestions();
@@ -170,20 +169,11 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                     String id = question.getGRId();
                     if (!(new File(questionsDir, id)).exists()) {
                         downloadQuestion(question);
-                        somethingToDownload = true;
                     } else if (question.getState() == WAITING) {
                         manifest.update(id, DOWNLOADED);
                     }
                 }
             }
-        }
-        
-        if (somethingToDownload) {
-            peedee = ProgressDialog.show(this, 
-                    "Initiating downloads", 
-                    "Please wait, this may take a minute...");
-            peedee.setIndeterminate(true);
-            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
         }
     }
     
@@ -229,7 +219,7 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         
     private void onDownloadComplete(String id) {
         manifest.update(id, DOWNLOADED);
-        if (peedee.isShowing() && requestIds.size() == 0) {
+        if (peedee != null && requestIds.size() == 0) {
             peedee.dismiss();
         }
     }
@@ -318,7 +308,7 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
     private final HashSet<String> requestIds = new HashSet<String>();
     private final IntentFilter downloadCompleteIntentFilter = 
             new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);       
-    private final String URL = "http://%s/vault/%s/pg-1.jpg";
+    private final String URL = "http://%s/vault/%s/notrim.jpg";
         public final int AUTH_ACTIVITY_REQUEST_CODE = 100;
 
 }

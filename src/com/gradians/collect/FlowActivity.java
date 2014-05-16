@@ -40,7 +40,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpPreview.setAdapter(adapter);
         vpPreview.setOnPageChangeListener(this);
         
-        zoom = 0;
         onPageSelected(0);
     }
 
@@ -103,7 +102,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     public void onPageScrolled(int arg0, float arg1, int arg2) { }
     @Override
     public void onPageSelected(int position) {
-        Log.d(TAG, "onPageSelected: " + position);
         char state = questions[position].getState();
         ImageButton btnAction1 = (ImageButton)this.findViewById(R.id.btnAction1);
         ImageButton btnAction2 = (ImageButton)this.findViewById(R.id.btnAction2);
@@ -156,8 +154,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     public void adjustZoom(View view) {
-        Log.d(TAG, "adjustZoom() --> zoom: " + zoom);
-        zoom++;
+        zoom = (zoom + 1)%3;
         ViewSwitcher vsFlow = (ViewSwitcher)this.findViewById(R.id.vsPreview);        
         switch (zoom) {
         case 0:
@@ -165,26 +162,23 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             break;
         default:
             int currentIndex = vpPreview.getCurrentItem();
-            FlowFragment fragment = (FlowFragment)adapter.getItem(currentIndex);
-            Bundle b = fragment.getArguments();
-            Bitmap bmap = BitmapFactory.decodeFile(b.getString(GR_PATH_KEY));
+            Question q = questions[currentIndex];
+            Bitmap bmap = BitmapFactory.decodeFile(q.getImgLocn());
             float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
-            float scalingFactor = (zoom == 1) ? 1.25f : 1.75f;
             DisplayMetrics dmetrics = this.getApplicationContext().
-                    getResources().getDisplayMetrics();
+                    getResources().getDisplayMetrics();            
+            float scalingFactor = 1.0f;
             if (bmap.getWidth() < dmetrics.widthPixels*scalingFactor) {
-                bmap = Bitmap.createScaledBitmap(bmap, 
-                        (int)(dmetrics.widthPixels*scalingFactor),
-                        (int)(dmetrics.widthPixels*scalingFactor/bmapAspectRatio), false);
+                scalingFactor = (zoom == 1) ? 1.0f : 1.25f;// for small/low density screens
+            } else {
+                scalingFactor = (zoom == 1) ? 1.25f : 1.75f;// for large/high density screens
             }            
+            bmap = Bitmap.createScaledBitmap(bmap, 
+                    (int)(dmetrics.widthPixels*scalingFactor),
+                    (int)(dmetrics.widthPixels*scalingFactor/bmapAspectRatio), false);
             ImageView iv = (ImageView)this.findViewById(R.id.ivFullPreview);
             iv.setImageBitmap(bmap);
-            if (zoom == 2) {
-                zoom = -1;
-                iv.invalidate();
-            } else {
-                vsFlow.showNext();
-            }
+            if (zoom == 1) vsFlow.showNext();
         }
     }
     
