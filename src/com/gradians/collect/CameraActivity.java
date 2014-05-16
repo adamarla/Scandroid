@@ -9,6 +9,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
+import android.net.Uri;
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
@@ -42,11 +43,10 @@ public class CameraActivity extends Activity implements IConstants {
             addView(new CameraPreview(this, camera));
         
         imagesDir = new File(this.getIntent().getStringExtra(TAG));
-        name_ids = this.getIntent().getStringArrayExtra(TAG_ID);     
-        frame = 0;
+        name_id = this.getIntent().getStringExtra(TAG_ID);
         
         TextView tv = (TextView)this.findViewById(R.id.tvCameraPreview);
-        tv.setText(name_ids[frame].split("-")[0]);
+        tv.setText(name_id.split("-")[0]);
     }
     
     @Override
@@ -79,31 +79,11 @@ public class CameraActivity extends Activity implements IConstants {
         releaseCamera();
     }
 
-    @Override
-    public void onBackPressed() {
-        Intent intent = new Intent();
-        intent.putExtra(TAG, frame);
-        setResult(RESULT_OK, intent);
-        super.onBackPressed();
-    }
-
     public void takePicture(View view) {
         // get an picture from the camera
-        File picture = new File(imagesDir, name_ids[frame]);
-        camera.takePicture(null, null, 
+        File picture = new File(imagesDir, name_id.split("-")[1]);
+        camera.takePicture(null, null,  
                 new PictureWriter(this, picture));
-    }
-    
-    public void moveToNext() {
-        if (frame == name_ids.length-1) {
-            Intent intent = new Intent();
-            setResult(RESULT_OK, intent);
-            finish();
-        } else {
-            TextView tv = (TextView)this.findViewById(R.id.tvCameraPreview);
-            tv.setText(name_ids[++frame].split("-")[0]);
-            camera.stopPreview(); camera.startPreview();
-        }
     }
     
     private void releaseCamera() {
@@ -159,8 +139,7 @@ public class CameraActivity extends Activity implements IConstants {
     }
 
     private File imagesDir;
-    private String[] name_ids;
-    private int frame;
+    private String name_id;
     private Camera camera;
     
     private final int PORTRAIT = 90;
@@ -168,12 +147,12 @@ public class CameraActivity extends Activity implements IConstants {
     
 }
 
-class PictureWriter implements PictureCallback, IConstants {
+class PictureWriter implements PictureCallback {
         
-    public PictureWriter(CameraActivity activity, File picture) {
+    public PictureWriter(Activity activity, File picture) {
         this.picture = picture;
-        this.activity = activity;
-    }
+        this.caller = activity;
+    }    
 
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
@@ -181,13 +160,17 @@ class PictureWriter implements PictureCallback, IConstants {
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
+            Intent intent = new Intent();
+            intent.setData(Uri.fromFile(picture));
+            caller.setResult(Activity.RESULT_OK, intent);
         } catch (Exception error) {
-            Log.e(TAG, error.getMessage());
+            Log.e(IConstants.TAG, error.getMessage());
+            caller.setResult(Activity.RESULT_FIRST_USER);
         }
-        activity.moveToNext();
+        caller.finish();
     }
     
-    private CameraActivity activity;
+    private Activity caller;
     private File picture;
 
 }

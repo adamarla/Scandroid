@@ -13,7 +13,19 @@ public interface IConstants {
     String QUIZ_ID_KEY = "quizId";
     String QUIZ_NAME_KEY = "quiz";
     String QUIZ_PATH_KEY = "locn";
-    String SCAN_KEY = "scan";
+    String STATE_KEY = "state";
     String GR_ID_KEY = "id";
+    String GR_PATH_KEY = "img";
+    String QUESTIONS_DIR_NAME = "questions";
+    String ANSWERS_DIR_NAME = "answers";
+    String SOLUTIONS_DIR_NAME = "solutions";
+    String MANIFEST_DIR_NAME = "manifests";
+    char WAITING = 'W',
+         DOWNLOADED = 'D',
+         CAPTURED = 'C',
+         UNMARKED = 'U',
+         MARKED = 'M', 
+         SAVED = 'V', 
+         SENT = 'S';
     
 }

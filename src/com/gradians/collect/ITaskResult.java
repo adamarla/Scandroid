@@ -7,6 +7,7 @@ public interface ITaskResult {
     int VERIFY_AUTH_TASK_RESULT_CODE        = 300;
     int UPLOAD_IMAGE_ACTIVITY_REQUEST_CODE  = 400;
     int PREVIEW_ACTIVITY_REQUEST_CODE       = 500;
+    int FLOW_ACTIVITY_REQUEST_CODE          = 600;
 
     void onTaskResult(int requestCode, int resultCode, String resultData);
     

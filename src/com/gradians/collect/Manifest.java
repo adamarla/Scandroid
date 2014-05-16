@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,11 +24,11 @@ import org.json.simple.parser.JSONParser;
 
 
 public class Manifest extends BaseExpandableListAdapter implements IConstants {
-    public Manifest(Context context, String json, OnClickListener l) throws Exception {
-        this.listener = l;
+
+    public Manifest(Context context, String json, OnClickListener ocl) throws Exception {
+        this.listener = ocl;
         this.inflater = LayoutInflater.from(context);
-        this.manifestDir = context.getDir(MANIFEST_DIR_NAME, Context.MODE_PRIVATE);
-        parse(json);
+        parse(context.getFilesDir(), json);
     }
     
     public String getName() {
@@ -55,7 +56,6 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     @Override
     public View getChildView(int groupPosition, int childPosition,
             boolean isLastChild, View convertView, ViewGroup parent) {
-        
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.layout_question, parent, false);
         }
@@ -85,8 +85,20 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             if (row[i] != null) {
                 tv.setText(row[i].getName());
                 tv.setTag(row[i].getGRId());
-                char status = stateLocation.get(row[i].getGRId()).toString().charAt(0);
-                switch(status) {
+                char state = row[i].getState();
+                switch(state) {
+                case WAITING:
+                    tv.setOnClickListener(listener);
+                    tv.setBackgroundResource(R.drawable.selected);
+                    break;
+                case DOWNLOADED:
+                    tv.setOnClickListener(listener);
+                    tv.setBackgroundResource(R.drawable.unselected);
+                    break;
+                case CAPTURED:
+                    tv.setOnClickListener(listener);
+                    tv.setBackgroundResource(R.drawable.saved);
+                    break;
                 case MARKED:
                     tv.setOnClickListener(listener);
                     tv.setBackgroundResource(R.drawable.selected);
@@ -94,10 +106,6 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                 case UNMARKED:
                     tv.setOnClickListener(listener);
                     tv.setBackgroundResource(R.drawable.unselected);
-                    break;
-                case SAVED:
-                    tv.setClickable(false);
-                    tv.setBackgroundResource(R.drawable.saved);
                     break;
                 case SENT:
                     tv.setClickable(false);
@@ -141,6 +149,8 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
 
         Quiz quiz = (Quiz)getGroup(groupPosition);
         TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
+        tv.setTag(groupPosition);
+        tv.setOnClickListener(listener);
         LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)tv.getLayoutParams();
         lp.height = parent.getWidth()/4;
         tv.setLayoutParams(lp);
@@ -158,7 +168,17 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return false;
     }
     
-    public void checkUncheck(String tag) {        
+    public void update(String id, char state) {
+        Question q = this.findQuestionById(id);
+        if (q.getState() != state) {
+            q.setState(state);
+            String stateLoc = stateLocation.getProperty(id);
+            stateLocation.setProperty(id, stateLoc.replace(stateLoc.charAt(0), state));
+            this.notifyDataSetChanged();            
+        }
+    }       
+    
+    public void checkUncheck(String tag) {
         String stateLocString = stateLocation.getProperty(tag);
         char status = stateLocString.charAt(0);
         switch (status) {
@@ -175,11 +195,11 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     }
     
     public Question[] getSaved() {
-        return this.itemsWithStatus(SAVED);
+        return this.questionsWithStatus(SAVED);
     }    
     
     public Question[] getSelected() {
-        return this.itemsWithStatus(MARKED);
+        return this.questionsWithStatus(MARKED);
     }
     
     public void clearSelected() {
@@ -195,10 +215,11 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     }
     
     public void commit() throws Exception {
-        stateLocation.store(new FileOutputStream(new File(manifestDir, this.getEmail())), null);
+        stateLocation.store(new FileOutputStream(manifest), null);
     }
     
-    private Question getQuestionAt(String locString) {
+    private Question findQuestionById(String id) {
+        String locString = stateLocation.getProperty(id);
         String[] tokens = locString.split(",");
         int[] idx = new int[3];
         idx[0] = Integer.parseInt(tokens[1]);
@@ -207,15 +228,15 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return quizzes.get(idx[0]).get(idx[1])[idx[2]];
     }
 
-    private Question[] itemsWithStatus(char status) {
+    private Question[] questionsWithStatus(char status) {
         ArrayList<Question> selected = new ArrayList<Question>();
-        String key = null, stateLocString = null;
-        Enumeration<Object> keys = stateLocation.keys();
-        while (keys.hasMoreElements()) {
-            key = (String)keys.nextElement();
-            stateLocString = stateLocation.getProperty(key);
-            if (stateLocString.charAt(0) == status) {
-                selected.add(this.getQuestionAt(stateLocString));
+        String id = null, stateLoc = null;
+        Enumeration<Object> ids = stateLocation.keys();
+        while (ids.hasMoreElements()) {
+            id = (String)ids.nextElement();
+            stateLoc = stateLocation.getProperty(id);
+            if (stateLoc.charAt(0) == status) {
+                selected.add(findQuestionById(stateLoc));
             }
         }
         return selected.toArray(new Question[selected.size()]);
@@ -228,32 +249,38 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             key = (String)keys.nextElement();
             stateLocString = stateLocation.getProperty(key);
             if (stateLocString.charAt(0) == from) {
+                Question q = findQuestionById(key);
                 stateLocation.put(key, stateLocString.replace(from, to));
+                q.setState(to);
             }
         }
         this.notifyDataSetChanged();
     }
     
-    private void parse(String json) throws Exception {
+    private void parse(File appDir, String json) throws Exception {
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject;
         respObject = (JSONObject)jsonParser.parse(json);
         token = (String)respObject.get(TOKEN_KEY);
         name = (String)respObject.get(NAME_KEY);
-        email = (String)respObject.get(EMAIL_KEY);        
-        JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);        
+        email = (String)respObject.get(EMAIL_KEY);
+        JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
+        
+        File manifests = new File(appDir, MANIFEST_DIR_NAME); 
+        manifests.mkdir();
         
         Properties lastStateLocation = new Properties();
-        File file = new File(manifestDir, email); file.createNewFile(); //creates if needed
-        lastStateLocation.load(new FileInputStream(file));
-    
+        manifest = new File(manifests, email); manifest.createNewFile();
+        lastStateLocation.load(new FileInputStream(manifest));
+        
         quizzes = new ArrayList<Quiz>();
         stateLocation = new Properties();
+        
         Quiz quiz = null; Question[] row = null;
         String stateLoc = null, lastStateLoc = null;
         long quizId = 0; int padding = 0, position = 0;
         for (int i = 0; i < items.size(); i++) {
-            
+
             JSONObject item = (JSONObject) items.get(i);
             if (quizId == 0 || quizId != (Long)item.get(QUIZ_ID_KEY)) {
                 if (quiz != null) quizzes.add(quiz);
@@ -264,24 +291,25 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             }
             
             Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
-                    String.valueOf(item.get(GR_ID_KEY)));
+                    String.valueOf((Long)item.get(GR_ID_KEY)), (String)item.get(GR_PATH_KEY));
             position = (i-padding)%ITEMS_PER_ROW; 
             if (position == 0) {
                 row = new Question[ITEMS_PER_ROW];
                 quiz.add(row);
-            }            
-            row[position] = question;
+            }
             
             lastStateLoc = lastStateLocation.getProperty(question.getGRId());
-            stateLoc = String.format("%s,%s,%s,%s", 
-                    lastStateLoc == null ? UNMARKED : lastStateLoc.charAt(0), 
-                    quizzes.size(), quiz.size()-1, position);            
+            question.setState(lastStateLoc == null ? WAITING : lastStateLoc.charAt(0));
+            stateLoc = String.format("%s,%s,%s,%s",
+                    question.getState(), quizzes.size(), quiz.size()-1, position);
             stateLocation.put(question.getGRId(), stateLoc);
+            row[position] = question;
         }
         if (quiz != null) quizzes.add(quiz);
     }
-
+        
     private String name, email, token;
+    private File manifest;
     
     private Properties stateLocation;
     private ArrayList<Quiz> quizzes;
@@ -289,12 +317,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
     private LayoutInflater inflater;        
     private OnClickListener listener;
     
-    private File manifestDir;
-    
     private final int ITEMS_PER_ROW = 4;
-    private final char
-        UNMARKED = 'U', MARKED = 'M', SAVED = 'D', SENT = 'S';
-    private final String MANIFEST_DIR_NAME = "manifests";
     
 }
 
@@ -318,6 +341,17 @@ class Quiz extends ArrayList<Question[]> {
         return path;
     }
     
+    public Question[] getQuestions() {
+        ArrayList<Question> questions = new ArrayList<Question>();
+        for (Question[] row : this) {
+            for (Question question : row) {
+                if (question != null)
+                    questions.add(question);
+            }            
+        }
+        return questions.toArray(new Question[questions.size()]);
+    }
+    
     @Override
     public String toString() {
         return name;
@@ -331,17 +365,38 @@ class Quiz extends ArrayList<Question[]> {
 
 class Question {
     
-    public Question(String name, String GRId) {
+    public Question(String name, String GRId, String imgLocn) {
         this.name = name;
         this.GRId = GRId;
+        this.imgLocn = imgLocn;
+    }
+    
+    public String getGRId() {
+        return GRId;
+    }
+    
+    public String getImgLocn() {
+        return imgLocn;
     }
     
     public String getName() {
         return name;
     }
     
-    public String getGRId() {
-        return GRId;
+    public char getState() {
+        return state;
+    }
+    
+    public String getNameStateId() {
+        return String.format("%s-%s-%s", name, state, GRId);
+    }
+    
+    public void setImgLocn(String imgLocn) {
+        this.imgLocn = imgLocn;
+    }
+    
+    public void setState(char state) {
+        this.state = state;
     }
     
     @Override
@@ -349,6 +404,6 @@ class Question {
         return name;
     }
     
-    private String name, GRId;
-    
+    private String name, GRId, imgLocn;
+    private char state;
 }
