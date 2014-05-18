@@ -20,5 +20,6 @@
     <string name="title_activity_view_quiz">View Questions</string>
     <string name="title_activity_summary">SummaryActivity</string>
     <string name="title_activity_flow">FlowActivity</string>
+    <string name="title_activity_feedback">FeedbackActivity</string>
 
 </resources>

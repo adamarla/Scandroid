@@ -1,11 +1,14 @@
 package com.gradians.collect;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,7 +41,15 @@ public class FlowFragment extends Fragment implements IConstants {
         
         ImageView iv = (ImageView)rootView.findViewById(R.id.ivPreview);
         Uri image = Uri.parse(path);
-        iv.setImageURI(image);
+        Bitmap bmap = BitmapFactory.decodeFile(image.getPath());
+        float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
+        //iv.setImageURI(image);
+        DisplayMetrics dmetrics = this.getActivity().getApplicationContext().
+                getResources().getDisplayMetrics();
+        bmap = Bitmap.createScaledBitmap(bmap, 
+                (int)(dmetrics.widthPixels),
+                (int)(dmetrics.widthPixels/bmapAspectRatio), false);
+        iv.setImageBitmap(bmap);
         
         TextView tv = (TextView)rootView.findViewById(R.id.tvPreview);
         tv.setText(name);
@@ -75,15 +86,6 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
         this.notifyDataSetChanged();
     }
     
-//    public void setQuestion(int position, Question question) {
-//        questions[position] = question;
-//        dirty = position;
-//    }
-//    
-//    public Question getQuestion(int position) {
-//        return questions[position];
-//    }
-//        
      @Override
     public int getItemPosition(Object object) {
          FlowFragment fragment = (FlowFragment) object;

@@ -1,6 +1,7 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.net.URL;
 import java.util.HashSet;
 
 import android.app.Activity;
@@ -31,13 +32,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_summary);
         checkAuth();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.summary, menu);
-        return true;
     }
 
     @Override
@@ -86,7 +80,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                 this.finish();
             }
         } else if (requestCode == FLOW_ACTIVITY_REQUEST_CODE) {
-            Log.d(TAG, "Returning from FlowActivity --> ");
             if (resultCode == RESULT_OK) {
                 try {
                     String[] name_state_ids = data.getStringArrayExtra(TAG);
@@ -229,6 +222,7 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         SharedPreferences prefs = getSharedPreferences(TAG, 
                 Context.MODE_PRIVATE);
         
+        String email = prefs.getString(EMAIL_KEY, null);
         String token = prefs.getString(TOKEN_KEY, null);        
         if (token == null) {
             initiateAuthActivity();
@@ -237,10 +231,17 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                     "Please wait...");
             peedee.setIndeterminate(true);
             peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-            
-            String email = prefs.getString(EMAIL_KEY, null);
-            new VerificationTask(email, token, this).execute();
-        }    
+            String urlString = String.format(
+                    "http://%s/tokens/verify?email=%s&token=%s",
+                    WEB_APP_HOST_PORT, email, token);
+            try {
+                URL[] urls = { new URL(urlString) };
+                new HttpCallsAsyncTask(this, 
+                        VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
+            } catch (Exception e) {
+                handleError("Auth Check Failed", e.getMessage());
+            }
+        }
     }
 
     private void initiateAuthActivity() {

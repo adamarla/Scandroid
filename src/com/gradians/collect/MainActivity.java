@@ -1,6 +1,8 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import android.os.Bundle;
 import android.app.Activity;
@@ -252,11 +254,12 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
         edit.commit();       
     }
 
-    private void initialize() {        
+    private void initialize() {
         context = getApplicationContext();
         SharedPreferences prefs = getSharedPreferences(TAG, 
                 Context.MODE_PRIVATE);
         
+        String email = prefs.getString(EMAIL_KEY, null);
         String token = prefs.getString(TOKEN_KEY, null);        
         if (token == null) {
             initiateAuthActivity();
@@ -265,9 +268,16 @@ public class MainActivity extends Activity implements ITaskResult, IConstants, O
                     "Please wait...");
             peedee.setIndeterminate(true);
             peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-            
-            String email = prefs.getString(EMAIL_KEY, null);
-            new VerificationTask(email, token, this).execute();
+            String urlString = String.format(
+                    "http://%s/tokens/verify?email=%s&token=%s",
+                    WEB_APP_HOST_PORT, email, token);
+            try {
+                URL[] urls = { new URL(urlString) };
+                new HttpCallsAsyncTask(this, 
+                        VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
+            } catch (Exception e) {
+                handleError("Auth Check Failed", e.getMessage());
+            }
         }
     }
     
