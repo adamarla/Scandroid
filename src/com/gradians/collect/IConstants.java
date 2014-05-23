@@ -20,12 +20,15 @@ public interface IConstants {
     String ANSWERS_DIR_NAME = "answers";
     String SOLUTIONS_DIR_NAME = "solutions";
     String MANIFEST_DIR_NAME = "manifests";
-    char WAITING = 'W',
-         DOWNLOADED = 'D',
-         CAPTURED = 'C',
-         UNMARKED = 'U',
-         MARKED = 'M', 
-         SAVED = 'V', 
-         SENT = 'S';
+    
+    short WAITING = 0,
+          DOWNLOADED = 1,
+          CAPTURED = 2,
+          SENT = 3,
+          RECEIVED = 4,
+          GRADED = 5,
+          UNMARKED = 6,
+          MARKED = 7, 
+          SAVED = 8;
     
 }

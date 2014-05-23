@@ -1,26 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?><RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/rlFlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        
-    <!--ImageView
-        android:id="@+id/ivPreview"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:adjustViewBounds="true"
-        android:scaleType="fitCenter"
-        android:contentDescription="@string/title_activity_preview"/-->
-    
-    <ImageView
-        android:id="@+id/ivPreview"
+
+    <ScrollView
+        android:id="@+id/svPreview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:adjustViewBounds="false"
-        android:scaleType="center"
-        android:contentDescription="@string/title_activity_preview"/>
+        android:layout_height="wrap_content">
+	    <ImageView
+	        android:id="@+id/ivPreview"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:adjustViewBounds="true"
+	        android:contentDescription="@string/title_activity_preview"/>        
+    </ScrollView>
     
     <TextView
         android:id="@+id/tvPreview"
@@ -29,8 +22,9 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="20dp"
         android:gravity="center"
         android:textSize="20sp"/>
-            
+    
+    
 </RelativeLayout>

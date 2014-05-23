@@ -1,9 +1,8 @@
 package com.gradians.collect;
 
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Paint;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -14,15 +13,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 
 public class FlowFragment extends Fragment implements IConstants {
     
     public static final FlowFragment newInstance(Question question) {
         Bundle bundle = new Bundle(3);
-        bundle.putString(IConstants.NAME_KEY, question.getName());
-        bundle.putString(IConstants.GR_ID_KEY, question.getGRId());
-        bundle.putString(IConstants.GR_PATH_KEY, question.getImgLocn());
+        bundle.putString(GR_PATH_KEY, question.getState() > DOWNLOADED ?
+                question.getScanLocn() : question.getImgLocn());
+        bundle.putString(NAME_KEY, question.getName());        
+        bundle.putString(GR_ID_KEY, question.getGRId());
         FlowFragment pf = new FlowFragment();
         pf.setArguments(bundle);
         return pf;
@@ -32,46 +33,42 @@ public class FlowFragment extends Fragment implements IConstants {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
         Bundle bundle = this.getArguments();
-        String name = bundle.getString(IConstants.NAME_KEY);
-        String id = bundle.getString(IConstants.GR_ID_KEY);
-        String path = bundle.getString(IConstants.GR_PATH_KEY);
+        String path = bundle.getString(GR_PATH_KEY);
+        String name = bundle.getString(NAME_KEY);
+        String id = bundle.getString(GR_ID_KEY);
 
         ViewGroup rootView = (ViewGroup) inflater.inflate(
                 R.layout.fragment_flow, container, false);
         
-        ImageView iv = (ImageView)rootView.findViewById(R.id.ivPreview);
-        Uri image = Uri.parse(path);
-        Bitmap bmap = BitmapFactory.decodeFile(image.getPath());
-        float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
-        //iv.setImageURI(image);
-        DisplayMetrics dmetrics = this.getActivity().getApplicationContext().
-                getResources().getDisplayMetrics();
-        bmap = Bitmap.createScaledBitmap(bmap, 
-                (int)(dmetrics.widthPixels),
-                (int)(dmetrics.widthPixels/bmapAspectRatio), false);
-        iv.setImageBitmap(bmap);
+        ImageView ivPreview = (ImageView)rootView.findViewById(R.id.ivPreview);
+        String imagePath = path;
+
+        int orientation = this.getActivity().getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+            ivPreview.setScaleType(ScaleType.CENTER_INSIDE);
+        } else {
+            ivPreview.setScaleType(ScaleType.FIT_CENTER);
+        }
+        setImage(ivPreview, imagePath);
         
         TextView tv = (TextView)rootView.findViewById(R.id.tvPreview);
         tv.setText(name);
         tv.setTag(id);
         
         return rootView;
-    }        
-    
-    public void delete() {
-        TextView tv = (TextView)this.getView().findViewById(R.id.tvPreview);
-        tv.setTag(R.id.preview_state, DELETE);
-        tv.setPaintFlags(tv.getPaintFlags()|Paint.STRIKE_THRU_TEXT_FLAG);
-    }
-
-    public void undelete() {
-        TextView tv = (TextView)this.getView().findViewById(R.id.tvPreview);
-        tv.setTag(R.id.preview_state, KEEP);
-        tv.setPaintFlags(REGULAR_TEXT);
     }
     
-    private final String KEEP = "K", DELETE = "D";
-    private final int REGULAR_TEXT = 257;
+    private void setImage(ImageView iv, String path) {
+        Bitmap bmap = BitmapFactory.decodeFile(path);
+        float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
+        DisplayMetrics dmetrics = this.getActivity().getApplicationContext().
+                getResources().getDisplayMetrics();
+        bmap = Bitmap.createScaledBitmap(bmap, 
+                (int)(dmetrics.widthPixels),
+                (int)(dmetrics.widthPixels/bmapAspectRatio), false);
+        iv.setImageBitmap(bmap);
+    }
+    
 }
 
 class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
@@ -81,14 +78,14 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
         this.questions = questions;
     }
     
-    public void markChanged(String id) {
-        this.lastChangedId = id;
+    public void update(Question question) {
+        this.lastChangedId = question.getGRId();
         this.notifyDataSetChanged();
     }
     
      @Override
     public int getItemPosition(Object object) {
-         FlowFragment fragment = (FlowFragment) object;
+         FlowFragment fragment = (FlowFragment)object;
          String id = fragment.getArguments().getString(GR_ID_KEY);
          return id.equals(lastChangedId) ? 
                  POSITION_NONE : POSITION_UNCHANGED;
@@ -101,11 +98,10 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
 
     @Override
     public Fragment getItem(int position) {
-        Question question = questions[position];
-        return FlowFragment.newInstance(question);
+        return FlowFragment.newInstance(questions[position]);
     }
     
     private String lastChangedId;
-    private int dirty = -1;
     private Question[] questions;
+    
 }

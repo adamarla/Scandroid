@@ -2,8 +2,8 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
-
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.ProgressDialog;
@@ -17,7 +17,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -84,9 +83,9 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                 try {
                     String[] name_state_ids = data.getStringArrayExtra(TAG);
                     for (String name_state_id : name_state_ids) {
-                        char state; String id;
+                        short state; String id;
                         String[] tokens = name_state_id.split("-");
-                        state = tokens[1].charAt(0);
+                        state = Short.parseShort(tokens[1]);
                         id = tokens[2];
                         manifest.update(id, state);
                     }
@@ -154,31 +153,80 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
     }
        
     private void triggerDownloads() {        
+        dm = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
+        context.registerReceiver(downloadCompleteReceiver, downloadCompleteIntentFilter);        
+        ArrayList<String[]> tbd = new ArrayList<String[]>();
+        
         for (int j = 0; j < manifest.getGroupCount(); j++) {
             Quiz quiz = (Quiz)manifest.getGroup(j);
             Question[] questions = quiz.getQuestions();
             for (Question question : questions) {
+                String[] srcDest = new String[2];
+                File image = null;
                 if (question != null) {
-                    String id = question.getGRId();
-                    if (!(new File(questionsDir, id)).exists()) {
-                        downloadQuestion(question);
-                    } else if (question.getState() == WAITING) {
-                        manifest.update(id, DOWNLOADED);
+                    switch (question.getState()) {
+                    case GRADED:
+                    case RECEIVED:
+                        image = new File(solutionsDir, question.getGRId()); 
+                        if (!image.exists()) {
+                            srcDest[0] = String.format(URL, BANK_HOST_PORT, "vault", 
+                                    question.getImgLocn() + "/pg-1.jpg");
+                            srcDest[1] = image.getPath();
+                            tbd.add(srcDest);
+                        }
+                    case SENT:
+                        image = new File(answersDir, question.getGRId());
+                        if (!image.exists()) {
+                            srcDest[0] = String.format(URL, BANK_HOST_PORT, "locker", 
+                                    question.getScanLocn());
+                            srcDest[1] = image.getPath();
+                            tbd.add(srcDest);
+                        }
+                        break;
+                    case CAPTURED:
+                        image = new File(answersDir, question.getGRId());
+                        if (!image.exists()) {
+                            question.setState(DOWNLOADED);
+                        }
+                    case DOWNLOADED:
+                    case WAITING:
+                        image = new File(questionsDir, question.getGRId());
+                        if (!image.exists()) {
+                            srcDest[0] = String.format(URL, BANK_HOST_PORT, "vault", 
+                                    question.getImgLocn() + "/notrim.jpg");
+                            srcDest[1] = image.getPath();
+                            tbd.add(srcDest);
+                        }                        
+                        if (question.getState() == WAITING) {
+                            question.setState(DOWNLOADED);
+                        }
                     }
                 }
             }
         }
+        
+        if (tbd.size() > 0) {
+            peedee = new ProgressDialog(this);
+            peedee.setTitle("Synchronizing files");
+            peedee.setMessage("this may take a minute...");
+            peedee.setIndeterminate(false);
+            peedee.setMax(tbd.size());
+            peedee.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            peedee.show();
+            for (String[] srcDest : tbd) {
+                download(srcDest[0], srcDest[1]);
+            }
+        }
     }
     
-    private void downloadQuestion(Question question) {
-        DownloadManager.Request request;
-        String url = String.format(URL, BANK_HOST_PORT, question.getImgLocn());
-        request = new DownloadManager.Request(Uri.parse(url));
+    private boolean download(String url, String dest) {
+        Uri uri = Uri.fromFile(new File(dest)); 
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
         request.setVisibleInDownloadsUi(false);
-        request.setTitle(question.getName());
-        request.setDestinationUri(Uri.fromFile(new File(questionsDir, question.getGRId())));
-        long id = dm.enqueue(request);
-        requestIds.add(String.valueOf(id));
+        request.setTitle(uri.getLastPathSegment());
+        request.setDestinationUri(uri);
+        requestIds.add(String.valueOf(dm.enqueue(request)));
+        return true;
     }
     
     private final BroadcastReceiver downloadCompleteReceiver = new BroadcastReceiver() {
@@ -202,18 +250,20 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
             }            
             
             int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-            int uri_index = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
             if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(statusIndex)) {
-                requestIds.remove(String.valueOf(id));
-                onDownloadComplete(Uri.parse(cursor.getString(uri_index)).getLastPathSegment());
+                onDownloadComplete(id);
             }
         }
     };
         
-    private void onDownloadComplete(String id) {
-        manifest.update(id, DOWNLOADED);
-        if (peedee != null && requestIds.size() == 0) {
-            peedee.dismiss();
+    private void onDownloadComplete(long requestId) {        
+        requestIds.remove(String.valueOf(requestId));
+        if (peedee != null) {
+            if (requestIds.size() == 0) {
+                peedee.dismiss();
+            } else {
+                peedee.setProgress(peedee.getMax() - requestIds.size());
+            }
         }
     }
     
@@ -254,7 +304,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
 
     private void setManifest(Manifest manifest) {
         setTitle(String.format("Hi %s", manifest.getName()));
-        studentDir = new File(this.getExternalFilesDir(null), manifest.getName());
         ExpandableListView elv = (ExpandableListView)this.findViewById(R.id.elvQuiz);
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
@@ -263,8 +312,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         }
         
         mkdirs(manifest.getEmail());
-        dm = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
-        context.registerReceiver(downloadCompleteReceiver, downloadCompleteIntentFilter);
         triggerDownloads();
     }
 
@@ -309,7 +356,7 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
     private final HashSet<String> requestIds = new HashSet<String>();
     private final IntentFilter downloadCompleteIntentFilter = 
             new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);       
-    private final String URL = "http://%s/vault/%s/notrim.jpg";
+    private final String URL = "http://%s/%s/%s";
         public final int AUTH_ACTIVITY_REQUEST_CODE = 100;
 
 }

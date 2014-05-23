@@ -1,5 +1,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rlFlowActivity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".FlowActivity" >
@@ -21,7 +22,7 @@
                 android:id="@+id/hsvFullPreview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-                <ImageView
+                <com.gradians.collect.FdbkView
                     android:id="@+id/ivFullPreview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -33,42 +34,85 @@
     </ViewSwitcher>
     
     <ImageButton
-        android:id="@+id/btnZoom"
+        android:id="@+id/btnMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
         android:gravity="center"
         android:contentDescription="@string/zoom_button"
-        android:onClick="adjustZoom"
-        android:src="@android:drawable/ic_menu_zoom" />
-            
+        android:onClick="toggleMode"
+        android:src="@android:drawable/ic_menu_more" />
+
     <ImageButton
-        android:id="@+id/btnAction1"
-        android:layout_alignLeft="@id/btnZoom"
-        android:layout_below="@id/btnZoom"
+        android:id="@+id/btnZoom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/btnMode"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:visibility="invisible"
+        android:contentDescription="@string/zoom_button"
+        android:onClick="toggleView"
+        android:src="@android:drawable/ic_menu_zoom" />                                           
+            
+    <ImageButton
+        android:id="@+id/btnAlternate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnZoom"
+        android:layout_alignParentRight="true"
+        android:visibility="invisible"
+        android:gravity="center"
+        android:contentDescription="@string/zoom_button"
+        android:onClick="toggleView"
+        android:src="@android:drawable/ic_menu_revert" />
+    
+    <ImageButton
+        android:id="@+id/btnInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnAlternate"
+        android:layout_alignParentRight="true"
+        android:visibility="invisible"
+        android:gravity="center"
+        android:contentDescription="@string/zoom_button"
+        android:onClick="toggleComments"
+        android:src="@android:drawable/ic_menu_info_details" />
+    
+    <ImageButton
+        android:id="@+id/btnAction1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
         android:gravity="center"
         android:contentDescription="@string/action_button"
         android:onClick="takeAction1" />
     
     <ImageButton
         android:id="@+id/btnAction2"
-        android:layout_alignLeft="@id/btnZoom"
-        android:layout_below="@id/btnAction1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/btnAction1"
+        android:layout_alignParentBottom="true"
         android:gravity="center"
+        android:visibility="invisible"
         android:contentDescription="@string/action_button"
         android:onClick="takeAction2" />
     
-    <WebView 
-        android:id="@+id/wvFeedback"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"
+    <!--ImageView
+        android:id="@+id/ivPoI"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:background="@drawable/point_of_interest"
+        android:contentDescription="@string/action_button"/-->
+            
+    <android.support.v4.view.ViewPager
+        android:id="@+id/vpFeedback"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true"
+        android:background="#88676767"/>
         
 </RelativeLayout>

@@ -85,7 +85,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             if (row[i] != null) {
                 tv.setText(row[i].getName());
                 tv.setTag(row[i].getGRId());
-                char state = row[i].getState();
+                short state = row[i].getState();
                 switch(state) {
                 case WAITING:
                     tv.setOnClickListener(listener);
@@ -99,17 +99,17 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                     tv.setOnClickListener(listener);
                     tv.setBackgroundResource(R.drawable.saved);
                     break;
-                case MARKED:
+                case SENT:
+                    tv.setOnClickListener(listener);
+                    tv.setBackgroundResource(R.drawable.sent);
+                case RECEIVED:
                     tv.setOnClickListener(listener);
                     tv.setBackgroundResource(R.drawable.selected);
                     break;
-                case UNMARKED:
+                case GRADED:
                     tv.setOnClickListener(listener);
                     tv.setBackgroundResource(R.drawable.unselected);
                     break;
-                case SENT:
-                    tv.setClickable(false);
-                    tv.setBackgroundResource(R.drawable.sent);
                 }
             } else {
                 tv.setText("");
@@ -168,50 +168,50 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return false;
     }
     
-    public void update(String id, char state) {
+    public void update(String id, short state) {
         Question q = this.findQuestionById(id);
         if (q.getState() != state) {
             q.setState(state);
             String stateLoc = stateLocation.getProperty(id);
-            stateLocation.setProperty(id, stateLoc.replace(stateLoc.charAt(0), state));
+            stateLocation.setProperty(id, (String.valueOf(state) + stateLoc.substring(1)));
             this.notifyDataSetChanged();            
         }
     }       
     
     public void checkUncheck(String tag) {
-        String stateLocString = stateLocation.getProperty(tag);
-        char status = stateLocString.charAt(0);
+        String stateLoc = stateLocation.getProperty(tag);
+        char status = stateLoc.charAt(0);
         switch (status) {
         case UNMARKED:
-            stateLocation.setProperty(tag, stateLocString.replace(UNMARKED, MARKED));
+            stateLocation.setProperty(tag, (String.valueOf(MARKED) + stateLoc.substring(1)));
             break;
         case MARKED:
-            stateLocation.setProperty(tag, stateLocString.replace(MARKED, UNMARKED));
+            stateLocation.setProperty(tag, (String.valueOf(UNMARKED) + stateLoc.substring(1)));
             break;
         case SAVED:// for re-takes
-            stateLocation.setProperty(tag, stateLocString.replace(SAVED, UNMARKED));
+            stateLocation.setProperty(tag, (String.valueOf(SAVED) + stateLoc.substring(1)));
         }
         this.notifyDataSetChanged();
     }
     
     public Question[] getSaved() {
-        return this.questionsWithStatus(SAVED);
+        return this.questionsWithStatus('S');
     }    
     
     public Question[] getSelected() {
-        return this.questionsWithStatus(MARKED);
+        return this.questionsWithStatus('M');
     }
     
     public void clearSelected() {
-        this.changeStatus(MARKED, UNMARKED);
+        this.changeStatus((short)'M', (short)'U');
     }    
     
     public void saveSelected() {
-        this.changeStatus(MARKED, SAVED);
+        this.changeStatus((short)'M', (short)'S');
     }
     
     public void sendSaved() {
-        this.changeStatus(SAVED, SENT);
+        this.changeStatus((short)'S', (short)'S');
     }
     
     public void commit() throws Exception {
@@ -242,7 +242,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         return selected.toArray(new Question[selected.size()]);
     }
     
-    private void changeStatus(char from, char to) {
+    private void changeStatus(short from, short to) {
         String key = null, stateLocString = null;
         Enumeration<Object> keys = stateLocation.keys();
         while (keys.hasMoreElements()) {
@@ -250,7 +250,7 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
             stateLocString = stateLocation.getProperty(key);
             if (stateLocString.charAt(0) == from) {
                 Question q = findQuestionById(key);
-                stateLocation.put(key, stateLocString.replace(from, to));
+                stateLocation.put(key, stateLocString.replace((char)from, (char)to));
                 q.setState(to);
             }
         }
@@ -289,21 +289,30 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
                         (String)item.get(QUIZ_PATH_KEY), quizId);
                 padding = i%ITEMS_PER_ROW;
             }
-            
             Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
                     String.valueOf((Long)item.get(GR_ID_KEY)), (String)item.get(GR_PATH_KEY));
+            String scan = (String)item.get("scan");
+            double marks = (Double)item.get("marks");
+            if (scan == null) {
+                lastStateLoc = lastStateLocation.getProperty(question.getGRId());
+                question.setState(lastStateLoc == null ? WAITING : 
+                    Short.parseShort(lastStateLoc.substring(0, 1)));
+            } else {
+                question.setScanLocn(scan);
+                question.setState(marks < 0 ? RECEIVED : GRADED);
+            }
+            
             position = (i-padding)%ITEMS_PER_ROW; 
             if (position == 0) {
                 row = new Question[ITEMS_PER_ROW];
                 quiz.add(row);
-            }
+            }                        
+            row[position] = question;
             
-            lastStateLoc = lastStateLocation.getProperty(question.getGRId());
-            question.setState(lastStateLoc == null ? WAITING : lastStateLoc.charAt(0));
             stateLoc = String.format("%s,%s,%s,%s",
                     question.getState(), quizzes.size(), quiz.size()-1, position);
             stateLocation.put(question.getGRId(), stateLoc);
-            row[position] = question;
+            
         }
         if (quiz != null) quizzes.add(quiz);
     }
@@ -379,11 +388,15 @@ class Question {
         return imgLocn;
     }
     
+    public String getScanLocn() {
+        return scanLocn;
+    }
+    
     public String getName() {
         return name;
     }
     
-    public char getState() {
+    public short getState() {
         return state;
     }
     
@@ -395,7 +408,11 @@ class Question {
         this.imgLocn = imgLocn;
     }
     
-    public void setState(char state) {
+    public void setScanLocn(String scanLocn) {
+        this.scanLocn = scanLocn;
+    }
+    
+    public void setState(short state) {
         this.state = state;
     }
     
@@ -404,6 +421,6 @@ class Question {
         return name;
     }
     
-    private String name, GRId, imgLocn;
-    private char state;
+    private String name, GRId, imgLocn, scanLocn;
+    private short state;
 }
