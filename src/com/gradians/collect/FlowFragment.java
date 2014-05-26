@@ -8,7 +8,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,7 +57,6 @@ public class FlowFragment extends Fragment implements IConstants {
     }
     
     private void setImage(ImageView iv, String path) {
-        Log.d("fragment.setImage() --> ", path);
         Bitmap bmap = BitmapFactory.decodeFile(path);
         float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
         DisplayMetrics dmetrics = this.getActivity().getApplicationContext().

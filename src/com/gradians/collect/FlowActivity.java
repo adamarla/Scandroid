@@ -45,9 +45,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     @Override 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_flow);
+        setContentView(R.layout.activity_flow); 
         
-        String[] name_state_ids = this.getIntent().getStringArrayExtra(TAG_ID);
+        String[] name_state_ids = savedInstanceState == null ? 
+                getIntent().getStringArrayExtra(TAG_ID) :
+                savedInstanceState.getStringArray(TAG_ID);
+                
         studentDir = new File(this.getIntent().getStringExtra(TAG));
         feedback = new Feedback[name_state_ids.length];
         questions = toQuestions(name_state_ids);
@@ -57,7 +60,13 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpPreview.setAdapter(adapter);
         vpPreview.setOnPageChangeListener(this);
         
-        slideshow = true;
+        resumeSlideshow();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putStringArray(TAG_ID, toNameStateIds(questions));
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -119,12 +128,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     @Override
     public void onPageScrolled(int arg0, float arg1, int arg2) { }
     @Override
-    public void onPageSelected(int position) {        
+    public void onPageSelected(int position) {
         if (slideshow) {
-            short state = questions[position].getState();
             ImageButton btnAction1 = (ImageButton)this.findViewById(R.id.btnAction1);
-            ImageButton btnAction2 = (ImageButton)this.findViewById(R.id.btnAction2);            
-            switch (state) {
+            ImageButton btnAction2 = (ImageButton)this.findViewById(R.id.btnAction2);
+            switch (questions[position].getState()) {
             case WAITING:
                 btnAction1.setVisibility(View.INVISIBLE);
                 btnAction2.setVisibility(View.INVISIBLE);
@@ -152,7 +160,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                         Log.e(TAG, e.getMessage());
                     }
                 }
-            }        
+            }
         } else {
             FdbkView ivFdbk = (FdbkView)this.findViewById(R.id.ivFullPreview);
             ivFdbk.setIndex(position);
@@ -290,6 +298,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     
     private void resumeSlideshow() {
         slideshow = true;
+        ((ImageButton)this.findViewById(R.id.btnMode)).setImageResource(android.R.drawable.ic_menu_gallery);
         this.findViewById(R.id.btnZoom).setVisibility(View.INVISIBLE);
         this.findViewById(R.id.btnAlternate).setVisibility(View.INVISIBLE);
         this.findViewById(R.id.vpFeedback).setVisibility(View.INVISIBLE);
@@ -297,16 +306,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
 
     private void suspendSlideshow() {
-        slideshow = false;
-        int currentIndex = vpPreview.getCurrentItem();
-        Question q = questions[currentIndex];
-        
-        int state = q.getState();
+        slideshow = false;        
+        ((ImageButton)this.findViewById(R.id.btnMode)).setImageResource(android.R.drawable.ic_menu_slideshow);
         this.findViewById(R.id.btnAction1).setVisibility(View.INVISIBLE);
-        this.findViewById(R.id.btnAction2).setVisibility(View.INVISIBLE);
-        
-        this.findViewById(R.id.btnZoom).setVisibility(View.VISIBLE);
+        this.findViewById(R.id.btnAction2).setVisibility(View.INVISIBLE);        
+        this.findViewById(R.id.btnZoom).setVisibility(View.VISIBLE);        
         String img = null;
+        int currentIndex = vpPreview.getCurrentItem();
+        Question q = questions[currentIndex];        
+        int state = q.getState();
         if (state > DOWNLOADED) {
             this.findViewById(R.id.btnAlternate).setVisibility(View.VISIBLE);
             if (state == GRADED) {
@@ -330,9 +338,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     private Feedback loadFeedback(int position) throws Exception {
         Question question = questions[position];
-        File feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME); 
-        BufferedReader br = new BufferedReader(
-            new FileReader(new File(feedbackDir, question.getGRId())));        
+        File feedback = new File(feedbackDir, question.getGRId());
+        if (!feedback.exists()) return null;
+        
+        BufferedReader br = new BufferedReader(new FileReader(feedback));        
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject = (JSONObject)jsonParser.parse(br.readLine());
         JSONArray comments = (JSONArray)respObject.get("comments");
@@ -380,10 +389,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private Question[] toQuestions(String[] name_state_ids) {
         DownloadMonitor dlm = new DownloadMonitor(this);
         
-        File questionsDir = new File(studentDir, QUESTIONS_DIR_NAME);
-        File answersDir = new File(studentDir, ANSWERS_DIR_NAME);
-        File solutionsDir = new File(studentDir, SOLUTIONS_DIR_NAME);
-        File feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME);
+        questionsDir = new File(studentDir, QUESTIONS_DIR_NAME);
+        answersDir = new File(studentDir, ANSWERS_DIR_NAME);
+        solutionsDir = new File(studentDir, SOLUTIONS_DIR_NAME);
+        feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME);
                 
         Question[] questions = new Question[name_state_ids.length];
         String name, id, imgLocn = null, scanLocn = null; short state;
@@ -410,13 +419,13 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             case RECEIVED:
             case GRADED:
                 imgLocn = (new File(solutionsDir, id)).getPath();
-                scanLocn = (new File(answersDir, id)).getPath();                
+                scanLocn = (new File(answersDir, id)).getPath();
                 if (!(new File(feedbackDir, id)).exists())
                     dlm.add(Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, id)), 
                         Uri.fromFile(new File(feedbackDir, id)));
                 break;
             default:
-            }            
+            }
             questions[i] = new Question(name, id, imgLocn);
             questions[i].setState(state);
             questions[i].setScanLocn(scanLocn);
@@ -437,7 +446,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     private Question[] questions;
     private Feedback[] feedback;
-    private File studentDir;
+    private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir;
     private ViewPager vpPreview, vpFdbk ;
     private FlowAdapter adapter;
     private FeedbackAdapter fdbkAdapter;

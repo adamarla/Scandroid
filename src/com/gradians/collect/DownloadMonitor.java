@@ -12,7 +12,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
 
 public class DownloadMonitor extends BroadcastReceiver {
     
@@ -26,7 +25,6 @@ public class DownloadMonitor extends BroadcastReceiver {
     }
     
     public void start(String title, String message) {
-        Log.d("gradians", "DownloadMonitor.start() --> " + srcDest.size());
         if (srcDest.size() == 0) return;
         
         activity.registerReceiver(this, downloadCompleteIntentFilter);

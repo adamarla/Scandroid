@@ -16,7 +16,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ExpandableListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 public class SummaryActivity extends Activity implements IConstants, ITaskResult, OnClickListener {
@@ -145,7 +144,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
     }
        
     private void triggerDownloads() {
-        Log.d(TAG, "triggerDownloads() -->");
         DownloadMonitor dlm = new DownloadMonitor(this);        
         for (int j = 0; j < manifest.getGroupCount(); j++) {
             Quiz quiz = (Quiz)manifest.getGroup(j);
