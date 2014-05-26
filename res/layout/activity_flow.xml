@@ -8,7 +8,9 @@
     <ViewSwitcher 
         android:id="@+id/vsPreview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:inAnimation="@android:anim/slide_in_left"
+        android:outAnimation="@android:anim/slide_out_right">
         <android.support.v4.view.ViewPager 
             android:id="@+id/vpPreview"
             android:layout_width="match_parent"
@@ -40,9 +42,10 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:gravity="center"
+        android:alpha="0.4"
         android:contentDescription="@string/zoom_button"
         android:onClick="toggleMode"
-        android:src="@android:drawable/ic_menu_more" />
+        android:src="@android:drawable/ic_menu_gallery" />
 
     <ImageButton
         android:id="@+id/btnZoom"
@@ -51,6 +54,7 @@
         android:layout_below="@id/btnMode"
         android:layout_alignParentRight="true"
         android:gravity="center"
+        android:alpha="0.4"
         android:visibility="invisible"
         android:contentDescription="@string/zoom_button"
         android:onClick="toggleView"
@@ -64,21 +68,10 @@
         android:layout_alignParentRight="true"
         android:visibility="invisible"
         android:gravity="center"
+        android:alpha="0.4"
         android:contentDescription="@string/zoom_button"
         android:onClick="toggleView"
         android:src="@android:drawable/ic_menu_revert" />
-    
-    <ImageButton
-        android:id="@+id/btnInfo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btnAlternate"
-        android:layout_alignParentRight="true"
-        android:visibility="invisible"
-        android:gravity="center"
-        android:contentDescription="@string/zoom_button"
-        android:onClick="toggleComments"
-        android:src="@android:drawable/ic_menu_info_details" />
     
     <ImageButton
         android:id="@+id/btnAction1"
@@ -101,18 +94,12 @@
         android:contentDescription="@string/action_button"
         android:onClick="takeAction2" />
     
-    <!--ImageView
-        android:id="@+id/ivPoI"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/point_of_interest"
-        android:contentDescription="@string/action_button"/-->
-            
     <android.support.v4.view.ViewPager
         android:id="@+id/vpFeedback"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_alignParentBottom="true"
+        android:layout_marginBottom="10dp"
         android:background="#88676767"/>
         
 </RelativeLayout>

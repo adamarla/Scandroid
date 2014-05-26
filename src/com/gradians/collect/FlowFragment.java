@@ -41,7 +41,6 @@ public class FlowFragment extends Fragment implements IConstants {
                 R.layout.fragment_flow, container, false);
         
         ImageView ivPreview = (ImageView)rootView.findViewById(R.id.ivPreview);
-        String imagePath = path;
 
         int orientation = this.getActivity().getResources().getConfiguration().orientation;
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -49,7 +48,7 @@ public class FlowFragment extends Fragment implements IConstants {
         } else {
             ivPreview.setScaleType(ScaleType.FIT_CENTER);
         }
-        setImage(ivPreview, imagePath);
+        setImage(ivPreview, path);
         
         TextView tv = (TextView)rootView.findViewById(R.id.tvPreview);
         tv.setText(name);
@@ -59,6 +58,7 @@ public class FlowFragment extends Fragment implements IConstants {
     }
     
     private void setImage(ImageView iv, String path) {
+        Log.d("fragment.setImage() --> ", path);
         Bitmap bmap = BitmapFactory.decodeFile(path);
         float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
         DisplayMetrics dmetrics = this.getActivity().getApplicationContext().

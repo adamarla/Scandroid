@@ -2,18 +2,13 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
+
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -38,11 +33,7 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         super.onPause();
         if (manifest != null) 
             try {
-                requestIds.clear();
                 manifest.commit();
-                context.unregisterReceiver(downloadCompleteReceiver);
-            } catch (IllegalArgumentException iae) { 
-                // In case the receiver is not registered                
             } catch (Exception e) {
                 handleError("Oops.. persist file thing failed", e.getMessage());
             }
@@ -64,7 +55,8 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    manifest = new Manifest(context, data.getStringExtra(TAG), this);
+                    manifest = new Manifest(context, 
+                            data.getStringExtra(TAG), this);
                     setPreferences(manifest);
                     setManifest(manifest);
                 } catch (Exception e) {
@@ -103,7 +95,7 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
     
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
         if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
-            peedee.dismiss();
+            if (peedee != null) peedee.dismiss();
             if (resultCode == RESULT_OK) {  
                 try {
                     manifest = new Manifest(context, resultData, this);
@@ -134,34 +126,32 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                 }
             }
         } else {
-            String tag = (String)((TextView)view).getTag();
-            launchFlowActivity(tag);
+            launchFlowActivity();
         }
     }
     
-    private void launchFlowActivity(String tag) {
+    private void launchFlowActivity() {
         Quiz quiz = (Quiz)manifest.getGroup(openGroupPosn);
         Question[] questions = quiz.getQuestions();
         String[] name_state_ids = new String[questions.length];
         for (int i = 0; i < questions.length; i++) {
             name_state_ids[i] = questions[i].getNameStateId();
         }
-        Intent flowIntent = new Intent(context, com.gradians.collect.FlowActivity.class);        
+        Intent flowIntent = new Intent(context, 
+                com.gradians.collect.FlowActivity.class);        
         flowIntent.putExtra(TAG_ID, name_state_ids);
         flowIntent.putExtra(TAG, this.studentDir.getPath());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
        
-    private void triggerDownloads() {        
-        dm = (DownloadManager)getSystemService(Context.DOWNLOAD_SERVICE);
-        context.registerReceiver(downloadCompleteReceiver, downloadCompleteIntentFilter);        
-        ArrayList<String[]> tbd = new ArrayList<String[]>();
-        
+    private void triggerDownloads() {
+        Log.d(TAG, "triggerDownloads() -->");
+        DownloadMonitor dlm = new DownloadMonitor(this);        
         for (int j = 0; j < manifest.getGroupCount(); j++) {
             Quiz quiz = (Quiz)manifest.getGroup(j);
             Question[] questions = quiz.getQuestions();
             for (Question question : questions) {
-                String[] srcDest = new String[2];
+                Uri src, dest;
                 File image = null;
                 if (question != null) {
                     switch (question.getState()) {
@@ -169,18 +159,18 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                     case RECEIVED:
                         image = new File(solutionsDir, question.getGRId()); 
                         if (!image.exists()) {
-                            srcDest[0] = String.format(URL, BANK_HOST_PORT, "vault", 
-                                    question.getImgLocn() + "/pg-1.jpg");
-                            srcDest[1] = image.getPath();
-                            tbd.add(srcDest);
+                            src = Uri.parse(String.format(URL, BANK_HOST_PORT, "vault", 
+                                    question.getImgLocn() + "/pg-1.jpg"));
+                            dest = Uri.fromFile(image);
+                            dlm.add(src, dest);
                         }
                     case SENT:
                         image = new File(answersDir, question.getGRId());
                         if (!image.exists()) {
-                            srcDest[0] = String.format(URL, BANK_HOST_PORT, "locker", 
-                                    question.getScanLocn());
-                            srcDest[1] = image.getPath();
-                            tbd.add(srcDest);
+                            src = Uri.parse(String.format(URL, BANK_HOST_PORT, "locker", 
+                                    question.getScanLocn()));
+                            dest = Uri.fromFile(image);
+                            dlm.add(src, dest);
                         }
                         break;
                     case CAPTURED:
@@ -192,11 +182,11 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                     case WAITING:
                         image = new File(questionsDir, question.getGRId());
                         if (!image.exists()) {
-                            srcDest[0] = String.format(URL, BANK_HOST_PORT, "vault", 
-                                    question.getImgLocn() + "/notrim.jpg");
-                            srcDest[1] = image.getPath();
-                            tbd.add(srcDest);
-                        }                        
+                            src = Uri.parse(String.format(URL, BANK_HOST_PORT, "vault", 
+                                    question.getImgLocn() + "/notrim.jpg"));
+                            dest = Uri.fromFile(image);
+                            dlm.add(src, dest);
+                        }
                         if (question.getState() == WAITING) {
                             question.setState(DOWNLOADED);
                         }
@@ -204,89 +194,28 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
                 }
             }
         }
-        
-        if (tbd.size() > 0) {
-            peedee = new ProgressDialog(this);
-            peedee.setTitle("Synchronizing files");
-            peedee.setMessage("this may take a minute...");
-            peedee.setIndeterminate(false);
-            peedee.setMax(tbd.size());
-            peedee.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            peedee.show();
-            for (String[] srcDest : tbd) {
-                download(srcDest[0], srcDest[1]);
-            }
-        }
+        dlm.start("Synchronizing Files", "Please wait...");
     }
-    
-    private boolean download(String url, String dest) {
-        Uri uri = Uri.fromFile(new File(dest)); 
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-        request.setVisibleInDownloadsUi(false);
-        request.setTitle(uri.getLastPathSegment());
-        request.setDestinationUri(uri);
-        requestIds.add(String.valueOf(dm.enqueue(request)));
-        return true;
-    }
-    
-    private final BroadcastReceiver downloadCompleteReceiver = new BroadcastReceiver() {
         
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0L);
-            if (!requestIds.contains(String.valueOf(id))) {
-                return;
-            }
-            
-            DownloadManager dm = (DownloadManager)
-                    context.getSystemService(Context.DOWNLOAD_SERVICE);
-            DownloadManager.Query query = new DownloadManager.Query();
-            query.setFilterById(id);
-            Cursor cursor = dm.query(query);
-
-            // it shouldn't be empty, but just in case
-            if (!cursor.moveToFirst()) {
-                return;
-            }            
-            
-            int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-            if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(statusIndex)) {
-                onDownloadComplete(id);
-            }
-        }
-    };
-        
-    private void onDownloadComplete(long requestId) {        
-        requestIds.remove(String.valueOf(requestId));
-        if (peedee != null) {
-            if (requestIds.size() == 0) {
-                peedee.dismiss();
-            } else {
-                peedee.setProgress(peedee.getMax() - requestIds.size());
-            }
-        }
-    }
-    
     private void checkAuth() {
         context = getApplicationContext();
         SharedPreferences prefs = getSharedPreferences(TAG, 
-                Context.MODE_PRIVATE);
-        
+                Context.MODE_PRIVATE);        
         String email = prefs.getString(EMAIL_KEY, null);
         String token = prefs.getString(TOKEN_KEY, null);        
         if (token == null) {
             initiateAuthActivity();
         } else {
-            peedee = ProgressDialog.show(this, "Initializing ", 
-                    "Please wait...");
-            peedee.setIndeterminate(true);
-            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
             String urlString = String.format(
                     "http://%s/tokens/verify?email=%s&token=%s",
                     WEB_APP_HOST_PORT, email, token);
             try {
+                peedee = ProgressDialog.show(this, "Initializing", 
+                        "Please wait...");
+                peedee.setIndeterminate(true);
+                peedee.setIcon(ProgressDialog.STYLE_SPINNER);        
                 URL[] urls = { new URL(urlString) };
-                new HttpCallsAsyncTask(this, 
+                new HttpCallsAsyncTask(this, this, 
                         VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
             } catch (Exception e) {
                 handleError("Auth Check Failed", e.getMessage());
@@ -308,7 +237,6 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         if (manifest.getGroupCount() > 0) {
             elv.setAdapter(manifest);
             elv.setChoiceMode(ExpandableListView.CHOICE_MODE_SINGLE);
-//            elv.expandGroup(0);
         }
         
         mkdirs(manifest.getEmail());
@@ -338,26 +266,20 @@ public class SummaryActivity extends Activity implements IConstants, ITaskResult
         (questionsDir = new File(studentDir, QUESTIONS_DIR_NAME)).mkdir();
         (answersDir = new File(studentDir, ANSWERS_DIR_NAME)).mkdir();
         (solutionsDir = new File(studentDir, SOLUTIONS_DIR_NAME)).mkdir();
+        (new File(studentDir, FEEDBACK_DIR_NAME)).mkdir();
     }
     
     private void handleError(String msg, String err) {
-        Log.d(TAG, msg + "\n" + err);
+        Log.d(TAG, msg + " " + err);
     }
     
-    private File studentDir, questionsDir, answersDir, solutionsDir;
-    
+    private File studentDir, questionsDir, answersDir, solutionsDir;    
     private int openGroupPosn = -1;
     
-    private DownloadManager dm;
     private Context context;
-    private ProgressDialog peedee;
     private Manifest manifest;
-    
-    private final HashSet<String> requestIds = new HashSet<String>();
-    private final IntentFilter downloadCompleteIntentFilter = 
-            new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);       
-    private final String URL = "http://%s/%s/%s";
-        public final int AUTH_ACTIVITY_REQUEST_CODE = 100;
+    private ProgressDialog peedee;
 
+    private final String URL = "http://%s/%s/%s";    
 }
 

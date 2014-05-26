@@ -13,7 +13,7 @@ import android.util.Log;
 
 public class HttpCallsAsyncTask extends AsyncTask<URL, Void, String> implements IConstants {
     
-    public HttpCallsAsyncTask(ITaskResult caller, int resultCode) {
+    public HttpCallsAsyncTask(Activity activity, ITaskResult caller, int resultCode) {
         this.resultCode = resultCode;
         this.caller = caller;
     }
@@ -31,10 +31,10 @@ public class HttpCallsAsyncTask extends AsyncTask<URL, Void, String> implements 
             int responseCode = conn.getResponseCode();                        
             InputStream istream = conn.getInputStream();
             BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
-            if (responseCode == HttpURLConnection.HTTP_OK) {                
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 result = ireader.readLine();
             } else {
-                Log.d(TAG, "Response Code " + responseCode);
+                Log.e(TAG, "Response Code " + responseCode);
             }
         } catch (Exception e){
             Log.e(TAG, e.getMessage());
@@ -43,8 +43,9 @@ public class HttpCallsAsyncTask extends AsyncTask<URL, Void, String> implements 
     }
 
     @Override
-    protected void onPostExecute(String result) {        
-        caller.onTaskResult(resultCode, result != null ? Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
+    protected void onPostExecute(String result) {
+        caller.onTaskResult(resultCode, result != null ? 
+                Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
     }
 
     private ITaskResult caller;
