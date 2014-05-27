@@ -21,6 +21,7 @@ public interface IConstants {
     String SOLUTIONS_DIR_NAME = "solutions";
     String MANIFEST_DIR_NAME = "manifests";
     String FEEDBACK_DIR_NAME = "feedback";
+    String UPLOAD_DIR_NAME = "upload";
     
     short WAITING = 0,
           DOWNLOADED = 1,

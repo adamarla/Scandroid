@@ -20,25 +20,21 @@ public class ImageUploadService extends IntentService implements IConstants {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        File[] images = (new File(intent.getStringExtra(TAG))).listFiles();
+        File idDir = new File(intent.getStringExtra(TAG_ID));
+        File imageDir = new File(intent.getStringExtra(TAG));
+        String[] ids = idDir.list();
 
         URL url = null;
         HttpURLConnection httpUrlConnection = null;
         OutputStream ostream = null;
         PrintWriter opstream = null;        
         String boundary =  null;
-        for (File image : images) {
+        for (String id : ids) {
             
-            String[] tokens = image.getName().split("-");
-            String ids = "";
-            for (int i = 0; i < tokens.length; i+=2) {
-                ids += (tokens[i+1] + "-");
-            }
-            ids = ids.substring(0, ids.length()-1);
             boundary = String.valueOf(System.currentTimeMillis());
             try {
                 url = new URL(String.format(URL,
-                        BANK_HOST_PORT, ids));
+                        BANK_HOST_PORT, id));
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setDoOutput(true);
 
@@ -53,15 +49,15 @@ public class ImageUploadService extends IntentService implements IConstants {
 
                 opstream.append("--" + boundary).append(CRLF);
                 opstream.append("Content-Disposition: form-data; name=\"image\"; filename=\"" + 
-                        image.getName() + "\"").append(CRLF);
+                        id + "\"").append(CRLF);
                 opstream.append("Content-Type: " + 
-                        HttpURLConnection.guessContentTypeFromName(image.getName())).append(CRLF);
+                        HttpURLConnection.guessContentTypeFromName("image.jpeg")).append(CRLF);
                 opstream.append("Content-Transfer-Encoding: binary").append(CRLF);
                 opstream.append(CRLF).flush();
                 
                 InputStream imgstream = null;
                 byte[] buffer = new byte[1024];
-                imgstream = new FileInputStream(image);
+                imgstream = new FileInputStream(new File(imageDir, id));
                 for (int length = 0; (length = imgstream.read(buffer)) > 0;) {
                     ostream.write(buffer, 0, length);
                 }
@@ -74,7 +70,7 @@ public class ImageUploadService extends IntentService implements IConstants {
                 opstream.close();
                 
                 if (httpUrlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    image.delete();
+                    (new File(idDir, id)).delete();
                 }
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());

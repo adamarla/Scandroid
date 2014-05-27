@@ -129,10 +129,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     public void onPageScrolled(int arg0, float arg1, int arg2) { }
     @Override
     public void onPageSelected(int position) {
+        short state;
         if (slideshow) {
+            state = questions[position].getState();
             ImageButton btnAction1 = (ImageButton)this.findViewById(R.id.btnAction1);
             ImageButton btnAction2 = (ImageButton)this.findViewById(R.id.btnAction2);
-            switch (questions[position].getState()) {
+            switch (state) {
             case WAITING:
                 btnAction1.setVisibility(View.INVISIBLE);
                 btnAction2.setVisibility(View.INVISIBLE);
@@ -162,10 +164,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 }
             }
         } else {
+            state = questions[vpPreview.getCurrentItem()].getState();
             FdbkView ivFdbk = (FdbkView)this.findViewById(R.id.ivFullPreview);
-            ivFdbk.setIndex(position);
-            ivFdbk.invalidate();
-        }        
+            if (state == GRADED) {
+                ivFdbk.setIndex(position);
+                ivFdbk.invalidate();
+            } else {
+                ivFdbk.setIndex(FdbkView.NO_FEEDBACK);
+            }
+        }
     }
     
     public void takeAction1(View view) {
@@ -246,27 +253,34 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     private void uploadPicture(final int position) {
         final Question q = questions[position];
-        final String path = q.getScanLocn();
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Ready to send?")
                .setMessage("This action is not reversible!");
-        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int id) {
-                       // User clicked OK button
-                       Intent uploadIntent = new Intent(getApplicationContext(),
-                               com.gradians.collect.ImageUploadService.class);
-                       uploadIntent.putExtra(TAG, path);
-                       //startService(uploadIntent);
-                       q.setState(SENT);
-                       adapter.update(q);
-                       onPageSelected(position);
-                   }
-               });
-        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                   public void onClick(DialogInterface dialog, int id) {
-                       // User cancelled the dialog
-                   }
-               });
+        builder.setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User clicked OK button
+                        Intent uploadIntent = new Intent( getApplicationContext(),
+                            com.gradians.collect.ImageUploadService.class);
+                        try {
+                            (new File(uploadsDir, q.getGRId())).createNewFile();
+                            uploadIntent.putExtra(TAG_ID, uploadsDir.getPath());
+                            uploadIntent.putExtra(TAG, answersDir.getPath());
+                            startService(uploadIntent);
+                            q.setState(SENT);
+                            adapter.update(q);
+                            onPageSelected(position);
+                        } catch (Exception e) {
+                            Log.e(TAG, e.getMessage());
+                        }
+                    }
+                });
+        builder.setNegativeButton(android.R.string.cancel,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
         AlertDialog dialog = builder.create();
         dialog.show();            
     }
@@ -306,7 +320,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
 
     private void suspendSlideshow() {
-        slideshow = false;        
+        slideshow = false;
         ((ImageButton)this.findViewById(R.id.btnMode)).setImageResource(android.R.drawable.ic_menu_slideshow);
         this.findViewById(R.id.btnAction1).setVisibility(View.INVISIBLE);
         this.findViewById(R.id.btnAction2).setVisibility(View.INVISIBLE);        
@@ -393,6 +407,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         answersDir = new File(studentDir, ANSWERS_DIR_NAME);
         solutionsDir = new File(studentDir, SOLUTIONS_DIR_NAME);
         feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME);
+        uploadsDir = new File(studentDir, UPLOAD_DIR_NAME);
                 
         Question[] questions = new Question[name_state_ids.length];
         String name, id, imgLocn = null, scanLocn = null; short state;
@@ -446,7 +461,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     private Question[] questions;
     private Feedback[] feedback;
-    private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir;
+    private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir, uploadsDir;
     private ViewPager vpPreview, vpFdbk ;
     private FlowAdapter adapter;
     private FeedbackAdapter fdbkAdapter;
@@ -496,17 +511,18 @@ class FdbkView extends ImageView {
         int w = canvas.getWidth();
         int h = canvas.getHeight();
         canvas.scale((float)w/X_FACTOR, (float)h/Y_FACTOR);
-        if (index > -1) {
-            canvas.drawRect(0, y[index], w, y[index]+5, paint);
+        if (index > NO_FEEDBACK && y.length > 0) {
+            canvas.drawRect(0, y[index], w, y[index]+5, paintY);
+            canvas.drawRect(x[index], y[index], x[index]+5, y[index]+5, paintX);
         }
     }
     
     private void init(Context context) {
-        paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setFilterBitmap(true);
-        paint.setDither(true);
-        paint.setColor(0x88676767);
+        paintY = new Paint();
+        paintY.setColor(0x88676767);
+        
+        paintX = new Paint();
+        paintX.setColor(0xCC676767);        
         
         x = new int[0];
         y = new int[0];
@@ -514,9 +530,10 @@ class FdbkView extends ImageView {
     
     private int index;
     private int[] x,y;
-    private Paint paint;
+    private Paint paintY, paintX;
     
     private final int X_FACTOR = 90, Y_FACTOR = 120;
+    public static final int NO_FEEDBACK = -1;
 }
 
 class FeedbackAdapter extends PagerAdapter {

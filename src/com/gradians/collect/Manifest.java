@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
@@ -150,10 +151,22 @@ public class Manifest extends BaseExpandableListAdapter implements IConstants {
         TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
         tv.setTag(groupPosition);
         tv.setOnClickListener(listener);
-        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)tv.getLayoutParams();
-        lp.height = parent.getWidth()/4;
-        tv.setLayoutParams(lp);
+//        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)tv.getLayoutParams();
+//        lp.height = parent.getWidth()/4;
+//        tv.setLayoutParams(lp);
         tv.setText(quiz.toString());
+        
+        LayoutParams param = null;
+        ImageView ivGraded = (ImageView)convertView.findViewById(R.id.vGraded);
+        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
+        ivGraded.setLayoutParams(param);
+        ImageView ivAttempted = (ImageView)convertView.findViewById(R.id.vAttempted);
+        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
+        ivAttempted.setLayoutParams(param);
+        ImageView ivDownloaded = (ImageView)convertView.findViewById(R.id.vDownloaded);
+        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f);
+        ivDownloaded.setLayoutParams(param);        
+        
         return convertView;
     }
 

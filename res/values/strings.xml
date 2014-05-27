@@ -17,9 +17,5 @@
     <string name="zoom_button">Zoom</string>
     <string name="title_activity_preview">Preview</string>
     <string name="hello_world">Hello world!</string>
-    <string name="title_activity_view_quiz">View Questions</string>
-    <string name="title_activity_summary">SummaryActivity</string>
-    <string name="title_activity_flow">FlowActivity</string>
-    <string name="title_activity_feedback">FeedbackActivity</string>
 
 </resources>
