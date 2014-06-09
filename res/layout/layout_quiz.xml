@@ -6,7 +6,7 @@
     android:gravity="center_vertical"
     android:descendantFocusability="blocksDescendants" >
         
-    <LinearLayout 
+    <RelativeLayout 
         android:id="@+id/llTextBtns"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
@@ -15,16 +15,43 @@
 	    <TextView
 	        android:id="@+id/tvQuiz"
 	        android:layout_height="wrap_content"
-	        android:layout_width="match_parent"
-	        android:gravity="left|center"
+	        android:layout_width="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_centerVertical="true"
 	        android:textSize="20sp"
 	        android:padding="10dp"
-	        android:layout_marginLeft="40dp" />
-	</LinearLayout>
+	        android:layout_marginLeft="10dp" />
+	    
+	    <TextView
+            android:id="@+id/tvTotal"
+	        android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:textColor="#efefef"
+            android:padding="0dp"/>
+        <TextView
+            android:id="@+id/tvAttempted"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textColor="#ababab"
+            android:padding="0dp"/>
+        <TextView
+            android:id="@+id/tvGraded"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:textColor="#676767"
+            android:padding="0dp"/>
+	    	    
+	</RelativeLayout>
     
     <LinearLayout 
         android:id="@+id/llProgress"
-        android:layout_height="10dp"
+        android:layout_height="2dp"
         android:layout_width="match_parent"
         android:orientation="horizontal">
 

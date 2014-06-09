@@ -3,7 +3,6 @@ package com.gradians.collect;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.PrintWriter;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -14,33 +13,30 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.Button;
 import android.widget.RelativeLayout.LayoutParams;
 import android.widget.Toast;
-import android.widget.ViewSwitcher;
 
 
-public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, ITaskResult, IConstants {
+public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, IConstants {
 
     @Override 
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,71 +49,72 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 
         studentDir = new File(this.getIntent().getStringExtra(TAG));
         feedback = new Feedback[name_state_ids.length];
-        questions = toQuestions(name_state_ids);
-        adapter = new FlowAdapter(questions, this.getSupportFragmentManager());
-        
-        vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
+        adapter = new FlowAdapter(toQuestions(name_state_ids), 
+                this.getSupportFragmentManager());
+        vpPreview = (FlowViewPager)this.findViewById(R.id.vpPreview);
+        vpPreview.setOverlay((ViewGroup)this.findViewById(R.id.btnBarViews));
         vpPreview.setAdapter(adapter);
-        vpPreview.setOnPageChangeListener(this);
         
-        resumeSlideshow();
+        multiMode = true;
+        if (savedInstanceState == null) {
+            vpPreview.setCurrentItem(0);
+            adjustButtons(adapter.getQuestions()[0].getState());
+            vpPreview.startFading();
+        } else {
+            int page = savedInstanceState.getInt("page");
+            vpPreview.setCurrentItem(page);
+            adjustButtons(adapter.getQuestions()[page].getState());
+            
+            adapter.setZoomed(savedInstanceState.getBoolean("zoomed"));
+            adapter.setFlipped(savedInstanceState.getBoolean("flipped"));
+            
+            int fdbkPg = savedInstanceState.getInt("fdbkPage", FdbkView.NO_FEEDBACK);
+            if (fdbkPg != FdbkView.NO_FEEDBACK) {
+                Question q = adapter.getQuestions()[page];
+                if (q.getState() == GRADED) {
+                    try {
+                        renderFeedback(page, fdbkPg);
+                    } catch (Exception e) {
+                        Log.e(TAG, e.getMessage());
+                    }                    
+                }                
+            }
+        }
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putStringArray(TAG_ID, toNameStateIds(questions));
+        outState.putStringArray(TAG_ID, toNameStateIds(adapter.getQuestions()));
+        outState.putBoolean("multiMode", multiMode);
+        outState.putInt("page", vpPreview.getCurrentItem());
+        outState.putBoolean("zoomed", adapter.getZoomed());
+        outState.putBoolean("flipped", adapter.getFlipped());
+        if (adapter.getFlipped() && feedback[vpPreview.getCurrentItem()] != null) {
+            outState.putInt("fdbkPage", vpFdbk.getCurrentItem());            
+        }
         super.onSaveInstanceState(outState);
     }
 
     @Override
     protected void onPause() {
         Intent intent = new Intent();
-        intent.putExtra(TAG, toNameStateIds(questions));
+        intent.putExtra(TAG, toNameStateIds(adapter.getQuestions()));
         this.setResult(RESULT_OK, intent);
         super.onPause();
-    }
-
-    @Override
-    public void onBackPressed() {
-        Intent intent = new Intent();
-        intent.putExtra(TAG, toNameStateIds(questions));
-        this.setResult(RESULT_OK, intent);
-        super.onBackPressed();
     }
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+        if (requestCode == ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Uri picture = data.getData();
                 int position = vpPreview.getCurrentItem();
-                Question q = questions[position];
+                Question q = adapter.getQuestions()[position];
                 q.setScanLocn(picture.getPath());
-                q.setState(CAPTURED);
-                adapter.update(q);
-                onPageSelected(position);
+                uploadPicture(position);
             } else if (resultCode != RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(), 
                         "Oops.. image capture failed. Please try again",
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-    
-    @Override
-    public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (requestCode == FETCH_COMMENTS_TASK_RESULT_CODE) {
-            if (resultCode == RESULT_OK) {
-                try {
-                    this.findViewById(R.id.vsPreview);
-                    storeFeedback(resultData);
-                    onPageSelected(0);  // for vpPreview
-                } catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
-                }
-            } else if (resultCode != RESULT_CANCELED) {
-                Toast.makeText(getApplicationContext(), 
-                        "Oops.. problems getting feedback (back). Please try again",
                         Toast.LENGTH_SHORT).show();
             }
         }
@@ -129,108 +126,59 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     public void onPageScrolled(int arg0, float arg1, int arg2) { }
     @Override
     public void onPageSelected(int position) {
-        short state;
-        if (slideshow) {
-            state = questions[position].getState();
-            ImageButton btnAction1 = (ImageButton)this.findViewById(R.id.btnAction1);
-            ImageButton btnAction2 = (ImageButton)this.findViewById(R.id.btnAction2);
-            switch (state) {
-            case WAITING:
-                btnAction1.setVisibility(View.INVISIBLE);
-                btnAction2.setVisibility(View.INVISIBLE);
-                break;
-            case DOWNLOADED:
-                btnAction1.setVisibility(View.VISIBLE);
-                btnAction2.setVisibility(View.INVISIBLE);
-                btnAction1.setImageResource(android.R.drawable.ic_menu_camera);
-                break;
-            case CAPTURED:
-                btnAction1.setVisibility(View.VISIBLE);
-                btnAction2.setVisibility(View.VISIBLE);
-                btnAction1.setImageResource(android.R.drawable.ic_menu_upload);
-                btnAction2.setImageResource(android.R.drawable.ic_menu_delete);
-                break;
-            case SENT:
-            case RECEIVED:
-            case GRADED:
-                btnAction1.setVisibility(View.INVISIBLE);
-                btnAction2.setVisibility(View.INVISIBLE);
-                if (feedback[position] == null) {
-                    try {
-                        feedback[position] = loadFeedback(position);
-                    } catch (Exception e) {
-                        Log.e(TAG, e.getMessage());
-                    }
-                }
-            }
-        } else {
-            state = questions[vpPreview.getCurrentItem()].getState();
-            FdbkView ivFdbk = (FdbkView)this.findViewById(R.id.ivFullPreview);
-            if (state == GRADED) {
-                ivFdbk.setIndex(position);
-                ivFdbk.invalidate();
-            } else {
-                ivFdbk.setIndex(FdbkView.NO_FEEDBACK);
-            }
-        }
+        Feedback fdbk = feedback[vpPreview.getCurrentItem()];
+        adapter.shift(fdbk.x[position], fdbk.y[position], vpPreview.getCurrentItem());
     }
     
-    public void takeAction1(View view) {
-        int currentIndex = vpPreview.getCurrentItem();
-        Question q = questions[currentIndex];
-        switch (q.getState()) {
-        case DOWNLOADED:
-            takePicture(currentIndex);
-            break;
-        case CAPTURED:
-            uploadPicture(currentIndex);
-            break;
-        default:
-        }
+    public void page(View view) {
+        int currentItem = vpPreview.getCurrentItem();
+        int nextItem = view.getId() == R.id.btnLeft ?
+            (--currentItem < 0 ? adapter.getCount()-1 : currentItem):
+            (++currentItem == adapter.getCount() ? 0 : currentItem);            
+        unrenderFeedback(nextItem);
+        vpPreview.setCurrentItem(nextItem, true);
+        vpPreview.startFading();
+        adjustButtons(adapter.getQuestions()[nextItem].getState());
     }
     
-    public void takeAction2(View view) {
+    public void takeAction(View view) {
         int currentIndex = vpPreview.getCurrentItem();
-        Question q = questions[currentIndex];
-        switch (q.getState()) {
-        case CAPTURED:
-            deletePicture(currentIndex);
-            break;        
-        default:
-        }
+        takePicture(currentIndex);
     }
     
     public void toggleView(View view) {
         int currentIndex = vpPreview.getCurrentItem();
-        Question q = questions[currentIndex];
         switch (view.getId()) {
         case R.id.btnZoom:
-            zoom = (zoom + 1)%3;
+            adapter.zoom(currentIndex);
+            if (adapter.getZoomed()) {
+                enableSingleMode();
+            } else {
+                if (!adapter.getFlipped()) enableMultiMode();
+            }
             break;
-        case R.id.btnAlternate:
-            showSoln = !showSoln;
-            this.findViewById(R.id.vpFeedback).
-                setVisibility(showSoln ? View.INVISIBLE : View.VISIBLE);
-            break;
+        case R.id.btnFlip:
+            adapter.flip(currentIndex);
+            if (adapter.getFlipped()) {
+                enableSingleMode();
+                Question q = adapter.getQuestions()[currentIndex];
+                if (q.getState() == GRADED) {
+                    try {
+                        renderFeedback(currentIndex, 0);
+                    } catch (Exception e) {
+                        Log.e(TAG, e.getClass().toString());                      
+                    }                    
+                } 
+            } else {
+                enableMultiMode();
+                unrenderFeedback(currentIndex);
+            }
         }
-        setImage((q.getState() > DOWNLOADED) ?
-                (showSoln ? q.getImgLocn() : q.getScanLocn()): q.getImgLocn());
     }
     
-    public void toggleMode(View view) {
-        ViewSwitcher vsFlow = (ViewSwitcher)this.findViewById(R.id.vsPreview);        
-        if (slideshow) {
-            vsFlow.showNext();
-            suspendSlideshow();
-        } else {
-            vsFlow.showPrevious();
-            resumeSlideshow();
-        }        
-    }
-
     private void takePicture(int position) {
-        Question q = questions[position];
-        String name_id = q.getName() + "-" + q.getGRId();
+        Question q = adapter.getQuestions()[position];
+        String name_id = q.getName() + "-" + q.getId();
         Intent takePictureIntent =
                 new Intent(this.getApplicationContext(),
                         com.gradians.collect.CameraActivity.class);
@@ -238,121 +186,29 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 (new File(studentDir, ANSWERS_DIR_NAME)).getPath());
         takePictureIntent.putExtra(TAG_ID, name_id);
         startActivityForResult(takePictureIntent,
-                CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+                ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
     }
     
-    private void deletePicture(int position) {
-        Question q = questions[position];
-        String path = q.getScanLocn();
-        if ((new File(path)).delete()) {
-            q.setState(DOWNLOADED);
-            adapter.update(q);
+    private void uploadPicture(int position) {
+        final Question q = adapter.getQuestions()[position];
+        Intent uploadIntent = new Intent(getApplicationContext(),
+            com.gradians.collect.ImageUploadService.class);
+        try {
+            (new File(uploadsDir, q.getId())).createNewFile();
+            uploadIntent.putExtra(TAG_ID, uploadsDir.getPath());
+            uploadIntent.putExtra(TAG, answersDir.getPath());
+            //startService(uploadIntent); TODO: uncomment this!
+            q.setState(SENT);
+            adapter.update(position);
             onPageSelected(position);
-        }
-    }
-
-    private void uploadPicture(final int position) {
-        final Question q = questions[position];
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Ready to send?")
-               .setMessage("This action is not reversible!");
-        builder.setPositiveButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User clicked OK button
-                        Intent uploadIntent = new Intent( getApplicationContext(),
-                            com.gradians.collect.ImageUploadService.class);
-                        try {
-                            (new File(uploadsDir, q.getGRId())).createNewFile();
-                            uploadIntent.putExtra(TAG_ID, uploadsDir.getPath());
-                            uploadIntent.putExtra(TAG, answersDir.getPath());
-                            startService(uploadIntent);
-                            q.setState(SENT);
-                            adapter.update(q);
-                            onPageSelected(position);
-                        } catch (Exception e) {
-                            Log.e(TAG, e.getMessage());
-                        }
-                    }
-                });
-        builder.setNegativeButton(android.R.string.cancel,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User cancelled the dialog
-                    }
-                });
-        AlertDialog dialog = builder.create();
-        dialog.show();            
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }        
     }
     
-    private void setImage(String locn) {
-        Bitmap bmap = BitmapFactory.decodeFile(locn);
-        float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
-        DisplayMetrics dmetrics = this.getApplicationContext().
-                getResources().getDisplayMetrics();
-        float scalingFactor = (zoom == 1) ? 1.25f : 1.75f;
-        switch (zoom) {
-        case 0:
-            scalingFactor = 1.0f;
-            break;
-        case 1:
-            scalingFactor = 1.25f;
-            break;
-        case 2:
-            scalingFactor = 1.5f;
-        }
-        bmap = Bitmap.createScaledBitmap(bmap, 
-                (int)(dmetrics.widthPixels*scalingFactor),
-                (int)(dmetrics.widthPixels*scalingFactor/bmapAspectRatio), false);
-        FdbkView iv = (FdbkView)this.findViewById(R.id.ivFullPreview);
-        iv.setImageBitmap(bmap);
-    }
-    
-    
-    
-    private void resumeSlideshow() {
-        slideshow = true;
-        ((ImageButton)this.findViewById(R.id.btnMode)).setImageResource(android.R.drawable.ic_menu_gallery);
-        this.findViewById(R.id.btnZoom).setVisibility(View.INVISIBLE);
-        this.findViewById(R.id.btnAlternate).setVisibility(View.INVISIBLE);
-        this.findViewById(R.id.vpFeedback).setVisibility(View.INVISIBLE);
-        onPageSelected(vpPreview.getCurrentItem());
-    }
-
-    private void suspendSlideshow() {
-        slideshow = false;
-        ((ImageButton)this.findViewById(R.id.btnMode)).setImageResource(android.R.drawable.ic_menu_slideshow);
-        this.findViewById(R.id.btnAction1).setVisibility(View.INVISIBLE);
-        this.findViewById(R.id.btnAction2).setVisibility(View.INVISIBLE);        
-        this.findViewById(R.id.btnZoom).setVisibility(View.VISIBLE);        
-        String img = null;
-        int currentIndex = vpPreview.getCurrentItem();
-        Question q = questions[currentIndex];        
-        int state = q.getState();
-        if (state > DOWNLOADED) {
-            this.findViewById(R.id.btnAlternate).setVisibility(View.VISIBLE);
-            if (state == GRADED) {
-                renderFeedback(feedback[currentIndex]);
-            }
-            img = showSoln ? q.getImgLocn() : q.getScanLocn();
-        } else {
-            img = q.getImgLocn();
-        }
-        setImage(img);
-    }
-    
-    private void storeFeedback(String json) throws Exception {
-        JSONParser jsonParser = new JSONParser();
-        JSONObject respObject = (JSONObject)jsonParser.parse(json);
-        String id = String.valueOf((Long)respObject.get("a"));
-        File feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME); 
-        PrintWriter pw = new PrintWriter(new File(feedbackDir, id));
-        pw.println(json); pw.close();
-    }
-
     private Feedback loadFeedback(int position) throws Exception {
-        Question question = questions[position];
-        File feedback = new File(feedbackDir, question.getGRId());
+        Question question = adapter.getQuestions()[position];
+        File feedback = new File(feedbackDir, question.getId());
         if (!feedback.exists()) return null;
         
         BufferedReader br = new BufferedReader(new FileReader(feedback));        
@@ -371,31 +227,65 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         return new Feedback(text, x, y);
     }
 
-    private void renderFeedback(Feedback fdbk) {
-        this.findViewById(R.id.vpFeedback).setVisibility(View.VISIBLE);
-        ((FdbkView)this.findViewById(R.id.ivFullPreview)).setFeedback(fdbk);
+    private void renderFeedback(int position, int index) throws Exception {
+        Log.d(TAG, "renderFeedback -- > " + position);
+        if (feedback[position] == null) {
+            feedback[position] = loadFeedback(position);
+        }
+        if (feedback[position] == null) return;
         
-        fdbkAdapter = new FeedbackAdapter(fdbk, this);
+        findViewById(R.id.vpFeedback).setVisibility(View.VISIBLE);
+        fdbkAdapter = new FeedbackAdapter(feedback[position], this);
         vpFdbk = (ViewPager)findViewById(R.id.vpFeedback);
         vpFdbk.setVisibility(View.VISIBLE);
-        vpFdbk.setOffscreenPageLimit(3);
+        vpFdbk.setOffscreenPageLimit(3);        
         LayoutParams lp = (LayoutParams)vpFdbk.getLayoutParams();
         DisplayMetrics dmetrics = this.getApplicationContext().
                 getResources().getDisplayMetrics();                                
         lp.height = (int)dmetrics.heightPixels/10;
-        vpFdbk.setLayoutParams(lp);
+        vpFdbk.setLayoutParams(lp);        
         vpFdbk.setAdapter(fdbkAdapter);
         vpFdbk.setOnPageChangeListener(this);
-        onPageSelected(0);// for vpFdbk
+        adapter.shift(feedback[position].x[index], feedback[position].y[index], position);
     }
-
+    
+    private void unrenderFeedback(int position) {
+        findViewById(R.id.vpFeedback).setVisibility(View.GONE);
+        adapter.shift(FdbkView.NO_FEEDBACK, FdbkView.NO_FEEDBACK, position);
+    }
+    
+    private void enableSingleMode() {
+        multiMode = false;
+        findViewById(R.id.btnAction).setVisibility(View.GONE);
+        findViewById(R.id.btnLeft).setVisibility(View.GONE);
+        findViewById(R.id.btnRight).setVisibility(View.GONE);
+    }
+    
+    private void enableMultiMode() {
+        multiMode = true;
+        findViewById(R.id.btnLeft).setVisibility(View.VISIBLE);
+        findViewById(R.id.btnRight).setVisibility(View.VISIBLE);
+    }
+    
+    private void adjustButtons(int state) {
+        Button btnAction = (Button)this.findViewById(R.id.btnAction);
+        switch (state) {
+        case DOWNLOADED:
+            btnAction.setVisibility(View.VISIBLE);
+            break;
+        case CAPTURED:
+        case WAITING:
+        case SENT:
+        case RECEIVED:
+        case GRADED:
+            btnAction.setVisibility(View.GONE);
+        }
+    }
+    
     private String[] toNameStateIds(Question[] questions) {
         String[] name_state_ids = new String[questions.length];
         for (int i = 0; i < questions.length; i++) {
-            name_state_ids[i] = String.format("%s-%s-%s",
-                    questions[i].getName(), 
-                    questions[i].getState(), 
-                    questions[i].getGRId());
+            name_state_ids[i] = questions[i].getNameStateId();
         }
         return name_state_ids;
     }
@@ -410,13 +300,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         uploadsDir = new File(studentDir, UPLOAD_DIR_NAME);
                 
         Question[] questions = new Question[name_state_ids.length];
-        String name, id, imgLocn = null, scanLocn = null; short state;
+        String name, id, grId, imgLocn = null, scanLocn = null; short state;
         for (int i = 0; i < questions.length; i++) {
             
-            String[] tokens = name_state_ids[i].split("-");
+            String[] tokens = name_state_ids[i].split(",");
             name = tokens[0];
             state = Short.parseShort(tokens[1]);
-            id = tokens[2];            
+            id = tokens[2];
+            grId = tokens[3];
             switch (state) {
             case WAITING:
                 imgLocn = "file:///android_asset/albert_einstein.jpg";
@@ -436,19 +327,19 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 imgLocn = (new File(solutionsDir, id)).getPath();
                 scanLocn = (new File(answersDir, id)).getPath();
                 if (!(new File(feedbackDir, id)).exists())
-                    dlm.add(Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, id)), 
+                    dlm.add(id, Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, grId)), 
                         Uri.fromFile(new File(feedbackDir, id)));
                 break;
             default:
             }
-            questions[i] = new Question(name, id, imgLocn);
+            questions[i] = new Question(name, id, grId, imgLocn);
             questions[i].setState(state);
             questions[i].setScanLocn(scanLocn);
         }
         dlm.start("Retreiving Feedback", "Please wait...");
         return questions;
     }
-
+    
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
      */
@@ -459,17 +350,70 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
     }
 
-    private Question[] questions;
     private Feedback[] feedback;
     private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir, uploadsDir;
-    private ViewPager vpPreview, vpFdbk ;
-    private FlowAdapter adapter;
-    private FeedbackAdapter fdbkAdapter;
-    private boolean slideshow, showSoln;
-    private int zoom;
-    
-    private final String FDBK_URL = "http://%s/view/fdb.json?id=%s&sandbox=false&a=null";
 
+    private FlowViewPager vpPreview;
+    private FlowAdapter adapter;
+    
+    private ViewPager vpFdbk;
+    private FeedbackAdapter fdbkAdapter;
+
+    private boolean multiMode;
+
+    private final String FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s";
+
+}
+
+class FlowViewPager extends ViewPager {
+
+    public FlowViewPager(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public FlowViewPager(Context context) {
+        super(context);
+    }
+    
+    public void setOverlay(ViewGroup group) {
+        this.group = group;
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent mev) {
+        switch (mev.getAction()) {
+        case MotionEvent.ACTION_DOWN:
+            startFading();
+            break;
+        default:
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent arg0) {
+        return false;
+    }
+    
+    public void startFading() {
+        group.setVisibility(View.VISIBLE);
+        Animation fadeOut = new AlphaAnimation(1, 0);  // opaque (1) transparent (0)
+        fadeOut.setInterpolator(new AccelerateInterpolator());
+        fadeOut.setStartOffset(2000); // Start fading out after
+        fadeOut.setDuration(1000); // Fadeout duration 
+        fadeOut.setAnimationListener(new AnimationListener()
+        {
+                public void onAnimationEnd(Animation animation) 
+                {
+                    group.setVisibility(View.GONE);
+                }
+                public void onAnimationRepeat(Animation animation) {}
+                public void onAnimationStart(Animation animation) {}
+        });
+        group.startAnimation(fadeOut);
+    }
+
+    private ViewGroup group;    
 }
 
 class Feedback {
@@ -478,62 +422,6 @@ class Feedback {
     }
     public int[] x, y;
     public String[] text;
-}
-
-class FdbkView extends ImageView {
-
-    public FdbkView(Context context) {
-        super(context);
-        init(context);
-    }
-    
-    public FdbkView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init(context);        
-    }
-    
-    public void setFeedback(Feedback fdbk) {
-        this.x = fdbk.x; this.y = fdbk.y;
-    }
-    
-    public void setIndex(int i) {
-        this.index = i;
-    }
-    
-    public void resetFeedback() {
-        x = new int[0];
-        y = new int[0];
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        int w = canvas.getWidth();
-        int h = canvas.getHeight();
-        canvas.scale((float)w/X_FACTOR, (float)h/Y_FACTOR);
-        if (index > NO_FEEDBACK && y.length > 0) {
-            canvas.drawRect(0, y[index], w, y[index]+5, paintY);
-            canvas.drawRect(x[index], y[index], x[index]+5, y[index]+5, paintX);
-        }
-    }
-    
-    private void init(Context context) {
-        paintY = new Paint();
-        paintY.setColor(0x88676767);
-        
-        paintX = new Paint();
-        paintX.setColor(0xCC676767);        
-        
-        x = new int[0];
-        y = new int[0];
-    }    
-    
-    private int index;
-    private int[] x,y;
-    private Paint paintY, paintX;
-    
-    private final int X_FACTOR = 90, Y_FACTOR = 120;
-    public static final int NO_FEEDBACK = -1;
 }
 
 class FeedbackAdapter extends PagerAdapter {

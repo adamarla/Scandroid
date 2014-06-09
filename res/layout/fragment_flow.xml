@@ -1,18 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?><RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/rlFlow"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
+        
     <ScrollView
         android:id="@+id/svPreview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-	    <ImageView
-	        android:id="@+id/ivPreview"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:adjustViewBounds="true"
-	        android:contentDescription="@string/title_activity_preview"/>        
+        android:layout_height="match_parent"
+        android:fillViewport="true">        
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+		    <com.gradians.collect.FdbkView
+		      	android:id="@+id/ivPreview"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:adjustViewBounds="false"
+		        android:contentDescription="@string/title_activity_preview"/>
+		</HorizontalScrollView>
     </ScrollView>
     
     <TextView
@@ -22,9 +29,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:layout_marginLeft="10dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="10dp"
         android:gravity="center"
         android:textSize="20sp"/>
-    
     
 </RelativeLayout>

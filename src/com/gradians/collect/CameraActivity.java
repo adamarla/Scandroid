@@ -12,13 +12,20 @@ import android.hardware.Camera.Size;
 import android.net.Uri;
 import android.os.Bundle;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.support.v4.app.NavUtils;
 import android.annotation.TargetApi;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 
@@ -28,7 +35,7 @@ public class CameraActivity extends Activity implements IConstants {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);        
         setContentView(R.layout.activity_camera);
-        // Show the Up button in the action bar.
+        
         setupActionBar();
         try {
             camera = Camera.open();
@@ -41,11 +48,12 @@ public class CameraActivity extends Activity implements IConstants {
         ((FrameLayout)findViewById(R.id.camera_preview)).
             addView(new CameraPreview(this, camera));
         
-        imagesDir = new File(this.getIntent().getStringExtra(TAG));
-        name_id = this.getIntent().getStringExtra(TAG_ID);
+        File imagesDir = new File(this.getIntent().getStringExtra(TAG));
+        String name_id = this.getIntent().getStringExtra(TAG_ID);
+        picture = new File(imagesDir, name_id.split("-")[1]);
         
         TextView tv = (TextView)this.findViewById(R.id.tvCameraPreview);
-        tv.setText(name_id.split("-")[0]);
+        tv.setText(name_id.split("-")[0]);        
     }
     
     @Override
@@ -72,17 +80,64 @@ public class CameraActivity extends Activity implements IConstants {
     }
 
     public void takePicture(View view) {
-        // get an picture from the camera
-        File picture = new File(imagesDir, name_id.split("-")[1]);
         camera.takePicture(null, null,  
                 new PictureWriter(this, picture));
+    }
+    
+    public void upload(View view) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Bombs away...").setMessage(
+                "This action is not reversible!");
+        builder.setPositiveButton(android.R.string.ok,
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // User clicked OK button
+                    Intent intent = new Intent();
+                    intent.setData(Uri.fromFile(picture));
+                    setResult(Activity.RESULT_OK, intent);
+                    finish();        
+                }
+            });
+        builder.setNegativeButton(android.R.string.cancel,
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    // User cancelled the dialog
+                }
+            });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
+    public void retake(View view) {
+        try {
+            camera.stopPreview();
+            camera.startPreview();
+            findViewById(R.id.btnCapture).setVisibility(View.VISIBLE);
+            findViewById(R.id.btnBarConf).setVisibility(View.GONE);
+        } catch (Exception e) {
+            finish();
+        }
+    }
+    
+    public void doneTaking(boolean success) {
+        if (!success) {
+            releaseCamera();
+            // User clicked OK button
+            Intent intent = new Intent();
+            intent.setData(Uri.fromFile(picture));
+            setResult(Activity.RESULT_FIRST_USER, intent);
+            finish();            
+        } else {
+            findViewById(R.id.btnCapture).setVisibility(View.GONE);
+            findViewById(R.id.btnBarConf).setVisibility(View.VISIBLE);            
+        }        
     }
     
     private void releaseCamera() {
         if (camera != null) {
             camera.release();
             camera = null;
-        }        
+        }
     }
     
     /**
@@ -98,7 +153,7 @@ public class CameraActivity extends Activity implements IConstants {
     private Camera.Parameters configureParams(Camera.Parameters params) {
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
-        params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+        params.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
         Size s = getOptimalSize(params);
         params.setPictureSize(s.width, s.height);
         return params;
@@ -130,8 +185,7 @@ public class CameraActivity extends Activity implements IConstants {
         return match;
     }
 
-    private File imagesDir;
-    private String name_id;
+    private File picture;
     private Camera camera;
     
     private final int PORTRAIT = 90;
@@ -141,7 +195,7 @@ public class CameraActivity extends Activity implements IConstants {
 
 class PictureWriter implements PictureCallback {
         
-    public PictureWriter(Activity activity, File picture) {
+    public PictureWriter(CameraActivity activity, File picture) {
         this.picture = picture;
         this.caller = activity;
     }    
@@ -152,17 +206,14 @@ class PictureWriter implements PictureCallback {
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
-            Intent intent = new Intent();
-            intent.setData(Uri.fromFile(picture));
-            caller.setResult(Activity.RESULT_OK, intent);
+            caller.doneTaking(true);
         } catch (Exception error) {
             Log.e(IConstants.TAG, error.getMessage());
-            caller.setResult(Activity.RESULT_FIRST_USER);
+            caller.doneTaking(false);
         }
-        caller.finish();
     }
     
-    private Activity caller;
+    private CameraActivity caller;
     private File picture;
 
 }

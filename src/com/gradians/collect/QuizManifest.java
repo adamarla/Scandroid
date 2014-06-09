@@ -39,8 +39,8 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     }
 
     public void update(int quizPosn, int itemPosn, short newState) {
-        Question q = quizzes.get(quizPosn).get(itemPosn);
-        String id = q.getGRId();
+        Question q = quizzes[quizPosn].get(itemPosn);
+        String id = q.getId();
         if (q.getState() != newState) {
             q.setState(newState);
             state.setProperty(id, String.valueOf(newState));
@@ -50,12 +50,12 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     
     @Override
     public int getCount() {
-        return quizzes.size();
+        return quizzes.length;
     }
 
     @Override
     public Object getItem(int position) {
-        return quizzes.get(position);
+        return quizzes[position];
     }
 
     @Override
@@ -68,29 +68,36 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.layout_quiz, parent, false);
         }
-        
         Quij quiz = (Quij)getItem(position);
+
+        float graded, sentRecvd, downloaded;
+        graded = quiz.getQuestionsByState(GRADED).length;
+        sentRecvd = quiz.getQuestionsByState(SENT).length + 
+                quiz.getQuestionsByState(RECEIVED).length;
+        downloaded = quiz.size() - (graded + sentRecvd);
+        
         TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
         tv.setTag(position);
-//        tv.setOnClickListener(activity);
-        tv.setText(quiz.toString());        
-                
-        float graded, attempted, downloaded;
-        graded = quiz.getQuestionsByState(GRADED).length;
-        attempted = quiz.getQuestionsByState(SENT).length;
-        downloaded = quiz.size() - (graded + attempted);
-        
+        tv.setText(quiz.toString());
+
+        TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
+        tvTotal.setText(String.format("Total %2d", quiz.size()));
+        TextView tvAttempted = (TextView)convertView.findViewById(R.id.tvAttempted);
+        tvAttempted.setText(String.format("Sent %2d", (int)(sentRecvd + graded)));
+        TextView tvGraded = (TextView)convertView.findViewById(R.id.tvGraded);
+        tvGraded.setText(String.format("Graded %2d", (int)graded));
+
         LayoutParams param = null;
         View vGraded = (View)convertView.findViewById(R.id.vGraded);
-        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, graded > 0 ? graded : 1);
+        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, graded);
         vGraded.setLayoutParams(param);
         View vAttempted = (View)convertView.findViewById(R.id.vAttempted);
-        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, attempted > 0 ? attempted : 1);
+        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, sentRecvd);
         vAttempted.setLayoutParams(param);
         View vDownloaded = (View)convertView.findViewById(R.id.vDownloaded);
         param = new LayoutParams(0, LayoutParams.MATCH_PARENT, downloaded);
         vDownloaded.setLayoutParams(param);
-        
+
         return convertView;
     }
 
@@ -106,6 +113,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         name = (String)respObject.get(NAME_KEY);
         email = (String)respObject.get(EMAIL_KEY);
         JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
+        quizzes = new Quij[items.size()];
         
         File manifests = new File(appDir, "manifest"); 
         manifests.mkdir();
@@ -114,42 +122,68 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         manifest = new File(manifests, email); manifest.createNewFile();
         lastState.load(new FileInputStream(manifest));
         Log.d(TAG, manifest.getPath());
-        quizzes = new ArrayList<Quij>();
         state = new Properties();
-        
-        Quij quiz = null; long quizId = 0;
-        for (int i = 0; i < items.size(); i++) {
 
-            JSONObject item = (JSONObject) items.get(i);
-            if (quizId == 0 || quizId != (Long)item.get(QUIZ_ID_KEY)) {
-                if (quiz != null) quizzes.add(quiz);
-                quizId = (Long)item.get(QUIZ_ID_KEY);
-                quiz = new Quij(((String)item.get(QUIZ_NAME_KEY)).replace("-", " "),
-                        (String)item.get(QUIZ_PATH_KEY), quizId);
-            }
+        for (int i = 0; i < items.size(); i++) {
+            JSONObject quizItem = (JSONObject) items.get(i);
+            quizzes[i] = new Quij(((String)quizItem.get(QUIZ_NAME_KEY)).replace(",", " "),
+                  (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY));
+            JSONArray questions = (JSONArray)quizItem.get("questions");
+            Log.d(TAG, quizzes[i].getId() + " " + quizzes[i].getName() + " has " + questions.size() + " questions");
             
-            Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
-                    String.valueOf((Long)item.get(GR_ID_KEY)), (String)item.get(GR_PATH_KEY));
-            String scan = (String)item.get("scan");            
-            double marks = (Double)item.get("marks");            
-            if (scan == null) {
-                question.setState(lastState.getProperty(question.getGRId()) == null ? WAITING : 
-                    Short.parseShort(lastState.getProperty(question.getGRId())));
-            } else {
-                question.setScanLocn(scan);
-                question.setState(marks < 0 ? RECEIVED : GRADED);
-            }            
-            quiz.add(question);
-            state.put(question.getGRId(), String.valueOf(question.getState()));
+            for (int j = 0; j < questions.size(); j++) {
+                JSONObject item = (JSONObject)questions.get(j);
+                Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
+                                (String)item.get(ID_KEY),
+                                (String)item.get(GR_ID_KEY),
+                                (String)item.get(GR_PATH_KEY));
+                Log.d(TAG, question.getName() + " " + question.getImgLocn());
+                String scan = (String)item.get(SCAN_KEY);
+                double marks = (Double)item.get(MARKS_KEY);
+                if (scan == null) {
+                    question.setState(lastState.getProperty(question.getId()) == null
+                            ? WAITING : Short.parseShort(lastState.getProperty(question.getId())));
+                } else {
+                    question.setScanLocn(scan);
+                    question.setState(marks < 0 ? RECEIVED : GRADED);
+                }
+                quizzes[i].add(question);
+            }
         }
-        if (quiz != null) quizzes.add(quiz);
+        
+//        Quij quiz = null; long quizId = 0;
+//        for (int i = 0; i < items.size(); i++) {
+//
+//            JSONObject item = (JSONObject) items.get(i);
+//            if (quizId == 0 || quizId != (Long)item.get(QUIZ_ID_KEY)) {
+//                if (quiz != null) quizzes.add(quiz);
+//                quizId = (Long)item.get(QUIZ_ID_KEY);
+//                quiz = new Quij(((String)item.get(QUIZ_NAME_KEY)).replace("-", " "),
+//                        (String)item.get(QUIZ_PATH_KEY), quizId);
+//            }
+//            
+//            Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
+//                    String.valueOf((Long)item.get(GR_ID_KEY)), (String)item.get(GR_PATH_KEY));
+//            String scan = (String)item.get(SCAN_KEY);
+//            double marks = (Double)item.get(MARKS_KEY);            
+//            if (scan == null) {
+//                question.setState(lastState.getProperty(question.getGRId()) == null ? WAITING : 
+//                    Short.parseShort(lastState.getProperty(question.getGRId())));
+//            } else {
+//                question.setScanLocn(scan);
+//                question.setState(marks < 0 ? RECEIVED : GRADED);
+//            }            
+//            quiz.add(question);
+//            state.put(question.getGRId(), String.valueOf(question.getState()));
+//        }
+//        if (quiz != null) quizzes.add(quiz);
     }
         
     private String name, email, token;
     private File manifest;
     
     private Properties state;
-    private ArrayList<Quij> quizzes;
+    private Quij[] quizzes;
     
     private LayoutInflater inflater;
 
@@ -198,6 +232,68 @@ class Quij extends ArrayList<Question> {
     private long id;
     
     private static final long serialVersionUID = 1L;
+}
+
+class Question {
+    
+    public Question(String name, String id, String GRId, String imgLocn) {
+        this.name = name;
+        this.id = id;
+        this.GRId = GRId;
+        this.imgLocn = imgLocn;
+    }
+    
+    public String getId() {
+        return id;
+    }
+    
+    public String getGRId() {
+        return GRId;
+    }
+    
+    public String getImgLocn() {
+        return imgLocn;
+    }
+    
+    public String getScanLocn() {
+        return scanLocn;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public short getState() {
+        return state;
+    }
+    
+    public void setGRId(String GRId) {
+        this.GRId = GRId;
+    }
+    
+    public void setImgLocn(String imgLocn) {
+        this.imgLocn = imgLocn;
+    }
+    
+    public void setScanLocn(String scanLocn) {
+        this.scanLocn = scanLocn;
+    }
+    
+    public void setState(short state) {
+        this.state = state;
+    }
+    
+    public String getNameStateId() {
+        return String.format("%s,%s,%s,%s", name, state, id, GRId);
+    }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+    
+    private String name, id, GRId, imgLocn, scanLocn;
+    private short state;    
 }
 
 

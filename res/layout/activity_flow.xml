@@ -5,98 +5,70 @@
     android:layout_height="match_parent"
     tools:context=".FlowActivity" >
     
-    <ViewSwitcher 
-        android:id="@+id/vsPreview"
+    <com.gradians.collect.FlowViewPager 
+        android:id="@+id/vpPreview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:inAnimation="@android:anim/fade_in"
-        android:outAnimation="@android:anim/fade_out" >
-        <android.support.v4.view.ViewPager 
-            android:id="@+id/vpPreview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-        </android.support.v4.view.ViewPager>
-        <ScrollView 
-            android:id="@+id/svFullPreview"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent">
-            <HorizontalScrollView 
-                android:id="@+id/hsvFullPreview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <com.gradians.collect.FdbkView
-                    android:id="@+id/ivFullPreview"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:adjustViewBounds="false"
-                    android:scaleType="center"
-                    android:contentDescription="@string/title_activity_preview"/>
-            </HorizontalScrollView>    
-        </ScrollView>
-    </ViewSwitcher>
+        android:layout_height="match_parent">
+    </com.gradians.collect.FlowViewPager> 
     
-    <ImageButton
-        android:id="@+id/btnMode"
+    <LinearLayout 
+        android:id="@+id/btnBarViews"
+        android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:gravity="center"
-        android:alpha="0.4"
-        android:contentDescription="@string/zoom_button"
-        android:onClick="toggleMode"
-        android:src="@android:drawable/ic_menu_gallery" />
+        android:layout_alignParentRight="true">
 
-    <ImageButton
-        android:id="@+id/btnZoom"
+	    <ImageButton
+	        android:id="@+id/btnZoom"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:gravity="center"
+	        android:contentDescription="@string/zoom_button"
+	        android:onClick="toggleView"
+	        android:src="@android:drawable/ic_menu_zoom" />
+	                                               
+	    <ImageButton
+	        android:id="@+id/btnFlip"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:gravity="center"
+	        android:contentDescription="@string/zoom_button"
+	        android:onClick="toggleView"
+	        android:src="@android:drawable/ic_menu_revert" />
+	    
+	</LinearLayout>    
+    
+    <ImageButton 
+        android:id="@+id/btnLeft"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/btnMode"
-        android:layout_alignParentRight="true"
-        android:gravity="center"
-        android:alpha="0.4"
-        android:visibility="invisible"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
         android:contentDescription="@string/zoom_button"
-        android:onClick="toggleView"
-        android:src="@android:drawable/ic_menu_zoom" />                                           
-            
-    <ImageButton
-        android:id="@+id/btnAlternate"
+        android:onClick="page"
+        android:src="@drawable/ic_menu_back"/>
+        
+    <Button
+        android:id="@+id/btnAction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/btnZoom"
+        android:layout_centerInParent="true"
+        android:contentDescription="@string/action_button"
+        android:onClick="takeAction"
+        android:text="Activate"
+        android:drawableTop="@android:drawable/ic_menu_camera"/>
+        
+    <ImageButton 
+        android:id="@+id/btnRight"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:visibility="invisible"
-        android:gravity="center"
-        android:alpha="0.4"
+        android:layout_centerVertical="true"
         android:contentDescription="@string/zoom_button"
-        android:onClick="toggleView"
-        android:src="@android:drawable/ic_menu_revert" />
-    
-    <ImageButton
-        android:id="@+id/btnAction1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btnMode"
-        android:layout_alignParentRight="true"
-        android:gravity="center"
-        android:alpha="0.4"
-        android:visibility="invisible"
-        android:contentDescription="@string/action_button"
-        android:onClick="takeAction1" />
-    
-    <ImageButton
-        android:id="@+id/btnAction2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btnAction1"
-        android:layout_alignParentRight="true"
-        android:gravity="center"
-        android:alpha="0.4"
-        android:visibility="invisible"
-        android:contentDescription="@string/action_button"
-        android:onClick="takeAction2" />
-    
+        android:onClick="page"
+        android:src="@drawable/ic_menu_forward"/>
+       
     <android.support.v4.view.ViewPager
         android:id="@+id/vpFeedback"
         android:layout_width="match_parent"
@@ -105,4 +77,5 @@
         android:layout_marginBottom="10dp"
         android:background="#88676767"/>
         
+    
 </RelativeLayout>

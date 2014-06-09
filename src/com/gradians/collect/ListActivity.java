@@ -124,57 +124,61 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
             lv.setOnItemClickListener(this);
         }        
         mkdirs(manifest.getEmail());
-        triggerDownloads();
+        triggerAllDownloads();
     }
     
-    private void triggerDownloads() {
-        DownloadMonitor dlm = new DownloadMonitor(this);        
-        for (int j = 0; j < manifest.getCount(); j++) {
-            Quij quiz = (Quij)manifest.getItem(j);
-            Question[] questions = quiz.getQuestions();
-            for (Question question : questions) {
-                Uri src, dest;
-                File image = null;
-                if (question != null) {
-                    switch (question.getState()) {
-                    case GRADED:
-                    case RECEIVED:
-                        image = new File(solutionsDir, question.getGRId()); 
-                        if (!image.exists()) {
-                            src = Uri.parse(String.format(URL, BANK_HOST_PORT, "vault", 
-                                    question.getImgLocn() + "/pg-1.jpg"));
-                            dest = Uri.fromFile(image);
-                            dlm.add(src, dest);
-                        }
-                    case SENT:
-                        image = new File(answersDir, question.getGRId());
-                        if (!image.exists()) {
-                            src = Uri.parse(String.format(URL, BANK_HOST_PORT, "locker", 
-                                    question.getScanLocn()));
-                            dest = Uri.fromFile(image);
-                            dlm.add(src, dest);
-                        }
-                        break;
-                    case CAPTURED:
-                        image = new File(answersDir, question.getGRId());
-                        if (!image.exists()) {
-                            question.setState(DOWNLOADED);
-                        }
-                    case DOWNLOADED:
-                    case WAITING:
-                        image = new File(questionsDir, question.getGRId());
-                        if (!image.exists()) {
-                            src = Uri.parse(String.format(URL, BANK_HOST_PORT, "vault", 
-                                    question.getImgLocn() + "/notrim.jpg"));
-                            dest = Uri.fromFile(image);
-                            dlm.add(src, dest);
-                        }
-                        if (question.getState() == WAITING) {
-                            question.setState(DOWNLOADED);
-                        }
+    private void triggerDownloads(DownloadMonitor dlm, Quij quiz) {
+        Question[] questions = quiz.getQuestions();
+        for (Question question : questions) {
+            Uri src, dest;
+            File image = null;
+            if (question != null) {
+                switch (question.getState()) {
+                case GRADED:
+                case RECEIVED:
+                    image = new File(solutionsDir, question.getId()); 
+                    if (!image.exists()) {                        
+                        src = Uri.parse(String.format(URL, BANK_HOST_PORT, "vault", 
+                                question.getImgLocn() + "/pg-1.jpg"));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
+                    }
+                case SENT:
+                    image = new File(answersDir, question.getId());
+                    if (!image.exists()) {
+                        src = Uri.parse(String.format(URL, BANK_HOST_PORT, "locker", 
+                                question.getScanLocn()));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
+                    }
+                    break;
+                case CAPTURED:
+                    image = new File(answersDir, question.getId());
+                    if (!image.exists()) {
+                        question.setState(DOWNLOADED);
+                    }
+                case DOWNLOADED:
+                case WAITING:
+                    image = new File(questionsDir, question.getId());
+                    if (!image.exists()) {
+                        src = Uri.parse(String.format(URL, BANK_HOST_PORT, "vault", 
+                                question.getImgLocn() + "/notrim.jpg"));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
+                    }
+                    if (question.getState() == WAITING) {
+                        question.setState(DOWNLOADED);
                     }
                 }
             }
+        }
+    }
+    
+    private void triggerAllDownloads() {
+        DownloadMonitor dlm = new DownloadMonitor(this);        
+        for (int j = 0; j < manifest.getCount(); j++) {
+            Quij quiz = (Quij)manifest.getItem(j);
+            triggerDownloads(dlm, quiz);
         }
         dlm.start("Synchronizing Files", "Please wait...");
     }    
@@ -241,7 +245,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
     
     
     private void handleError(String error, String message) {
-        
+        Log.d(TAG, error + " " + message);
     }
 
     private int selectedQuizPosition;
