@@ -30,7 +30,8 @@
         android:layout_alignParentTop="true"
         android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
+        android:background="#CC676767"
         android:gravity="center"
-        android:textSize="20sp"/>
+        android:textColor="#ffffff"/>
     
 </RelativeLayout>

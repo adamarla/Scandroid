@@ -14,7 +14,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,7 +41,8 @@ public class FlowFragment extends Fragment implements IConstants {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        Log.d(TAG, "Fragment.onCreateView() -->  ");
+        dmetrics = getActivity().getApplicationContext().getResources().getDisplayMetrics();
+        
         Bundle bundle = this.getArguments();
         int xPosn = bundle.getInt("xPosn", FdbkView.NO_FEEDBACK);
         int yPosn = bundle.getInt("yPosn", FdbkView.NO_FEEDBACK);
@@ -67,19 +67,18 @@ public class FlowFragment extends Fragment implements IConstants {
         return rootView;
     }
     
-    private void setImage(FdbkView iv, String path, float scale) {
+    private Bitmap setImage(FdbkView iv, String path, float scale) {
         Bitmap bmap = path.contains("albert") ?
             getBitmapFromAssets("albert_einstein.jpg"):
             BitmapFactory.decodeFile(path);
             
         float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
-        DisplayMetrics dmetrics = this.getActivity().getApplicationContext().
-                getResources().getDisplayMetrics();        
         int w = dmetrics.widthPixels < MIN_WIDTH ? MIN_WIDTH : dmetrics.widthPixels;        
         bmap = Bitmap.createScaledBitmap(bmap, 
                 (int)(w*scale),
                 (int)(w*scale/bmapAspectRatio), false);
         iv.setImageBitmap(bmap);
+        return bmap;
     }
     
     private Bitmap getBitmapFromAssets(String name) {
@@ -93,7 +92,8 @@ public class FlowFragment extends Fragment implements IConstants {
         return bitmap;
     }
     
-    private int MIN_WIDTH = 600;
+    private DisplayMetrics dmetrics;
+    private final int MIN_WIDTH = 600;
 }
 
 class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
@@ -187,6 +187,14 @@ class FdbkView extends ImageView {
         init(context);        
     }
     
+    public int getYPixelPosn() {
+        return (int)rect.top;
+    }
+    
+    public int getXPixelPosn() {
+        return (int)rect.left;
+    }
+    
     public void setPosn(int xPosn, int yPosn) {
         this.xPosn = xPosn;
         this.yPosn = yPosn;
@@ -202,8 +210,6 @@ class FdbkView extends ImageView {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        int w = canvas.getWidth();
-        int h = canvas.getHeight();
         canvas.scale((float)imgWidth/X_FACTOR, (float)imgHeight/Y_FACTOR);
         if (yPosn != NO_FEEDBACK) {
             rect.left = xPosn - OFFSET;
@@ -211,9 +217,12 @@ class FdbkView extends ImageView {
             rect.right = rect.left + DIA;
             rect.bottom = rect.top + DIA;
             float[] pts = {
-                0, rect.top+DIA/2, w, rect.top+DIA/2,
-                rect.left+DIA/2, 0, rect.left+DIA/2, h 
+                rect.left+DIA/2, rect.top+1, rect.left+DIA/2, rect.top-1,
+                rect.left+DIA/2, rect.bottom+1, rect.left+DIA/2, rect.bottom-1,
+                rect.left-1, rect.top+DIA/2, rect.left+1, rect.top+DIA/2,
+                rect.right-1, rect.top+DIA/2, rect.right+1, rect.top+DIA/2
             };
+            //canvas.drawRoundRect(rect, 0.5f, 0.5f, paint);
             canvas.drawOval(rect, paint);
             canvas.drawLines(pts, paint);
         }
@@ -221,12 +230,12 @@ class FdbkView extends ImageView {
     
     private void init(Context context) {
         paint = new Paint();
-        paint.setColor(0x66676767);
+        paint.setColor(0xff0000ff);
         paint.setStyle(Style.STROKE);
-        paint.setStrokeWidth(0.35f);
+        paint.setStrokeWidth(0.2f);
         
-        rect = new RectF();        
-        yPosn = NO_FEEDBACK;
+        rect = new RectF();
+        xPosn = yPosn = NO_FEEDBACK;
     }
     
     private RectF rect;
@@ -234,7 +243,7 @@ class FdbkView extends ImageView {
     private int xPosn, yPosn;
     private int imgWidth, imgHeight;
     
-    private final int OFFSET = 9, DIA = 6;
-    private final int X_FACTOR = 90, Y_FACTOR = 120;
+    private final int OFFSET = 8, DIA = 6;
+    public static final int X_FACTOR = 90, Y_FACTOR = 120;
     public static final int NO_FEEDBACK = -1;
 }

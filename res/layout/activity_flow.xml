@@ -10,72 +10,49 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
     </com.gradians.collect.FlowViewPager> 
-    
-    <LinearLayout 
+    	
+    <RelativeLayout 
         android:id="@+id/btnBarViews"
-        android:orientation="vertical"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true">
-
-	    <ImageButton
-	        android:id="@+id/btnZoom"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:gravity="center"
-	        android:contentDescription="@string/zoom_button"
-	        android:onClick="toggleView"
-	        android:src="@android:drawable/ic_menu_zoom" />
-	                                               
-	    <ImageButton
-	        android:id="@+id/btnFlip"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:gravity="center"
-	        android:contentDescription="@string/zoom_button"
-	        android:onClick="toggleView"
-	        android:src="@android:drawable/ic_menu_revert" />
-	    
-	</LinearLayout>    
+        android:visibility="invisible"
+        android:layout_centerVertical="true">
     
-    <ImageButton 
-        android:id="@+id/btnLeft"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
-        android:contentDescription="@string/zoom_button"
-        android:onClick="page"
-        android:src="@drawable/ic_menu_back"/>
-        
-    <Button
-        android:id="@+id/btnAction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:contentDescription="@string/action_button"
-        android:onClick="takeAction"
-        android:text="Activate"
-        android:drawableTop="@android:drawable/ic_menu_camera"/>
-        
-    <ImageButton 
-        android:id="@+id/btnRight"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
-        android:contentDescription="@string/zoom_button"
-        android:onClick="page"
-        android:src="@drawable/ic_menu_forward"/>
-       
+	    <ImageButton 
+	        android:id="@+id/btnLeft"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_centerVertical="true"
+	        android:contentDescription="@string/zoom_button"
+	        android:onClick="page"
+	        android:src="@drawable/ic_action_back"/>
+	        
+	    <Button
+	        android:id="@+id/btnAction"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+	        android:contentDescription="@string/action_button"
+	        android:onClick="takeAction"/>
+	        
+	    <ImageButton 
+	        android:id="@+id/btnRight"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+	        android:contentDescription="@string/zoom_button"
+	        android:onClick="page"
+	        android:src="@drawable/ic_action_forward"/>
+    
+    </RelativeLayout>
+    	       
     <android.support.v4.view.ViewPager
         android:id="@+id/vpFeedback"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="40dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="10dp"
-        android:background="#88676767"/>
-        
+        android:background="#CC676767"/>        
     
 </RelativeLayout>

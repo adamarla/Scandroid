@@ -79,7 +79,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
                         Toast.LENGTH_SHORT).show();
             }
         }
-    }    
+    }
 
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {

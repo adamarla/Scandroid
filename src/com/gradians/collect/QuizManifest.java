@@ -16,7 +16,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
 public class QuizManifest extends BaseAdapter implements IConstants {
@@ -70,33 +69,21 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         }
         Quij quiz = (Quij)getItem(position);
 
-        float graded, sentRecvd, downloaded;
+        float graded, sentRecvd;
         graded = quiz.getQuestionsByState(GRADED).length;
         sentRecvd = quiz.getQuestionsByState(SENT).length + 
                 quiz.getQuestionsByState(RECEIVED).length;
-        downloaded = quiz.size() - (graded + sentRecvd);
         
         TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
         tv.setTag(position);
         tv.setText(quiz.toString());
 
         TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
-        tvTotal.setText(String.format("Total %2d", quiz.size()));
+        tvTotal.setText(String.format("total %2d", quiz.size()));
         TextView tvAttempted = (TextView)convertView.findViewById(R.id.tvAttempted);
-        tvAttempted.setText(String.format("Sent %2d", (int)(sentRecvd + graded)));
+        tvAttempted.setText(String.format("sent %2d", (int)(sentRecvd + graded)));
         TextView tvGraded = (TextView)convertView.findViewById(R.id.tvGraded);
-        tvGraded.setText(String.format("Graded %2d", (int)graded));
-
-        LayoutParams param = null;
-        View vGraded = (View)convertView.findViewById(R.id.vGraded);
-        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, graded);
-        vGraded.setLayoutParams(param);
-        View vAttempted = (View)convertView.findViewById(R.id.vAttempted);
-        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, sentRecvd);
-        vAttempted.setLayoutParams(param);
-        View vDownloaded = (View)convertView.findViewById(R.id.vDownloaded);
-        param = new LayoutParams(0, LayoutParams.MATCH_PARENT, downloaded);
-        vDownloaded.setLayoutParams(param);
+        tvGraded.setText(String.format("graded %2d", (int)graded));
 
         return convertView;
     }
@@ -107,8 +94,8 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     
     private void parse(File appDir, String json) throws Exception {
         JSONParser jsonParser = new JSONParser();
-        JSONObject respObject;
-        respObject = (JSONObject)jsonParser.parse(json);
+        JSONObject respObject = (JSONObject)jsonParser.parse(json);
+        
         token = (String)respObject.get(TOKEN_KEY);
         name = (String)respObject.get(NAME_KEY);
         email = (String)respObject.get(EMAIL_KEY);
@@ -121,7 +108,6 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         Properties lastState = new Properties();
         manifest = new File(manifests, email); manifest.createNewFile();
         lastState.load(new FileInputStream(manifest));
-        Log.d(TAG, manifest.getPath());
         state = new Properties();
 
         for (int i = 0; i < items.size(); i++) {
@@ -129,15 +115,15 @@ public class QuizManifest extends BaseAdapter implements IConstants {
             quizzes[i] = new Quij(((String)quizItem.get(QUIZ_NAME_KEY)).replace(",", " "),
                   (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY));
             JSONArray questions = (JSONArray)quizItem.get("questions");
-            Log.d(TAG, quizzes[i].getId() + " " + quizzes[i].getName() + " has " + questions.size() + " questions");
             
-            for (int j = 0; j < questions.size(); j++) {
+            for (int j = 0; j < questions.size(); j++) {                
                 JSONObject item = (JSONObject)questions.get(j);
+                Log.d(TAG, item.toJSONString());
                 Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
                                 (String)item.get(ID_KEY),
                                 (String)item.get(GR_ID_KEY),
                                 (String)item.get(GR_PATH_KEY));
-                Log.d(TAG, question.getName() + " " + question.getImgLocn());
+                
                 String scan = (String)item.get(SCAN_KEY);
                 double marks = (Double)item.get(MARKS_KEY);
                 if (scan == null) {
@@ -150,33 +136,6 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                 quizzes[i].add(question);
             }
         }
-        
-//        Quij quiz = null; long quizId = 0;
-//        for (int i = 0; i < items.size(); i++) {
-//
-//            JSONObject item = (JSONObject) items.get(i);
-//            if (quizId == 0 || quizId != (Long)item.get(QUIZ_ID_KEY)) {
-//                if (quiz != null) quizzes.add(quiz);
-//                quizId = (Long)item.get(QUIZ_ID_KEY);
-//                quiz = new Quij(((String)item.get(QUIZ_NAME_KEY)).replace("-", " "),
-//                        (String)item.get(QUIZ_PATH_KEY), quizId);
-//            }
-//            
-//            Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
-//                    String.valueOf((Long)item.get(GR_ID_KEY)), (String)item.get(GR_PATH_KEY));
-//            String scan = (String)item.get(SCAN_KEY);
-//            double marks = (Double)item.get(MARKS_KEY);            
-//            if (scan == null) {
-//                question.setState(lastState.getProperty(question.getGRId()) == null ? WAITING : 
-//                    Short.parseShort(lastState.getProperty(question.getGRId())));
-//            } else {
-//                question.setScanLocn(scan);
-//                question.setState(marks < 0 ? RECEIVED : GRADED);
-//            }            
-//            quiz.add(question);
-//            state.put(question.getGRId(), String.valueOf(question.getState()));
-//        }
-//        if (quiz != null) quizzes.add(quiz);
     }
         
     private String name, email, token;
@@ -284,7 +243,8 @@ class Question {
     }
     
     public String getNameStateId() {
-        return String.format("%s,%s,%s,%s", name, state, id, GRId);
+        return String.format("%s,%s,%s,%s", name, state, id, 
+            GRId.equals("") ? 0 : GRId);
     }
     
     @Override

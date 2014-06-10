@@ -16,6 +16,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,12 +59,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         multiMode = true;
         if (savedInstanceState == null) {
             vpPreview.setCurrentItem(0);
-            adjustButtons(adapter.getQuestions()[0].getState());
-            vpPreview.startFading();
+            adjustView(0);
         } else {
             int page = savedInstanceState.getInt("page");
             vpPreview.setCurrentItem(page);
-            adjustButtons(adapter.getQuestions()[page].getState());
+            adjustView(page);
             
             adapter.setZoomed(savedInstanceState.getBoolean("zoomed"));
             adapter.setFlipped(savedInstanceState.getBoolean("flipped"));
@@ -134,46 +134,24 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         int currentItem = vpPreview.getCurrentItem();
         int nextItem = view.getId() == R.id.btnLeft ?
             (--currentItem < 0 ? adapter.getCount()-1 : currentItem):
-            (++currentItem == adapter.getCount() ? 0 : currentItem);            
-        unrenderFeedback(nextItem);
+            (++currentItem == adapter.getCount() ? 0 : currentItem);
+        adjustView(nextItem);
         vpPreview.setCurrentItem(nextItem, true);
         vpPreview.startFading();
-        adjustButtons(adapter.getQuestions()[nextItem].getState());
     }
     
     public void takeAction(View view) {
         int currentIndex = vpPreview.getCurrentItem();
-        takePicture(currentIndex);
-    }
-    
-    public void toggleView(View view) {
-        int currentIndex = vpPreview.getCurrentItem();
-        switch (view.getId()) {
-        case R.id.btnZoom:
-            adapter.zoom(currentIndex);
-            if (adapter.getZoomed()) {
-                enableSingleMode();
-            } else {
-                if (!adapter.getFlipped()) enableMultiMode();
-            }
+        Question q = adapter.getQuestions()[currentIndex];
+        switch (q.getState()) {
+        case DOWNLOADED:
+            takePicture(currentIndex);
             break;
-        case R.id.btnFlip:
+        default:
             adapter.flip(currentIndex);
-            if (adapter.getFlipped()) {
-                enableSingleMode();
-                Question q = adapter.getQuestions()[currentIndex];
-                if (q.getState() == GRADED) {
-                    try {
-                        renderFeedback(currentIndex, 0);
-                    } catch (Exception e) {
-                        Log.e(TAG, e.getClass().toString());                      
-                    }                    
-                } 
-            } else {
-                enableMultiMode();
-                unrenderFeedback(currentIndex);
-            }
+            adjustView(currentIndex);
         }
+        vpPreview.startFading();
     }
     
     private void takePicture(int position) {
@@ -197,10 +175,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             (new File(uploadsDir, q.getId())).createNewFile();
             uploadIntent.putExtra(TAG_ID, uploadsDir.getPath());
             uploadIntent.putExtra(TAG, answersDir.getPath());
-            //startService(uploadIntent); TODO: uncomment this!
+            startService(uploadIntent);
             q.setState(SENT);
             adapter.update(position);
-            onPageSelected(position);
+            adjustView(position);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }        
@@ -228,7 +206,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
 
     private void renderFeedback(int position, int index) throws Exception {
-        Log.d(TAG, "renderFeedback -- > " + position);
         if (feedback[position] == null) {
             feedback[position] = loadFeedback(position);
         }
@@ -238,15 +215,17 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         fdbkAdapter = new FeedbackAdapter(feedback[position], this);
         vpFdbk = (ViewPager)findViewById(R.id.vpFeedback);
         vpFdbk.setVisibility(View.VISIBLE);
-        vpFdbk.setOffscreenPageLimit(3);        
+        vpFdbk.setOffscreenPageLimit(3);
         LayoutParams lp = (LayoutParams)vpFdbk.getLayoutParams();
         DisplayMetrics dmetrics = this.getApplicationContext().
-                getResources().getDisplayMetrics();                                
-        lp.height = (int)dmetrics.heightPixels/10;
-        vpFdbk.setLayoutParams(lp);        
+                getResources().getDisplayMetrics();
+        lp.height = (int)dmetrics.heightPixels/5;
+        vpFdbk.setLayoutParams(lp);
         vpFdbk.setAdapter(fdbkAdapter);
         vpFdbk.setOnPageChangeListener(this);
-        adapter.shift(feedback[position].x[index], feedback[position].y[index], position);
+        adapter.shift(feedback[position].x[index], 
+                feedback[position].y[index], position);
+                
     }
     
     private void unrenderFeedback(int position) {
@@ -254,32 +233,39 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         adapter.shift(FdbkView.NO_FEEDBACK, FdbkView.NO_FEEDBACK, position);
     }
     
-    private void enableSingleMode() {
-        multiMode = false;
-        findViewById(R.id.btnAction).setVisibility(View.GONE);
-        findViewById(R.id.btnLeft).setVisibility(View.GONE);
-        findViewById(R.id.btnRight).setVisibility(View.GONE);
-    }
-    
-    private void enableMultiMode() {
-        multiMode = true;
-        findViewById(R.id.btnLeft).setVisibility(View.VISIBLE);
-        findViewById(R.id.btnRight).setVisibility(View.VISIBLE);
-    }
-    
-    private void adjustButtons(int state) {
+    private void adjustView(int position) {
+        Question q = adapter.getQuestions()[position];
+        if (adapter.getFlipped()) {
+            if (q.getState() == GRADED) {
+                try {
+                    renderFeedback(position, 0);
+                } catch (Exception e) {
+                    Log.e(TAG, e.getClass().toString());
+                }
+            }
+        } else {
+            unrenderFeedback(position);
+        }
+                
         Button btnAction = (Button)this.findViewById(R.id.btnAction);
-        switch (state) {
+        Drawable img = null;
+        String text = null;
+        switch (q.getState()) {
         case DOWNLOADED:
-            btnAction.setVisibility(View.VISIBLE);
+            img = getResources().getDrawable(android.R.drawable.ic_menu_camera);
+            text = "Activate";
             break;
         case CAPTURED:
         case WAITING:
         case SENT:
         case RECEIVED:
         case GRADED:
-            btnAction.setVisibility(View.GONE);
+            img = getResources().getDrawable(android.R.drawable.ic_menu_revert);
+            boolean flipped = adapter.getFlipped();
+            text = flipped ? (q.getState() > SENT ? "Question" : "Solution") : "Answer";
         }
+        btnAction.setCompoundDrawablesWithIntrinsicBounds(null, img, null, null);
+        btnAction.setText(text);
     }
     
     private String[] toNameStateIds(Question[] questions) {
@@ -383,7 +369,8 @@ class FlowViewPager extends ViewPager {
     public boolean onInterceptTouchEvent(MotionEvent mev) {
         switch (mev.getAction()) {
         case MotionEvent.ACTION_DOWN:
-            startFading();
+            if (group.getVisibility() == View.INVISIBLE)
+                startFading();
             break;
         default:
         }
@@ -399,13 +386,13 @@ class FlowViewPager extends ViewPager {
         group.setVisibility(View.VISIBLE);
         Animation fadeOut = new AlphaAnimation(1, 0);  // opaque (1) transparent (0)
         fadeOut.setInterpolator(new AccelerateInterpolator());
-        fadeOut.setStartOffset(2000); // Start fading out after
-        fadeOut.setDuration(1000); // Fadeout duration 
+        fadeOut.setStartOffset(1000); // Start fading out after
+        fadeOut.setDuration(2000); // Fadeout duration
         fadeOut.setAnimationListener(new AnimationListener()
         {
                 public void onAnimationEnd(Animation animation) 
                 {
-                    group.setVisibility(View.GONE);
+                    group.setVisibility(View.INVISIBLE);
                 }
                 public void onAnimationRepeat(Animation animation) {}
                 public void onAnimationStart(Animation animation) {}
@@ -475,12 +462,21 @@ class FeedbackAdapter extends PagerAdapter {
     private Feedback feedback;
     private Activity activity;
     
-    private final String HTML = "<html><head>" 
-            + "<script type='text/x-mathjax-config'>" 
-            + "MathJax.Hub.Config({showMathMenu: false, " 
-            + "jax: ['input/TeX','output/HTML-CSS'], " 
-            + "extensions: ['tex2jax.js'], "
-            + "TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'] } });</script>" 
+    private final String HTML = 
+            "<html><head>"            
+//            + "<script type='text/x-mathjax-config'>" 
+//            +   "MathJax.Hub.Config({showMathMenu: false, " 
+//            +       "jax: ['input/TeX','output/HTML-CSS'], " 
+//            +           "extensions: ['tex2jax.js'], "
+//            +       "TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'] } });"
+//            + "</script>"             
+            + "<script type='text/x-mathjax-config'>"
+            +   "MathJax.Hub.Config({ showMathMenu: false }); " 
+            +   "MathJax.Hub.Register.StartupHook(\"HTML-CSS Jax Ready\", function() {"
+            +       "var VARIANT = MathJax.OutputJax[\"HTML-CSS\"].FONTDATA.VARIANT;"
+            +       "VARIANT[\"normal\"].fonts.unshift(\"MathJax_SansSerif\");});"
+            + "</script>"
+            
             + "<script type='text/javascript' src='http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'></script>"
             + "<span id='math' style='color:white; margin:0 auto;'>\\[%s\\]</span></head><body></body></html>";
     
