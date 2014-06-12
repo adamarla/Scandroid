@@ -33,9 +33,11 @@ public interface IConstants {
           CAPTURED = 2,
           SENT = 3,
           RECEIVED = 4,
-          GRADED = 5,
-          UNMARKED = 6,
-          MARKED = 7, 
-          SAVED = 8;
+          GRADED = 5;
     
+    short NOT_YET_BILLED = 0,
+          NOT_YET_STARTED = 1,
+          NOT_YET_COMPLETED = 2,
+          NOT_YET_GRADED = 3,
+          DONE = 4;    
 }

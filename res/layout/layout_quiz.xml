@@ -19,23 +19,8 @@
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:textColor="#efefef"/>
-    
-    <TextView
-        android:id="@+id/tvAttempted"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:textColor="#ababab"/>
+        android:layout_marginRight="4dp"
+        android:background="@drawable/button"/>
     
-    <TextView
-        android:id="@+id/tvGraded"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        android:textColor="#676767"/>
-              
 </RelativeLayout>

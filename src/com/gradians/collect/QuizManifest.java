@@ -11,14 +11,16 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import android.content.Context;
-import android.util.Log;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 
-public class QuizManifest extends BaseAdapter implements IConstants {
+public class QuizManifest extends BaseAdapter implements Filterable, IConstants {
     
     public QuizManifest(Context context, String json) throws Exception {
         this.inflater = LayoutInflater.from(context);
@@ -43,6 +45,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         if (q.getState() != newState) {
             q.setState(newState);
             state.setProperty(id, String.valueOf(newState));
+            quizzes[quizPosn].determineState();
             this.notifyDataSetChanged();            
         }
     }
@@ -67,25 +70,37 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         if(convertView == null) {
             convertView = inflater.inflate(R.layout.layout_quiz, parent, false);
         }
+        
         Quij quiz = (Quij)getItem(position);
-
-        float graded, sentRecvd;
-        graded = quiz.getQuestionsByState(GRADED).length;
-        sentRecvd = quiz.getQuestionsByState(SENT).length + 
-                quiz.getQuestionsByState(RECEIVED).length;
         
         TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
         tv.setTag(position);
         tv.setText(quiz.toString());
 
         TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
-        tvTotal.setText(String.format("total %2d", quiz.size()));
-        TextView tvAttempted = (TextView)convertView.findViewById(R.id.tvAttempted);
-        tvAttempted.setText(String.format("sent %2d", (int)(sentRecvd + graded)));
-        TextView tvGraded = (TextView)convertView.findViewById(R.id.tvGraded);
-        tvGraded.setText(String.format("graded %2d", (int)graded));
-
+        tvTotal.setText(String.format("%d", quiz.size()));
+        
+        if (quiz.getState() == NOT_YET_BILLED) {
+            tvTotal.setTextColor(Color.DKGRAY);
+            tvTotal.setBackgroundResource(android.R.color.white);
+        } else if (quiz.getState() == NOT_YET_STARTED) {
+            tvTotal.setTextColor(Color.DKGRAY);
+            tvTotal.setBackgroundResource(R.drawable.quiz_not_started);                
+        } else if (quiz.getState() == GRADED) {
+            tvTotal.setTextColor(Color.WHITE);
+            tvTotal.setBackgroundResource(R.drawable.quiz_done);
+        } else {            
+            tvTotal.setTextColor(Color.WHITE);
+            tvTotal.setBackgroundResource(R.drawable.button);
+        }
+        
         return convertView;
+    }
+
+    @Override
+    public Filter getFilter() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     public void commit() throws Exception {
@@ -118,12 +133,11 @@ public class QuizManifest extends BaseAdapter implements IConstants {
             
             for (int j = 0; j < questions.size(); j++) {                
                 JSONObject item = (JSONObject)questions.get(j);
-                Log.d(TAG, item.toJSONString());
                 Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
                                 (String)item.get(ID_KEY),
                                 (String)item.get(GR_ID_KEY),
                                 (String)item.get(GR_PATH_KEY));
-                
+
                 String scan = (String)item.get(SCAN_KEY);
                 double marks = (Double)item.get(MARKS_KEY);
                 if (scan == null) {
@@ -148,12 +162,48 @@ public class QuizManifest extends BaseAdapter implements IConstants {
 
 }
 
-class Quij extends ArrayList<Question> {
+class Quij extends ArrayList<Question> implements IConstants {
     
     public Quij(String name, String path, long id) {
         this.name = name;
         this.id = id;
         this.path = path;
+    }
+    
+    public void determineState() {
+        if (this.get(0).getGRId().equals("")) {
+            state = NOT_YET_BILLED;
+            return;
+        }        
+        short mostFarAlong = this.get(0).getState(), 
+              leastFarAlong = this.get(this.size()-1).getState();
+        for (Question q : this) {            
+            mostFarAlong = q.getState() > mostFarAlong ? 
+                q.getState() : mostFarAlong;
+            leastFarAlong = q.getState() < leastFarAlong ?
+                q.getState() : leastFarAlong;
+        }
+        
+        switch (mostFarAlong) {
+        case DOWNLOADED:
+            state = NOT_YET_STARTED;
+            break;
+        case CAPTURED:
+        case SENT:
+        case RECEIVED:
+            state = leastFarAlong == DOWNLOADED ? 
+                    NOT_YET_COMPLETED : NOT_YET_GRADED;
+            break;
+        case GRADED:
+            state = leastFarAlong == GRADED ? 
+                    GRADED : NOT_YET_GRADED;
+            break;
+        default:
+        }
+    }
+    
+    public short getState() {
+        return state;
     }
     
     public String getName() {
@@ -189,6 +239,7 @@ class Quij extends ArrayList<Question> {
     
     private String name, path;
     private long id;
+    private short state;
     
     private static final long serialVersionUID = 1L;
 }
@@ -243,8 +294,8 @@ class Question {
     }
     
     public String getNameStateId() {
-        return String.format("%s,%s,%s,%s", name, state, id, 
-            GRId.equals("") ? 0 : GRId);
+        return name + SEP + state + SEP + id + SEP + 
+            (GRId.equals("") ? "0" : GRId);
     }
     
     @Override
@@ -253,7 +304,8 @@ class Question {
     }
     
     private String name, id, GRId, imgLocn, scanLocn;
-    private short state;    
+    private short state;
+    
+    public static final String SEP = ",";
+    
 }
-
-

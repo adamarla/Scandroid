@@ -9,50 +9,77 @@
         android:id="@+id/vpPreview"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    </com.gradians.collect.FlowViewPager> 
-    	
-    <RelativeLayout 
-        android:id="@+id/btnBarViews"
+    </com.gradians.collect.FlowViewPager>
+
+    <LinearLayout
+        android:id="@+id/llBtnBar"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="invisible"
-        android:layout_centerVertical="true">
-    
-	    <ImageButton 
-	        android:id="@+id/btnLeft"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_centerVertical="true"
-	        android:contentDescription="@string/zoom_button"
-	        android:onClick="page"
-	        android:src="@drawable/ic_action_back"/>
-	        
-	    <Button
+        android:layout_height="50dp" >
+        
+	    <TextView
+	        android:id="@+id/btnName"
+	        android:layout_weight="1"
+	        android:layout_width="0dp"
+	        android:layout_height="match_parent"
+	        android:background="@drawable/button"	        
+	        android:gravity="center"/>
+	    
+        <ImageButton 
+            android:id="@+id/btnLeft"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/zoom_button"
+            android:onClick="page"           
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:gravity="center"
+            android:background="@drawable/button"
+            android:src="@drawable/ic_action_back"/>        
+            
+	    <ImageButton
 	        android:id="@+id/btnAction"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
+            android:layout_weight="2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
 	        android:contentDescription="@string/action_button"
-	        android:onClick="takeAction"/>
-	        
+	        android:background="@drawable/button"
+            android:gravity="center"
+	        android:src="@drawable/ic_action_undo"
+	        android:onClick="takeAction"/>    
+	    
 	    <ImageButton 
 	        android:id="@+id/btnRight"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
 	        android:contentDescription="@string/zoom_button"
 	        android:onClick="page"
-	        android:src="@drawable/ic_action_forward"/>
-    
-    </RelativeLayout>
-    	       
+            android:layout_marginLeft="2dp"
+            android:layout_marginRight="2dp"
+            android:gravity="center"
+	        android:background="@drawable/button"
+	        android:src="@drawable/ic_action_forward"/>        
+                       
+        <ImageButton
+            android:id="@+id/btnMin"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/zoom_button"
+            android:onClick="showHide"
+            android:background="@drawable/button"
+            android:gravity="center"
+            android:src="@android:drawable/ic_menu_more"/>
+        
+	    </LinearLayout>    
+  
     <android.support.v4.view.ViewPager
         android:id="@+id/vpFeedback"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="50dp"
         android:layout_alignParentBottom="true"
-        android:background="#CC676767"/>        
+        android:background="@drawable/gray_background"/>        
     
 </RelativeLayout>

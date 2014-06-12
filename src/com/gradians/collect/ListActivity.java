@@ -12,6 +12,8 @@ import android.content.SharedPreferences.Editor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Toast;
@@ -28,6 +30,12 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
     }
     
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.list, menu);
+        return true;    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         if (manifest != null) {
@@ -38,6 +46,21 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
             }
         }
     }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+      switch (item.getItemId()) {
+      case R.id.action_sign_out:
+          initiateAuthActivity();
+          break;
+      case R.drawable.ic_action_refresh:
+          checkAuth();
+          break;
+      default:
+        break;
+      }
+      return super.onOptionsItemSelected(item);
+    }    
     
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
@@ -61,12 +84,11 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
         } else if (requestCode == FLOW_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    String[] name_state_ids = data.getStringArrayExtra(TAG);
-                    int itemPosition = 0;
+                    String[] name_state_ids = data.getStringArrayExtra(TAG_ID);
+                    int itemPosition = 0; short state;
                     for (String name_state_id : name_state_ids) {
-                        short state;
-                        String[] tokens = name_state_id.split("-");
-                        state = Short.parseShort(tokens[1]);
+                        String[] tokens = name_state_id.split(Question.SEP);
+                        state = Short.parseShort(tokens[1]);                        
                         manifest.update(selectedQuizPosition, itemPosition++, state);
                     }
                 } catch (Exception e) {
@@ -108,7 +130,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
         for (int i = 0; i < questions.length; i++) {
             name_state_ids[i] = questions[i].getNameStateId();
         }
-        Intent flowIntent = new Intent(this.getApplicationContext(), 
+        Intent flowIntent = new Intent(this.getApplicationContext(),
                 com.gradians.collect.FlowActivity.class);
         flowIntent.putExtra(TAG_ID, name_state_ids);
         flowIntent.putExtra(TAG, this.studentDir.getPath());
@@ -122,7 +144,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
             lv.setAdapter(manifest);
             lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
             lv.setOnItemClickListener(this);
-        }        
+        }
         mkdirs(manifest.getEmail());
         triggerAllDownloads();
     }
@@ -172,6 +194,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
                 }
             }
         }
+        quiz.determineState();
     }
     
     private void triggerAllDownloads() {
@@ -180,7 +203,10 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
             Quij quiz = (Quij)manifest.getItem(j);
             triggerDownloads(dlm, quiz);
         }
-        dlm.start("Synchronizing Files", "Please wait...");
+        if (!dlm.start("Synchronizing Files", "Please wait...", this)) {
+//            ViewSwitcher vsLists = (ViewSwitcher)findViewById(R.id.vsLists);
+//            vsLists.showPrevious();            
+        }
     }    
 
     private void checkAuth() {
@@ -243,9 +269,8 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
         (new File(studentDir, UPLOAD_DIR_NAME)).mkdir();
     }
     
-    
     private void handleError(String error, String message) {
-        Log.d(TAG, error + " " + message);
+        Log.e(TAG, error + " " + message);
     }
 
     private int selectedQuizPosition;

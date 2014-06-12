@@ -22,16 +22,15 @@
 		</HorizontalScrollView>
     </ScrollView>
     
-    <TextView
+    <!--TextView
         android:id="@+id/tvPreview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
-        android:background="#CC676767"
+        android:padding="15dp"
+        android:background="@drawable/button"
         android:gravity="center"
-        android:textColor="#ffffff"/>
+        android:textColor="#ffffff"/-->
     
 </RelativeLayout>

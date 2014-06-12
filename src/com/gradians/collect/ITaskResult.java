@@ -9,6 +9,7 @@ public interface ITaskResult {
     int PREVIEW_ACTIVITY_REQUEST_CODE       = 500;
     int FLOW_ACTIVITY_REQUEST_CODE          = 600;
     int FETCH_COMMENTS_TASK_RESULT_CODE     = 700;
+    int DOWNLOAD_MONITOR_TASK               = 800;
 
     void onTaskResult(int requestCode, int resultCode, String resultData);
     

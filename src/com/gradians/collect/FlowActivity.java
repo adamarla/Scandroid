@@ -11,33 +11,27 @@ import org.json.simple.parser.JSONParser;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.MotionEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
-import android.widget.RelativeLayout.LayoutParams;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, IConstants {
+public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, IConstants{
 
     @Override 
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +46,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         feedback = new Feedback[name_state_ids.length];
         adapter = new FlowAdapter(toQuestions(name_state_ids), 
                 this.getSupportFragmentManager());
-        vpPreview = (FlowViewPager)this.findViewById(R.id.vpPreview);
-        vpPreview.setOverlay((ViewGroup)this.findViewById(R.id.btnBarViews));
+        vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
         vpPreview.setAdapter(adapter);
         
         multiMode = true;
@@ -63,10 +56,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } else {
             int page = savedInstanceState.getInt("page");
             vpPreview.setCurrentItem(page);
-            adjustView(page);
-            
             adapter.setZoomed(savedInstanceState.getBoolean("zoomed"));
             adapter.setFlipped(savedInstanceState.getBoolean("flipped"));
+            adjustView(page);            
             
             int fdbkPg = savedInstanceState.getInt("fdbkPage", FdbkView.NO_FEEDBACK);
             if (fdbkPg != FdbkView.NO_FEEDBACK) {
@@ -77,32 +69,43 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                     } catch (Exception e) {
                         Log.e(TAG, e.getMessage());
                     }                    
-                }                
+                }
             }
         }
-    }
+    }    
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG, "FlowActivity.onSaveInstanceState");
         outState.putStringArray(TAG_ID, toNameStateIds(adapter.getQuestions()));
         outState.putBoolean("multiMode", multiMode);
         outState.putInt("page", vpPreview.getCurrentItem());
         outState.putBoolean("zoomed", adapter.getZoomed());
         outState.putBoolean("flipped", adapter.getFlipped());
-        if (adapter.getFlipped() && feedback[vpPreview.getCurrentItem()] != null) {
+        if (!adapter.getFlipped() && feedback[vpPreview.getCurrentItem()] != null) {
             outState.putInt("fdbkPage", vpFdbk.getCurrentItem());            
         }
         super.onSaveInstanceState(outState);
     }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Intent intent = new Intent();
+        String[] nsids = toNameStateIds(adapter.getQuestions());
+        intent.putExtra(TAG_ID, nsids);
+        this.setResult(RESULT_OK, intent);
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
-    protected void onPause() {
+    public void onBackPressed() {
         Intent intent = new Intent();
-        intent.putExtra(TAG, toNameStateIds(adapter.getQuestions()));
+        String[] nsids = toNameStateIds(adapter.getQuestions());
+        intent.putExtra(TAG_ID, nsids);
         this.setResult(RESULT_OK, intent);
-        super.onPause();
+        super.onBackPressed();
     }
-    
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
@@ -137,7 +140,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             (++currentItem == adapter.getCount() ? 0 : currentItem);
         adjustView(nextItem);
         vpPreview.setCurrentItem(nextItem, true);
-        vpPreview.startFading();
     }
     
     public void takeAction(View view) {
@@ -151,7 +153,16 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             adapter.flip(currentIndex);
             adjustView(currentIndex);
         }
-        vpPreview.startFading();
+    }
+    
+    public void showHide(View view) {
+        ViewGroup btnBar = (ViewGroup)findViewById(R.id.llBtnBar);
+        for (int i = 0; i < btnBar.getChildCount(); i++) {
+            btnBar.getChildAt(i).setVisibility(
+                btnBar.getChildAt(i).getVisibility() == View.INVISIBLE ?
+                View.VISIBLE : View.INVISIBLE);
+        }
+        findViewById(R.id.btnMin).setVisibility(View.VISIBLE);
     }
     
     private void takePicture(int position) {
@@ -168,7 +179,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     private void uploadPicture(int position) {
-        final Question q = adapter.getQuestions()[position];
+        Question q = adapter.getQuestions()[position];
         Intent uploadIntent = new Intent(getApplicationContext(),
             com.gradians.collect.ImageUploadService.class);
         try {
@@ -216,16 +227,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpFdbk = (ViewPager)findViewById(R.id.vpFeedback);
         vpFdbk.setVisibility(View.VISIBLE);
         vpFdbk.setOffscreenPageLimit(3);
-        LayoutParams lp = (LayoutParams)vpFdbk.getLayoutParams();
-        DisplayMetrics dmetrics = this.getApplicationContext().
-                getResources().getDisplayMetrics();
-        lp.height = (int)dmetrics.heightPixels/5;
-        vpFdbk.setLayoutParams(lp);
         vpFdbk.setAdapter(fdbkAdapter);
         vpFdbk.setOnPageChangeListener(this);
         adapter.shift(feedback[position].x[index], 
-                feedback[position].y[index], position);
-                
+                feedback[position].y[index], position);                
     }
     
     private void unrenderFeedback(int position) {
@@ -235,7 +240,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     
     private void adjustView(int position) {
         Question q = adapter.getQuestions()[position];
-        if (adapter.getFlipped()) {
+        ((TextView)findViewById(R.id.btnName)).setText(q.getName());
+        if (!adapter.getFlipped()) {
             if (q.getState() == GRADED) {
                 try {
                     renderFeedback(position, 0);
@@ -246,14 +252,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } else {
             unrenderFeedback(position);
         }
-                
-        Button btnAction = (Button)this.findViewById(R.id.btnAction);
+        
+        ImageButton btnAction = (ImageButton)this.findViewById(R.id.btnAction);
         Drawable img = null;
-        String text = null;
         switch (q.getState()) {
         case DOWNLOADED:
-            img = getResources().getDrawable(android.R.drawable.ic_menu_camera);
-            text = "Activate";
+            img = getResources().getDrawable(R.drawable.ic_action_camera);
             break;
         case CAPTURED:
         case WAITING:
@@ -261,11 +265,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         case RECEIVED:
         case GRADED:
             img = getResources().getDrawable(android.R.drawable.ic_menu_revert);
-            boolean flipped = adapter.getFlipped();
-            text = flipped ? (q.getState() > SENT ? "Question" : "Solution") : "Answer";
         }
-        btnAction.setCompoundDrawablesWithIntrinsicBounds(null, img, null, null);
-        btnAction.setText(text);
+        btnAction.setImageDrawable(img);
     }
     
     private String[] toNameStateIds(Question[] questions) {
@@ -296,12 +297,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             grId = tokens[3];
             switch (state) {
             case WAITING:
-                imgLocn = "file:///android_asset/albert_einstein.jpg";
-                scanLocn = "file:///android_asset/albert_einstein.jpg";
+                imgLocn = scanLocn = "file:///android_asset/albert_einstein.jpg";
                 break;
             case DOWNLOADED:
-                imgLocn = (new File(questionsDir, id)).getPath();
-                scanLocn = "file:///android_asset/albert_einstein.jpg";
+                imgLocn = scanLocn = (new File(questionsDir, id)).getPath();
                 break;
             case CAPTURED:
             case SENT:
@@ -322,7 +321,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             questions[i].setState(state);
             questions[i].setScanLocn(scanLocn);
         }
-        dlm.start("Retreiving Feedback", "Please wait...");
+        dlm.start("Retreiving Feedback", "Please wait...", null);
         return questions;
     }
     
@@ -339,7 +338,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private Feedback[] feedback;
     private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir, uploadsDir;
 
-    private FlowViewPager vpPreview;
+    private ViewPager vpPreview;
     private FlowAdapter adapter;
     
     private ViewPager vpFdbk;
@@ -349,58 +348,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     private final String FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s";
 
-}
-
-class FlowViewPager extends ViewPager {
-
-    public FlowViewPager(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
-    public FlowViewPager(Context context) {
-        super(context);
-    }
-    
-    public void setOverlay(ViewGroup group) {
-        this.group = group;
-    }
-
-    @Override
-    public boolean onInterceptTouchEvent(MotionEvent mev) {
-        switch (mev.getAction()) {
-        case MotionEvent.ACTION_DOWN:
-            if (group.getVisibility() == View.INVISIBLE)
-                startFading();
-            break;
-        default:
-        }
-        return false;
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent arg0) {
-        return false;
-    }
-    
-    public void startFading() {
-        group.setVisibility(View.VISIBLE);
-        Animation fadeOut = new AlphaAnimation(1, 0);  // opaque (1) transparent (0)
-        fadeOut.setInterpolator(new AccelerateInterpolator());
-        fadeOut.setStartOffset(1000); // Start fading out after
-        fadeOut.setDuration(2000); // Fadeout duration
-        fadeOut.setAnimationListener(new AnimationListener()
-        {
-                public void onAnimationEnd(Animation animation) 
-                {
-                    group.setVisibility(View.INVISIBLE);
-                }
-                public void onAnimationRepeat(Animation animation) {}
-                public void onAnimationStart(Animation animation) {}
-        });
-        group.startAnimation(fadeOut);
-    }
-
-    private ViewGroup group;    
 }
 
 class Feedback {
@@ -418,18 +365,20 @@ class FeedbackAdapter extends PagerAdapter {
         this.activity = activity;
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
         final String latex = feedback.text[position];
         final WebView webView = new WebView(activity);
-        //webView.setBackgroundResource(R.drawable.dialog);
+        webView.clearCache(false);
+        webView.destroyDrawingCache();
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setBuiltInZoomControls(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
             webView.getSettings().setDisplayZoomControls(false);
-        webView.loadDataWithBaseURL("http://cdn.mathjax.org", 
+        webView.loadDataWithBaseURL("file:///android_asset/mathjax",
                 String.format(HTML, latex), "text/html", "utf-8", "");        
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -469,15 +418,18 @@ class FeedbackAdapter extends PagerAdapter {
 //            +       "jax: ['input/TeX','output/HTML-CSS'], " 
 //            +           "extensions: ['tex2jax.js'], "
 //            +       "TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'] } });"
-//            + "</script>"             
+//            + "</script>"            
             + "<script type='text/x-mathjax-config'>"
-            +   "MathJax.Hub.Config({ showMathMenu: false }); " 
+            +   "MathJax.Hub.Config({ showMathMenu: false, \"HTML-CSS\": {"
+            +       "availableFonts: [\"TeX\"], preferredFont: \"TeX\", webFont: \"TeX\""
+            +   "} }); "
             +   "MathJax.Hub.Register.StartupHook(\"HTML-CSS Jax Ready\", function() {"
             +       "var VARIANT = MathJax.OutputJax[\"HTML-CSS\"].FONTDATA.VARIANT;"
             +       "VARIANT[\"normal\"].fonts.unshift(\"MathJax_SansSerif\");});"
             + "</script>"
             
-            + "<script type='text/javascript' src='http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML'></script>"
+            + "<script type='text/javascript' src='file:///android_asset/mathjax/MathJax.js?config=TeX-AMS_HTML'></script>"
             + "<span id='math' style='color:white; margin:0 auto;'>\\[%s\\]</span></head><body></body></html>";
     
 }
+
