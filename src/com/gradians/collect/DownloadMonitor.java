@@ -80,7 +80,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     public void onDismiss(DialogInterface dialog) {
         activity.unregisterReceiver(this);
         if (resultHandler != null)
-            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK, Activity.RESULT_FIRST_USER, null);       
+            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, Activity.RESULT_FIRST_USER, null);       
     }
     
     private void onDownloadComplete(long requestId) {
@@ -93,7 +93,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             }
         }
         if (requestIds.size() == 0 && resultHandler != null) 
-                resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK, Activity.RESULT_OK, null);        
+                resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, Activity.RESULT_OK, null);        
     }
 
     private Activity activity;

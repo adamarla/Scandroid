@@ -134,6 +134,8 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
                 com.gradians.collect.FlowActivity.class);
         flowIntent.putExtra(TAG_ID, name_state_ids);
         flowIntent.putExtra(TAG, this.studentDir.getPath());
+        if (quiz.getState() == NOT_YET_BILLED) 
+            flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
 
@@ -224,9 +226,9 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
                 peedee = ProgressDialog.show(this, "Initializing", 
                         "Please wait...");
                 peedee.setIndeterminate(true);
-                peedee.setIcon(ProgressDialog.STYLE_SPINNER);        
+                peedee.setIcon(ProgressDialog.STYLE_SPINNER);
                 URL[] urls = { new URL(urlString) };
-                new HttpCallsAsyncTask(this, this, 
+                new HttpCallsAsyncTask(this, 
                         VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
             } catch (Exception e) {
                 handleError("Auth Check Failed", e.getMessage());
@@ -275,7 +277,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
 
     private int selectedQuizPosition;
     private QuizManifest manifest;
-    private File studentDir, questionsDir, answersDir, solutionsDir;    
+    private File studentDir, questionsDir, answersDir, solutionsDir;
     ProgressDialog peedee;
     
     private final String URL = "http://%s/%s/%s";    

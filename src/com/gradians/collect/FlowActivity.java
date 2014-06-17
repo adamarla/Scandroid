@@ -14,14 +14,17 @@ import android.support.v4.view.ViewPager;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -41,8 +44,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         String[] name_state_ids = savedInstanceState == null ? 
                 getIntent().getStringArrayExtra(TAG_ID) :
                 savedInstanceState.getStringArray(TAG_ID);
-                
-        studentDir = new File(this.getIntent().getStringExtra(TAG));
+
+        price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
+        studentDir = new File(getIntent().getStringExtra(TAG));
         feedback = new Feedback[name_state_ids.length];
         adapter = new FlowAdapter(toQuestions(name_state_ids), 
                 this.getSupportFragmentManager());
@@ -76,7 +80,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        Log.d(TAG, "FlowActivity.onSaveInstanceState");
         outState.putStringArray(TAG_ID, toNameStateIds(adapter.getQuestions()));
         outState.putBoolean("multiMode", multiMode);
         outState.putInt("page", vpPreview.getCurrentItem());
@@ -110,6 +113,13 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
+                String[] grIds = data.getStringArrayExtra(TAG_ID);
+                if (grIds != null) {
+                    Question[] questions = adapter.getQuestions();
+                    for (int i = 0; i < grIds.length; i++) {
+                        questions[i].setGRId(grIds[i]);
+                    }
+                }
                 Uri picture = data.getData();
                 int position = vpPreview.getCurrentItem();
                 Question q = adapter.getQuestions()[position];
@@ -174,6 +184,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         takePictureIntent.putExtra(TAG,
                 (new File(studentDir, ANSWERS_DIR_NAME)).getPath());
         takePictureIntent.putExtra(TAG_ID, name_id);
+        if (price > 0)
+            takePictureIntent.putExtra(QUIZ_PRICE_KEY, 20);
         startActivityForResult(takePictureIntent,
                 ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
     }
@@ -183,7 +195,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         Intent uploadIntent = new Intent(getApplicationContext(),
             com.gradians.collect.ImageUploadService.class);
         try {
-            (new File(uploadsDir, q.getId())).createNewFile();
+            (new File(uploadsDir, q.getId() + "-" + q.getGRId())).createNewFile();
             uploadIntent.putExtra(TAG_ID, uploadsDir.getPath());
             uploadIntent.putExtra(TAG, answersDir.getPath());
             startService(uploadIntent);
@@ -200,7 +212,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         File feedback = new File(feedbackDir, question.getId());
         if (!feedback.exists()) return null;
         
-        BufferedReader br = new BufferedReader(new FileReader(feedback));        
+        BufferedReader br = new BufferedReader(new FileReader(feedback));
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject = (JSONObject)jsonParser.parse(br.readLine());
         JSONArray comments = (JSONArray)respObject.get("comments");
@@ -241,13 +253,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private void adjustView(int position) {
         Question q = adapter.getQuestions()[position];
         ((TextView)findViewById(R.id.btnName)).setText(q.getName());
-        if (!adapter.getFlipped()) {
-            if (q.getState() == GRADED) {
-                try {
-                    renderFeedback(position, 0);
-                } catch (Exception e) {
-                    Log.e(TAG, e.getClass().toString());
-                }
+        if (!adapter.getFlipped() && q.getState() == GRADED) {
+            try {
+                renderFeedback(position, 0);
+            } catch (Exception e) {
+                Log.e(TAG, e.getClass().toString());
             }
         } else {
             unrenderFeedback(position);
@@ -335,6 +345,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
     }
 
+    private int price;
     private Feedback[] feedback;
     private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir, uploadsDir;
 
@@ -347,6 +358,30 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private boolean multiMode;
 
     private final String FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s";
+
+}
+
+class FlowViewPager extends ViewPager {
+
+    public FlowViewPager(Context context) {
+        super(context);
+    }
+
+    public FlowViewPager(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent arg0) {
+        // Never allow swiping to switch between pages
+        return false;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        // Never allow swiping to switch between pages
+        return false;
+    }
 
 }
 

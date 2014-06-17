@@ -14,6 +14,8 @@ public interface IConstants {
     String QUIZ_ID_KEY = "quizId";
     String QUIZ_NAME_KEY = "quiz";
     String QUIZ_PATH_KEY = "locn";
+    String QUIZ_PRICE_KEY = "price";
+    
     String STATE_KEY = "state";
     String ID_KEY = "id";
     String GR_ID_KEY = "grId";

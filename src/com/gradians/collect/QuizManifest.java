@@ -11,16 +11,13 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Filter;
-import android.widget.Filterable;
 import android.widget.TextView;
 
-public class QuizManifest extends BaseAdapter implements Filterable, IConstants {
+public class QuizManifest extends BaseAdapter implements IConstants {
     
     public QuizManifest(Context context, String json) throws Exception {
         this.inflater = LayoutInflater.from(context);
@@ -78,29 +75,19 @@ public class QuizManifest extends BaseAdapter implements Filterable, IConstants 
         tv.setText(quiz.toString());
 
         TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
-        tvTotal.setText(String.format("%d", quiz.size()));
+        tvTotal.setText(String.valueOf(quiz.size()));
         
         if (quiz.getState() == NOT_YET_BILLED) {
-            tvTotal.setTextColor(Color.DKGRAY);
-            tvTotal.setBackgroundResource(android.R.color.white);
+            tvTotal.setBackgroundResource(R.drawable.gray_background);
         } else if (quiz.getState() == NOT_YET_STARTED) {
-            tvTotal.setTextColor(Color.DKGRAY);
-            tvTotal.setBackgroundResource(R.drawable.quiz_not_started);                
+            tvTotal.setBackgroundResource(R.drawable.light_background);
         } else if (quiz.getState() == GRADED) {
-            tvTotal.setTextColor(Color.WHITE);
-            tvTotal.setBackgroundResource(R.drawable.quiz_done);
+            tvTotal.setBackgroundResource(R.drawable.green_background);
         } else {            
-            tvTotal.setTextColor(Color.WHITE);
-            tvTotal.setBackgroundResource(R.drawable.button);
+            tvTotal.setBackgroundResource(R.drawable.blue_button);
         }
         
         return convertView;
-    }
-
-    @Override
-    public Filter getFilter() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public void commit() throws Exception {
@@ -128,7 +115,8 @@ public class QuizManifest extends BaseAdapter implements Filterable, IConstants 
         for (int i = 0; i < items.size(); i++) {
             JSONObject quizItem = (JSONObject) items.get(i);
             quizzes[i] = new Quij(((String)quizItem.get(QUIZ_NAME_KEY)).replace(",", " "),
-                  (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY));
+                  (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY),
+                  ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue());
             JSONArray questions = (JSONArray)quizItem.get("questions");
             
             for (int j = 0; j < questions.size(); j++) {                
@@ -164,10 +152,11 @@ public class QuizManifest extends BaseAdapter implements Filterable, IConstants 
 
 class Quij extends ArrayList<Question> implements IConstants {
     
-    public Quij(String name, String path, long id) {
+    public Quij(String name, String path, long id, int price) {
         this.name = name;
         this.id = id;
         this.path = path;
+        this.price = price;
     }
     
     public void determineState() {
@@ -218,6 +207,10 @@ class Quij extends ArrayList<Question> implements IConstants {
         return path;
     }
     
+    public int getPrice() {
+        return price;
+    }
+    
     public Question[] getQuestions() {
         return this.toArray(new Question[this.size()]);
     }
@@ -237,6 +230,7 @@ class Quij extends ArrayList<Question> implements IConstants {
         return name;
     }
     
+    private int price;
     private String name, path;
     private long id;
     private short state;

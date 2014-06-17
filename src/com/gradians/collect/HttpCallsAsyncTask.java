@@ -13,7 +13,7 @@ import android.util.Log;
 
 public class HttpCallsAsyncTask extends AsyncTask<URL, Void, String> implements IConstants {
     
-    public HttpCallsAsyncTask(Activity activity, ITaskResult caller, int resultCode) {
+    public HttpCallsAsyncTask(ITaskResult caller, int resultCode) {
         this.resultCode = resultCode;
         this.caller = caller;
     }

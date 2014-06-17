@@ -202,21 +202,18 @@ class FdbkView extends ImageView {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.scale((float)imgWidth/X_FACTOR, (float)imgHeight/Y_FACTOR);
         if (yPosn != NO_FEEDBACK) {
-            rect.left = xPosn - OFFSET;
-            rect.top = yPosn + OFFSET;
-            rect.right = rect.left + DIA;
-            rect.bottom = rect.top + DIA;
-            canvas.drawOval(rect, paint);
+            float x = xPosn*imgWidth/100, y = yPosn*imgHeight/100;
+            canvas.drawLine(x-DIA, y+DIA, x+DIA, y+DIA, paint);
+            canvas.drawLine(x, y, x, imgHeight, paint);
         }
     }
     
     private void init(Context context) {
         paint = new Paint();
-        paint.setColor(0xCC01537D);
-        paint.setStyle(Style.FILL);
-        paint.setStrokeWidth(0.2f);
+        paint.setColor(0xAA676767);
+        paint.setStyle(Style.STROKE);        
+        paint.setStrokeWidth(5.0f);
         
         rect = new RectF();
         xPosn = yPosn = NO_FEEDBACK;
@@ -227,7 +224,7 @@ class FdbkView extends ImageView {
     private int xPosn, yPosn;
     private int imgWidth, imgHeight;
     
-    private final int OFFSET = 6, DIA = 2;
+    private final int DIA = 4;
     public static final int X_FACTOR = 90, Y_FACTOR = 120;
     public static final int NO_FEEDBACK = -1;
 }
