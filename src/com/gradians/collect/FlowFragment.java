@@ -1,13 +1,15 @@
 package com.gradians.collect;
 
+import java.io.File;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Paint.Cap;
 import android.graphics.Paint.Style;
-import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -18,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 
 public class FlowFragment extends Fragment implements IConstants {
     
@@ -43,32 +46,38 @@ public class FlowFragment extends Fragment implements IConstants {
         
         Bundle bundle = this.getArguments();
         int xPosn = bundle.getInt("xPosn", FdbkView.NO_FEEDBACK);
-        int yPosn = bundle.getInt("yPosn", FdbkView.NO_FEEDBACK);
-        boolean zoomed = bundle.getBoolean("zoomed", false);
+        final int yPosn = bundle.getInt("yPosn", FdbkView.NO_FEEDBACK);
         boolean flipped = bundle.getBoolean("flipped", false);
         String scan = bundle.getString(SCAN_KEY);
         String path = bundle.getString(GR_PATH_KEY);
 
         ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
         FdbkView ivPreview = (FdbkView)rootView.findViewById(R.id.ivPreview);
-        float scale = zoomed ? 1.25f : 1.0f;
         ivPreview.setPosn(xPosn, yPosn);
         String imgPath = flipped ? path : scan;
-        setImage(ivPreview, imgPath, scale);
+        final Bitmap bmap = setImage(ivPreview, imgPath);
         
+        if (yPosn != FdbkView.NO_FEEDBACK) {
+            final ScrollView svPreview = (ScrollView)rootView.findViewById(R.id.svPreview);
+            svPreview.post(new Runnable() {
+                @Override
+                public void run() {
+                    int scrollTo = bmap.getHeight()*yPosn/100 - dmetrics.heightPixels/2;
+                    svPreview.smoothScrollTo(0, scrollTo);
+                }
+            });            
+        }
         return rootView;
     }
     
-    private Bitmap setImage(FdbkView iv, String path, float scale) {
-        Bitmap bmap = path.contains("albert") ?
-            getBitmapFromAssets("albert_einstein.jpg"):
-            BitmapFactory.decodeFile(path);
+    private Bitmap setImage(FdbkView iv, String path) {
+        Bitmap bmap = (new File(path)).exists() ?
+            BitmapFactory.decodeFile(path):
+            getBitmapFromAssets("albert_einstein.jpg");
             
         float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
-        int w = dmetrics.widthPixels < MIN_WIDTH ? MIN_WIDTH : dmetrics.widthPixels;        
-        bmap = Bitmap.createScaledBitmap(bmap, 
-                (int)(w*scale),
-                (int)(w*scale/bmapAspectRatio), false);
+        int w = dmetrics.widthPixels < MIN_WIDTH ? MIN_WIDTH : dmetrics.widthPixels;
+        bmap = Bitmap.createScaledBitmap(bmap, w, (int)(w/bmapAspectRatio), false);               
         iv.setImageBitmap(bmap);
         return bmap;
     }
@@ -179,14 +188,6 @@ class FdbkView extends ImageView {
         init(context);        
     }
     
-    public int getYPixelPosn() {
-        return (int)rect.top;
-    }
-    
-    public int getXPixelPosn() {
-        return (int)rect.left;
-    }
-    
     public void setPosn(int xPosn, int yPosn) {
         this.xPosn = xPosn;
         this.yPosn = yPosn;
@@ -203,28 +204,32 @@ class FdbkView extends ImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (yPosn != NO_FEEDBACK) {
+            paint.setStrokeWidth(imgHeight/20);
+            bpaint.setStrokeWidth(imgHeight/20);
             float x = xPosn*imgWidth/100, y = yPosn*imgHeight/100;
-            canvas.drawLine(x-DIA, y+DIA, x+DIA, y+DIA, paint);
-            canvas.drawLine(x, y, x, imgHeight, paint);
+            canvas.drawLine(0, y, imgWidth, y, paint);
+            canvas.drawLine(0, y-1, 0, y+1, bpaint);
+            canvas.drawLine(imgWidth, y-1, imgWidth, y+1, bpaint);
         }
     }
     
     private void init(Context context) {
         paint = new Paint();
-        paint.setColor(0xAA676767);
-        paint.setStyle(Style.STROKE);        
-        paint.setStrokeWidth(5.0f);
+        paint.setColor(0x33676767);
+        paint.setStyle(Style.STROKE);
+        paint.setStrokeCap(Cap.SQUARE);
         
-        rect = new RectF();
+        bpaint = new Paint();
+        bpaint.setColor(0xFFFF05AE);
+        bpaint.setStyle(Style.STROKE);
+        bpaint.setStrokeCap(Cap.SQUARE);
+        
         xPosn = yPosn = NO_FEEDBACK;
     }
     
-    private RectF rect;
-    private Paint paint;
+    private Paint paint, bpaint;
     private int xPosn, yPosn;
     private int imgWidth, imgHeight;
     
-    private final int DIA = 4;
-    public static final int X_FACTOR = 90, Y_FACTOR = 120;
     public static final int NO_FEEDBACK = -1;
 }

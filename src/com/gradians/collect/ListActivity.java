@@ -205,10 +205,7 @@ public class ListActivity extends Activity implements OnItemClickListener, ITask
             Quij quiz = (Quij)manifest.getItem(j);
             triggerDownloads(dlm, quiz);
         }
-        if (!dlm.start("Synchronizing Files", "Please wait...", this)) {
-//            ViewSwitcher vsLists = (ViewSwitcher)findViewById(R.id.vsLists);
-//            vsLists.showPrevious();            
-        }
+        dlm.start("Synchronizing Files", "Please wait...", this);
     }    
 
     private void checkAuth() {

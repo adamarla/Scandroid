@@ -67,6 +67,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
 
         // it shouldn't be empty, but just in case
         if (!cursor.moveToFirst()) {
+            cursor.close();
             return;
         }            
         
@@ -74,6 +75,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(statusIndex)) {
             onDownloadComplete(id);
         }
+        cursor.close();
     }
 
     @Override

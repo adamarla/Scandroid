@@ -34,7 +34,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, IConstants{
+public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, IConstants, ITaskResult{
 
     @Override 
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +50,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         feedback = new Feedback[name_state_ids.length];
         adapter = new FlowAdapter(toQuestions(name_state_ids), 
                 this.getSupportFragmentManager());
+        
         vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
         vpPreview.setAdapter(adapter);
         
@@ -134,13 +135,23 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     @Override
+    public void onTaskResult(int requestCode, int resultCode, String resultData) {
+        if (requestCode == DOWNLOAD_MONITOR_TASK_RESULT_CODE) {
+            if (resultCode == RESULT_OK) {
+                adjustView(0);
+            } 
+        }
+    }
+
+    @Override
     public void onPageScrollStateChanged(int arg0) { }
     @Override
     public void onPageScrolled(int arg0, float arg1, int arg2) { }
     @Override
     public void onPageSelected(int position) {
         Feedback fdbk = feedback[vpPreview.getCurrentItem()];
-        adapter.shift(fdbk.x[position], fdbk.y[position], vpPreview.getCurrentItem());
+        adapter.shift(fdbk.x[position], fdbk.y[position], 
+                vpPreview.getCurrentItem());
     }
     
     public void page(View view) {
@@ -148,8 +159,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         int nextItem = view.getId() == R.id.btnLeft ?
             (--currentItem < 0 ? adapter.getCount()-1 : currentItem):
             (++currentItem == adapter.getCount() ? 0 : currentItem);
-        adjustView(nextItem);
         vpPreview.setCurrentItem(nextItem, true);
+        adjustView(nextItem);        
     }
     
     public void takeAction(View view) {
@@ -172,7 +183,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 btnBar.getChildAt(i).getVisibility() == View.INVISIBLE ?
                 View.VISIBLE : View.INVISIBLE);
         }
-        findViewById(R.id.btnMin).setVisibility(View.VISIBLE);
+        findViewById(R.id.btnMin).setVisibility(View.VISIBLE);        
     }
     
     private void takePicture(int position) {
@@ -215,15 +226,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         BufferedReader br = new BufferedReader(new FileReader(feedback));
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject = (JSONObject)jsonParser.parse(br.readLine());
-        JSONArray comments = (JSONArray)respObject.get("comments");
+        JSONArray comments = (JSONArray)respObject.get(COMMENTS_KEY);
         br.close();
         String[] text = new String[comments.size()];
         int[] x = new int[text.length], y = new int[text.length];
         for (int i = 0; i < comments.size(); i++) {
             JSONObject comment = (JSONObject)comments.get(i);
-            text[i] = (String)comment.get("comment");
-            x[i] = ((Long)comment.get("x")).intValue();
-            y[i] = ((Long)comment.get("y")).intValue();
+            text[i] = (String)comment.get(COMMENT_KEY);
+            x[i] = ((Long)comment.get(X_POSN_KEY)).intValue();
+            y[i] = ((Long)comment.get(Y_POSN_KEY)).intValue();
         }
         return new Feedback(text, x, y);
     }
@@ -331,7 +342,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             questions[i].setState(state);
             questions[i].setScanLocn(scanLocn);
         }
-        dlm.start("Retreiving Feedback", "Please wait...", null);
+        dlm.start("Retreiving Feedback", "Please wait...", this);
         return questions;
     }
     
@@ -405,7 +416,7 @@ class FeedbackAdapter extends PagerAdapter {
     public Object instantiateItem(ViewGroup container, int position) {
         final String latex = feedback.text[position];
         final WebView webView = new WebView(activity);
-        webView.clearCache(false);
+        webView.clearCache(true);
         webView.destroyDrawingCache();
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.getSettings().setLoadWithOverviewMode(true);
@@ -448,12 +459,6 @@ class FeedbackAdapter extends PagerAdapter {
     
     private final String HTML = 
             "<html><head>"            
-//            + "<script type='text/x-mathjax-config'>" 
-//            +   "MathJax.Hub.Config({showMathMenu: false, " 
-//            +       "jax: ['input/TeX','output/HTML-CSS'], " 
-//            +           "extensions: ['tex2jax.js'], "
-//            +       "TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'] } });"
-//            + "</script>"            
             + "<script type='text/x-mathjax-config'>"
             +   "MathJax.Hub.Config({ showMathMenu: false, \"HTML-CSS\": {"
             +       "availableFonts: [\"TeX\"], preferredFont: \"TeX\", webFont: \"TeX\""

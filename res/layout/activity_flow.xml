@@ -8,12 +8,21 @@
     <com.gradians.collect.FlowViewPager 
         android:id="@+id/vpPreview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"/>
 
+    <android.support.v4.view.ViewPager
+        android:id="@+id/vpFeedback"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentTop="true"
+        android:background="@drawable/gray_background"/>        
+    
     <LinearLayout
         android:id="@+id/llBtnBar"
         android:orientation="horizontal"
         android:layout_width="match_parent"
+        android:layout_alignParentBottom="true"
         android:layout_height="50dp" >
         
 	    <TextView
@@ -74,11 +83,4 @@
         
 	    </LinearLayout>
 	    
-    <android.support.v4.view.ViewPager
-        android:id="@+id/vpFeedback"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_alignParentBottom="true"
-        android:background="@drawable/gray_background"/>        
-    
 </RelativeLayout>
