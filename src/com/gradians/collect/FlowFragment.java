@@ -25,15 +25,14 @@ import android.widget.ScrollView;
 public class FlowFragment extends Fragment implements IConstants {
     
     public static final FlowFragment newInstance(Question question,
-            boolean flipped, boolean zoomed,int x, int y) {
-        Bundle bundle = new Bundle(7);
-        if (x != FdbkView.NO_FEEDBACK) bundle.putInt("xPosn", x);
-        if (y != FdbkView.NO_FEEDBACK) bundle.putInt("yPosn", y);
-        if (zoomed) bundle.putBoolean("zoomed", zoomed);
+            boolean flipped,int x, int y) {
+        Bundle bundle = new Bundle(5);
+        if (x != FdbkView.NO_FEEDBACK) bundle.putInt(X_POSN_KEY, x);
+        if (y != FdbkView.NO_FEEDBACK) bundle.putInt(Y_POSN_KEY, y);
         if (flipped) bundle.putBoolean("flipped", flipped);
         bundle.putString(SCAN_KEY, question.getScanLocn());
         bundle.putString(GR_PATH_KEY, question.getImgLocn());
-        bundle.putString(ID_KEY, question.getId());
+        bundle.putString(ID_KEY, question.getId()); // Do not delete, is used!
         FlowFragment pf = new FlowFragment();
         pf.setArguments(bundle);
         return pf;
@@ -45,8 +44,8 @@ public class FlowFragment extends Fragment implements IConstants {
         dmetrics = getActivity().getApplicationContext().getResources().getDisplayMetrics();
         
         Bundle bundle = this.getArguments();
-        int xPosn = bundle.getInt("xPosn", FdbkView.NO_FEEDBACK);
-        final int yPosn = bundle.getInt("yPosn", FdbkView.NO_FEEDBACK);
+        int xPosn = bundle.getInt(X_POSN_KEY, FdbkView.NO_FEEDBACK);
+        final int yPosn = bundle.getInt(Y_POSN_KEY, FdbkView.NO_FEEDBACK);
         boolean flipped = bundle.getBoolean("flipped", false);
         String scan = bundle.getString(SCAN_KEY);
         String path = bundle.getString(GR_PATH_KEY);
@@ -116,11 +115,6 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
         update(position);
     }
     
-    public void zoom(int position) {
-        zoomed = !zoomed;
-        update(position); 
-    }
-    
     public void update(int position) {
         lastChangedId = questions[position].getId();
         notifyDataSetChanged();
@@ -134,16 +128,8 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
         return flipped;
     }
     
-    public boolean getZoomed() {
-        return zoomed;
-    }
-    
     public void setFlipped(boolean flipped) {
         this.flipped = flipped;
-    }
-    
-    public void setZoomed(boolean zoomed) {
-        this.zoomed = zoomed;
     }
     
     @Override
@@ -163,13 +149,11 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     public Fragment getItem(int position) {
         return FlowFragment.newInstance(questions[position], 
                 flipped,
-                zoomed,
                 xPosn,
                 yPosn);
     }
     
     private int xPosn, yPosn;
-    private boolean zoomed;
     private boolean flipped;
     private String lastChangedId;
     private Question[] questions;
@@ -204,12 +188,13 @@ class FdbkView extends ImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (yPosn != NO_FEEDBACK) {
-            paint.setStrokeWidth(imgHeight/20);
-            bpaint.setStrokeWidth(imgHeight/20);
+            int unit = imgHeight/20;
+            paint.setStrokeWidth(unit);
+            bpaint.setStrokeWidth(unit/2);
             float x = xPosn*imgWidth/100, y = yPosn*imgHeight/100;
             canvas.drawLine(0, y, imgWidth, y, paint);
-            canvas.drawLine(0, y-1, 0, y+1, bpaint);
-            canvas.drawLine(imgWidth, y-1, imgWidth, y+1, bpaint);
+            canvas.drawLine(0, y-unit/4, 0, y+unit/4, bpaint);
+            canvas.drawLine(imgWidth, y-unit/2, imgWidth, y+unit/2, bpaint);
         }
     }
     
@@ -220,7 +205,7 @@ class FdbkView extends ImageView {
         paint.setStrokeCap(Cap.SQUARE);
         
         bpaint = new Paint();
-        bpaint.setColor(0xFFFF05AE);
+        bpaint.setColor(0xFFF88017);
         bpaint.setStyle(Style.STROKE);
         bpaint.setStrokeCap(Cap.SQUARE);
         

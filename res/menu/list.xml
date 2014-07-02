@@ -4,7 +4,7 @@
     tools:context="com.gradians.collect.ListActivity" >
 
     <item
-        android:id="@+id/action_filter"
+        android:id="@+id/action_refresh"
         android:orderInCategory="99"
         android:showAsAction="always"
         android:icon="@drawable/ic_action_refresh"

@@ -115,20 +115,21 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         for (int i = 0; i < items.size(); i++) {
             JSONObject quizItem = (JSONObject) items.get(i);
             quizzes[i] = new Quij(((String)quizItem.get(QUIZ_NAME_KEY)).replace(",", " "),
-                  (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY),
-                  ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue());
+                (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY),
+                ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue());
             JSONArray questions = (JSONArray)quizItem.get("questions");
             
             for (int j = 0; j < questions.size(); j++) {                
                 JSONObject item = (JSONObject)questions.get(j);
-                Question question = new Question(((String)item.get(NAME_KEY)).replace("-", ""),
-                                (String)item.get(ID_KEY),
-                                (String)item.get(GR_ID_KEY),
-                                (String)item.get(GR_PATH_KEY));
+                Question question = new Question((
+                    (String)item.get(NAME_KEY)).replace("-", ""),
+                    (String)item.get(ID_KEY),
+                    (String)item.get(GR_ID_KEY),
+                    (String)item.get(GR_PATH_KEY));
 
                 String scan = (String)item.get(SCAN_KEY);
                 double marks = (Double)item.get(MARKS_KEY);
-                if (scan == null) {
+                if (scan == null || scan.equals("")) {
                     question.setState(lastState.getProperty(question.getId()) == null
                             ? WAITING : Short.parseShort(lastState.getProperty(question.getId())));
                 } else {
@@ -137,6 +138,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                 }
                 quizzes[i].add(question);
             }
+            quizzes[i].determineState();
         }
     }
         
@@ -163,7 +165,8 @@ class Quij extends ArrayList<Question> implements IConstants {
         if (this.get(0).getGRId().equals("")) {
             state = NOT_YET_BILLED;
             return;
-        }        
+        }
+        
         short mostFarAlong = this.get(0).getState(), 
               leastFarAlong = this.get(this.size()-1).getState();
         for (Question q : this) {            
@@ -174,6 +177,7 @@ class Quij extends ArrayList<Question> implements IConstants {
         }
         
         switch (mostFarAlong) {
+        case WAITING:
         case DOWNLOADED:
             state = NOT_YET_STARTED;
             break;
@@ -186,8 +190,6 @@ class Quij extends ArrayList<Question> implements IConstants {
         case GRADED:
             state = leastFarAlong == GRADED ? 
                     GRADED : NOT_YET_GRADED;
-            break;
-        default:
         }
     }
     
