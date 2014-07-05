@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="9"
-    android:versionName="4.0" >
+    android:versionCode="10"
+    android:versionName="4.1.0" >
 
     <uses-sdk
         android:minSdkVersion="9"
-        android:targetSdkVersion="19" />
+        android:targetSdkVersion="20" />
 
     <uses-feature android:name="android.hardware.camera" />
 
@@ -20,7 +20,8 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppBaseTheme" >
+        android:theme="@style/AppBaseTheme" 
+        android:hardwareAccelerated="false" >
         <activity
             android:name="com.gradians.collect.LoginActivity"
             android:label="@string/title_activity_login"

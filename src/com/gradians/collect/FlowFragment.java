@@ -26,10 +26,10 @@ public class FlowFragment extends Fragment implements IConstants {
     
     public static final FlowFragment newInstance(Question question,
             boolean flipped,int x, int y) {
-        Bundle bundle = new Bundle(5);
-        if (x != FdbkView.NO_FEEDBACK) bundle.putInt(X_POSN_KEY, x);
-        if (y != FdbkView.NO_FEEDBACK) bundle.putInt(Y_POSN_KEY, y);
-        if (flipped) bundle.putBoolean("flipped", flipped);
+        Bundle bundle = new Bundle(6);
+        bundle.putInt(X_POSN_KEY, x);
+        bundle.putInt(Y_POSN_KEY, y);
+        bundle.putBoolean("flipped", flipped);
         bundle.putString(SCAN_KEY, question.getScanLocn());
         bundle.putString(GR_PATH_KEY, question.getImgLocn());
         bundle.putString(ID_KEY, question.getId()); // Do not delete, is used!
@@ -44,9 +44,9 @@ public class FlowFragment extends Fragment implements IConstants {
         dmetrics = getActivity().getApplicationContext().getResources().getDisplayMetrics();
         
         Bundle bundle = this.getArguments();
-        int xPosn = bundle.getInt(X_POSN_KEY, FdbkView.NO_FEEDBACK);
-        final int yPosn = bundle.getInt(Y_POSN_KEY, FdbkView.NO_FEEDBACK);
-        boolean flipped = bundle.getBoolean("flipped", false);
+        int xPosn = bundle.getInt(X_POSN_KEY);
+        final int yPosn = bundle.getInt(Y_POSN_KEY);
+        boolean flipped = bundle.getBoolean("flipped");
         String scan = bundle.getString(SCAN_KEY);
         String path = bundle.getString(GR_PATH_KEY);
 
@@ -101,12 +101,12 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     public FlowAdapter(Question[] questions, FragmentManager fragmentManager) {
         super(fragmentManager);
         this.questions = questions;
-        yPosn = FdbkView.NO_FEEDBACK;
-    }    
+        xPosn = yPosn = FdbkView.NO_FEEDBACK;
+    }
     
     public void shift(int x, int y, int position) {
-        this.xPosn = x;
-        this.yPosn = y;
+        xPosn = x;
+        yPosn = y;
         update(position);
     }
     
@@ -148,9 +148,7 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     @Override
     public Fragment getItem(int position) {
         return FlowFragment.newInstance(questions[position], 
-                flipped,
-                xPosn,
-                yPosn);
+                flipped, xPosn, yPosn);
     }
     
     private int xPosn, yPosn;
@@ -194,7 +192,7 @@ class FdbkView extends ImageView {
             float x = xPosn*imgWidth/100, y = yPosn*imgHeight/100;
             canvas.drawLine(0, y, imgWidth, y, paint);
             canvas.drawLine(0, y-unit/4, 0, y+unit/4, bpaint);
-            canvas.drawLine(imgWidth, y-unit/2, imgWidth, y+unit/2, bpaint);
+            canvas.drawLine(imgWidth, y-unit/4, imgWidth, y+unit/4, bpaint);
         }
     }
     

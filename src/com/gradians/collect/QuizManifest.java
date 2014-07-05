@@ -78,20 +78,21 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         tvTotal.setText(String.valueOf(quiz.size()));
         
         if (quiz.getState() == NOT_YET_BILLED) {
-            tvTotal.setBackgroundResource(R.drawable.gray_background);
+            tvTotal.setBackgroundResource(R.drawable.blue_background);
         } else if (quiz.getState() == NOT_YET_STARTED) {
-            tvTotal.setBackgroundResource(R.drawable.light_background);
+            tvTotal.setBackgroundResource(R.drawable.gray_background);
+        } else if (quiz.getState() == NOT_YET_GRADED) {    
+            tvTotal.setBackgroundResource(R.drawable.lt_green_background);
         } else if (quiz.getState() == GRADED) {
             tvTotal.setBackgroundResource(R.drawable.green_background);
-        } else {            
-            tvTotal.setBackgroundResource(R.drawable.blue_button);
+            tvTotal.setText(String.format("%2.1f/%2d", quiz.getScore(), quiz.getMax()));
         }
         
         return convertView;
     }
 
     public void commit() throws Exception {
-        state.store(new FileOutputStream(manifest), null);
+        state.store(new FileOutputStream(manifestFile), null);
     }
     
     private void parse(File appDir, String json) throws Exception {
@@ -104,20 +105,25 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
         quizzes = new Quij[items.size()];
         
-        File manifests = new File(appDir, "manifest"); 
+        File manifests = new File(appDir, "manifestFile"); 
         manifests.mkdir();
         
+        manifestFile = new File(manifests, email.replace('@', '.')); 
+        manifestFile.createNewFile(); // creates only if needed
+        
         Properties lastState = new Properties();
-        manifest = new File(manifests, email); manifest.createNewFile();
-        lastState.load(new FileInputStream(manifest));
+        lastState.load(new FileInputStream(manifestFile));
         state = new Properties();
-
+        
         for (int i = 0; i < items.size(); i++) {
             JSONObject quizItem = (JSONObject) items.get(i);
-            quizzes[i] = new Quij(((String)quizItem.get(QUIZ_NAME_KEY)).replace(",", " "),
-                (String)quizItem.get(QUIZ_PATH_KEY), (Long)quizItem.get(QUIZ_ID_KEY),
-                ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue());
-            JSONArray questions = (JSONArray)quizItem.get("questions");
+            quizzes[i] = new Quij((
+                (String)quizItem.get(QUIZ_NAME_KEY)).replace(",", " "),
+                (String)quizItem.get(QUIZ_PATH_KEY), 
+                (Long)quizItem.get(QUIZ_ID_KEY),
+                ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue(),
+                (Long)quizItem.get(QUIZ_FDBK_KEY));
+            JSONArray questions = (JSONArray)quizItem.get(QUESTIONS_KEY);
             
             for (int j = 0; j < questions.size(); j++) {                
                 JSONObject item = (JSONObject)questions.get(j);
@@ -128,13 +134,16 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                     (String)item.get(GR_PATH_KEY));
 
                 String scan = (String)item.get(SCAN_KEY);
-                double marks = (Double)item.get(MARKS_KEY);
+                float marks = item.get(MARKS_KEY) == null ? -1 : ((Double)item.get(MARKS_KEY)).floatValue();
+                short outof = item.get(OUT_OF_KEY) == null ? 0 : ((Long)item.get(OUT_OF_KEY)).shortValue();
+                String ls = lastState.getProperty(question.getId());
                 if (scan == null || scan.equals("")) {
-                    question.setState(lastState.getProperty(question.getId()) == null
-                            ? WAITING : Short.parseShort(lastState.getProperty(question.getId())));
+                    question.setState(ls == null ? WAITING : (short)((short)ls.charAt(0)-(short)'0'));
                 } else {
                     question.setScanLocn(scan);
                     question.setState(marks < 0 ? RECEIVED : GRADED);
+                    question.setMarks(marks);
+                    question.setOutOf(outof);
                 }
                 quizzes[i].add(question);
             }
@@ -143,7 +152,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     }
         
     private String name, email, token;
-    private File manifest;
+    private File manifestFile;
     
     private Properties state;
     private Quij[] quizzes;
@@ -154,11 +163,12 @@ public class QuizManifest extends BaseAdapter implements IConstants {
 
 class Quij extends ArrayList<Question> implements IConstants {
     
-    public Quij(String name, String path, long id, int price) {
+    public Quij(String name, String path, long id, int price, long fdbkMrkr) {
         this.name = name;
         this.id = id;
         this.path = path;
         this.price = price;
+        this.fdbkMrkr = fdbkMrkr;
     }
     
     public void determineState() {
@@ -213,6 +223,24 @@ class Quij extends ArrayList<Question> implements IConstants {
         return price;
     }
     
+    public double getScore() {
+        double total = 0;
+        for (Question q : this)
+            total += q.getMarks();
+        return total;
+    }
+    
+    public short getMax() {
+        short max = 0;
+        for (Question q : this)
+            max += q.getOutOf();
+        return max;
+    }
+    
+    public long getFdbkMrkr() {
+        return fdbkMrkr;
+    }
+
     public Question[] getQuestions() {
         return this.toArray(new Question[this.size()]);
     }
@@ -234,7 +262,7 @@ class Quij extends ArrayList<Question> implements IConstants {
     
     private int price;
     private String name, path;
-    private long id;
+    private long id, fdbkMrkr;
     private short state;
     
     private static final long serialVersionUID = 1L;
@@ -273,6 +301,14 @@ class Question {
         return state;
     }
     
+    public float getMarks() {
+        return marks;
+    }
+    
+    public short getOutOf() {
+        return outof;
+    }
+    
     public void setGRId(String GRId) {
         this.GRId = GRId;
     }
@@ -289,9 +325,17 @@ class Question {
         this.state = state;
     }
     
-    public String getNameStateId() {
-        return name + SEP + state + SEP + id + SEP + 
-            (GRId.equals("") ? "0" : GRId);
+    public void setMarks(float marks) {
+        this.marks = marks;
+    }
+    
+    public void setOutOf(short outof) {
+        this.outof = outof;        
+    }
+    
+    public String getNameStateScoreId() {
+        return name + SEP + state + SEP + marks + SEP + outof + SEP
+            + id + SEP + (GRId.equals("") ? "0" : GRId);
     }
     
     @Override
@@ -301,6 +345,8 @@ class Question {
     
     private String name, id, GRId, imgLocn, scanLocn;
     private short state;
+    private float marks;
+    private short outof;
     
     public static final String SEP = ",";
     

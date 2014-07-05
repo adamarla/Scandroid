@@ -18,6 +18,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -43,14 +44,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flow); 
         
-        String[] name_state_ids = savedInstanceState == null ? 
+        String[] name_state_score_ids = savedInstanceState == null ? 
                 getIntent().getStringArrayExtra(TAG_ID) :
                 savedInstanceState.getStringArray(TAG_ID);
 
         price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
         studentDir = new File(getIntent().getStringExtra(TAG));
-        feedback = new Feedback[name_state_ids.length];
-        adapter = new FlowAdapter(toQuestions(name_state_ids), 
+        feedback = new Feedback[name_state_score_ids.length];
+        adapter = new FlowAdapter(toQuestions(name_state_score_ids), 
                 this.getSupportFragmentManager());
         
         vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
@@ -162,15 +163,17 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     public void showHide(View view) {
-        ViewGroup btnBar = view.getId() == R.id.btnMin ? 
-            (ViewGroup)findViewById(R.id.llBtnBar) : (ViewGroup)findViewById(R.id.llFdbkBar);
+        ViewGroup btnBar = (ViewGroup)findViewById(R.id.llBtnBar);
         for (int i = 0; i < btnBar.getChildCount(); i++) {
             btnBar.getChildAt(i).setVisibility(
                 btnBar.getChildAt(i).getVisibility() == View.INVISIBLE ?
-                View.VISIBLE : View.INVISIBLE);
+                        View.VISIBLE : View.INVISIBLE);
         }
-        findViewById(view.getId() == R.id.btnMin ? 
-            R.id.btnMin : R.id.llName).setVisibility(View.VISIBLE);
+        if (fdbkShown) {
+            vpFdbk.setVisibility(vpFdbk.getVisibility() == View.INVISIBLE ?
+                    View.VISIBLE : View.INVISIBLE);
+        }
+        findViewById(R.id.btnMin).setVisibility(View.VISIBLE);        
     }
     
     private void takePicture(int position) {
@@ -222,8 +225,13 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         case WAITING:
         case SENT:
         case RECEIVED:
+            img = getResources().getDrawable(android.R.drawable.ic_menu_info_details);
+            ((TextView)findViewById(R.id.tvMarks)).setText("TBD");
+            break;
         case GRADED:
             img = getResources().getDrawable(android.R.drawable.ic_menu_info_details);
+            ((TextView)findViewById(R.id.tvMarks)).setText(
+                String.format("%2.1f/%1d", q.getMarks(), q.getOutOf()));
         }
         btnAction.setImageDrawable(img);        
         
@@ -245,7 +253,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpFdbk.setOffscreenPageLimit(3);
         vpFdbk.setAdapter(fdbkAdapter);
         vpFdbk.setVisibility(View.VISIBLE);
-        findViewById(R.id.btnMinFdbk).setVisibility(View.VISIBLE);
+        fdbkShown = true;
+        findViewById(R.id.tvMarks).setVisibility(View.VISIBLE);
+        findViewById(R.id.circlesFdbk).setVisibility(View.VISIBLE);
         
         //Bind the circle indicator to the adapter
         fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
@@ -256,8 +266,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     private void unrenderFeedback(int position) {
-        findViewById(R.id.btnMinFdbk).setVisibility(View.INVISIBLE);
+        fdbkShown = false;
         vpFdbk.setVisibility(View.INVISIBLE);
+        findViewById(R.id.circlesFdbk).setVisibility(View.VISIBLE);
+        findViewById(R.id.tvMarks).setVisibility(View.INVISIBLE);
         adapter.shift(FdbkView.NO_FEEDBACK, FdbkView.NO_FEEDBACK, position);
     }
     
@@ -292,7 +304,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private String[] toNameStateIds(Question[] questions) {
         String[] name_state_ids = new String[questions.length];
         for (int i = 0; i < questions.length; i++) {
-            name_state_ids[i] = questions[i].getNameStateId();
+            name_state_ids[i] = questions[i].getNameStateScoreId();
         }
         return name_state_ids;
     }
@@ -306,19 +318,23 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         uploadsDir = new File(studentDir, UPLOAD_DIR_NAME);
                 
         Question[] questions = new Question[name_state_ids.length];
-        String name, id, grId, imgLocn = null, scanLocn = null; short state;
+        String name, id, grId, imgLocn, scanLocn, score, outof; short state;
         for (int i = 0; i < questions.length; i++) {
             String[] tokens = name_state_ids[i].split(",");
             name = tokens[0];
             state = Short.parseShort(tokens[1]);
-            id = tokens[2];
-            grId = tokens[3];
+            score = tokens[2];
+            outof = tokens[3];
+            id = tokens[4];
+            grId = tokens[5];
             
             imgLocn = (new File(state >  SENT ? solutionsDir : questionsDir, id)).getPath();
             scanLocn = (new File(state > DOWNLOADED ? answersDir : questionsDir, id)).getPath();
             questions[i] = new Question(name, id, grId, imgLocn);
             questions[i].setState(state);
             questions[i].setScanLocn(scanLocn);
+            questions[i].setMarks(state == GRADED ? Float.parseFloat(score) : 0f);
+            questions[i].setOutOf(state == GRADED ? Short.parseShort(outof) : 0);
         }
         return questions;
     }
@@ -341,6 +357,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private FlowAdapter adapter;
     
     private int fdbkPg;
+    private boolean fdbkShown;
     private ViewPager vpFdbk;
     private FeedbackAdapter fdbkAdapter;
     private CirclePageIndicator fdbkIndicator;
@@ -391,6 +408,8 @@ class FeedbackAdapter extends PagerAdapter {
     public Object instantiateItem(ViewGroup container, int position) {
         final String latex = feedback.text[position];
         final WebView webView = new WebView(activity);
+        final int scale = activity.getResources().getConfiguration().
+            orientation == Configuration.ORIENTATION_LANDSCAPE ? 100 : 80;
         webView.clearCache(true);
         webView.destroyDrawingCache();
         webView.setBackgroundColor(Color.TRANSPARENT);
@@ -400,7 +419,8 @@ class FeedbackAdapter extends PagerAdapter {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
             webView.getSettings().setDisplayZoomControls(false);
             webView.loadDataWithBaseURL("file:///android_asset/mathjax-svg",
-                    String.format(HTML, latex), "text/html", "utf-8", "");        
+                    String.format(HTML, scale, latex), "text/html", "utf-8", "");
+            
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -438,7 +458,9 @@ class FeedbackAdapter extends PagerAdapter {
         +   "MathJax.Hub.Config({ "
         +     "showMathMenu: false,"
         +     "SVG: { "
-        +       "font: \"TeX\", linebreaks: { automatic: true, width: \"container\" }, "
+        +       "scale: %d,"
+        +       "font: \"TeX\", "
+        +       "linebreaks: { automatic: false, width: \"automatic\" }, "
         +       "styles: { "
         +         "\".MathJax_SVG svg > g, .MathJax_SVG_Display svg > g\": {"
         +           "fill: \"#FFF\","
@@ -453,7 +475,8 @@ class FeedbackAdapter extends PagerAdapter {
         + "});"
         + "</script>"
         + "<script type='text/javascript' src='file:///android_asset/mathjax-svg/MathJax.js?config=TeX-AMS-MML_SVG'></script>"
-        + "<span id='math' style='color:white; margin:0 auto;'>\\[%s\\]</span></head><body></body></html>";
+//        + "</head><body><span id='math' style='position: absolute; color:white; margin-top:13%%;'>\\[%s\\]</span></body></html>";
+        + "</head><body><span id='math' style='position: absolute; color:white;'>\\[%s\\]</span></body></html>";
        
 }
 

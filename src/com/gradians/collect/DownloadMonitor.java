@@ -1,5 +1,6 @@
 package com.gradians.collect;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -72,8 +73,9 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         }            
         
         int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+        int filenameIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
         if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(statusIndex)) {
-            onDownloadComplete(id);
+            onDownloadComplete(id, cursor.getString(filenameIndex));
         }
         cursor.close();
     }
@@ -85,7 +87,12 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, Activity.RESULT_FIRST_USER, null);       
     }
     
-    private void onDownloadComplete(long requestId) {
+    private void onDownloadComplete(long requestId, String uri) {
+        File file = new File(Uri.parse(uri).getPath());
+        String name = file.getName();
+        if (name.contains("-")) {
+            file.renameTo(new File(file.getParentFile(), name.replaceFirst("-.*\\.", ".")));
+        }
         requestIds.remove(requestId);
         if (peedee != null) {
             if (requestIds.size() == 0) {

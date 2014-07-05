@@ -1,7 +1,10 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.URL;
+import java.util.Properties;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -62,9 +65,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    manifest =
-                            new QuizManifest(this.getApplicationContext(),
-                                    data.getStringExtra(TAG));
+                    manifest = new QuizManifest(getApplicationContext(), data.getStringExtra(TAG));
                     setPreferences(manifest);
                     setManifest(manifest);
                 } catch (Exception e) {
@@ -87,8 +88,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     for (String name_state_id : name_state_ids) {
                         String[] tokens = name_state_id.split(Question.SEP);
                         state = Short.parseShort(tokens[1]);
-                        manifest.update(selectedQuizPosition, itemPosition++,
-                                state);
+                        manifest.update(selectedQuizPosition, itemPosition++, state);
                     }
                 } catch (Exception e) {
                     handleError("Oops, Flow activity request failed",
@@ -108,9 +108,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             if (peedee != null) peedee.dismiss();
             if (resultCode == RESULT_OK) {
                 try {
-                    manifest =
-                            new QuizManifest(this.getApplicationContext(),
-                                    resultData);
+                    manifest = new QuizManifest(getApplicationContext(), resultData);
                     setManifest(manifest);
                 } catch (Exception e) {
                     handleError("Oops, Verify auth task failed", e.getMessage());
@@ -127,8 +125,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position,
-            long id) {
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Quij quiz = (Quij) manifest.getItem(position);
 
         DownloadMonitor dlm = new DownloadMonitor(this);
@@ -142,14 +139,13 @@ public class ListActivity extends Activity implements OnItemClickListener,
     
     private void launchFlowActivity(Quij quiz) {
         Question[] questions = quiz.getQuestions();
-        String[] name_state_ids = new String[questions.length];
+        String[] name_state_score_ids = new String[questions.length];
         for (int i = 0; i < questions.length; i++) {
-            name_state_ids[i] = questions[i].getNameStateId();
+            name_state_score_ids[i] = questions[i].getNameStateScoreId();
         }
-        Intent flowIntent =
-                new Intent(this.getApplicationContext(),
-                        com.gradians.collect.FlowActivity.class);
-        flowIntent.putExtra(TAG_ID, name_state_ids);
+        Intent flowIntent = new Intent(this.getApplicationContext(), 
+            com.gradians.collect.FlowActivity.class);
+        flowIntent.putExtra(TAG_ID, name_state_score_ids);
         flowIntent.putExtra(TAG, this.studentDir.getPath());
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
@@ -165,6 +161,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             lv.setOnItemClickListener(this);
         }
         mkdirs(manifest.getEmail().replace('@', '.'));
+        recordFdbkMrkrs(manifest);
     }
 
     private void setUpDownloads(DownloadMonitor dlm, Quij quiz) {
@@ -172,12 +169,13 @@ public class ListActivity extends Activity implements OnItemClickListener,
         for (Question question : questions) {
             Uri src, dest;
             String id;
-            File image = null;
+            File image = null, fdbk = null;
             if (question != null) {
                 id = question.getId();
                 switch (question.getState()) {
                 case GRADED:
-                    if (!(new File(feedbackDir, id)).exists()) {
+                    fdbk = new File(feedbackDir, id);
+                    if (!fdbk.exists()) {
                         src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, question.getGRId()));
                         dest = Uri.fromFile(new File(feedbackDir, id));
                         dlm.add(id, src, dest);
@@ -217,25 +215,19 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     private void checkAuth() {
-        SharedPreferences prefs =
-                getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
         String email = prefs.getString(EMAIL_KEY, null);
         String token = prefs.getString(TOKEN_KEY, null);
         if (token == null) {
             initiateAuthActivity();
         } else {
-            String urlString =
-                    String.format("http://%s/tokens/verify?email=%s&token=%s",
-                            WEB_APP_HOST_PORT, email, token);
+            String urlString = String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token);
             try {
-                peedee =
-                        ProgressDialog.show(this, "Initializing",
-                                "Please wait...");
+                peedee = ProgressDialog.show(this, "Initializing", "Please wait...");
                 peedee.setIndeterminate(true);
                 peedee.setIcon(ProgressDialog.STYLE_SPINNER);
                 URL[] urls = { new URL(urlString) };
-                new HttpCallsAsyncTask(this, VERIFY_AUTH_TASK_RESULT_CODE)
-                        .execute(urls);
+                new HttpCallsAsyncTask(this, VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
             } catch (Exception e) {
                 handleError("Auth Check Failed", e.getMessage());
             }
@@ -276,6 +268,31 @@ public class ListActivity extends Activity implements OnItemClickListener,
         (feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME)).mkdir();
         (new File(studentDir, UPLOAD_DIR_NAME)).mkdir();
     }
+    
+    private void recordFdbkMrkrs(QuizManifest manifest) {
+        Properties fdbkMrkrs = new Properties();
+        try {
+            File fdbkMrkrsFile = new File(feedbackDir, "mrkrs");
+            fdbkMrkrsFile.createNewFile(); // creates only if needed
+            fdbkMrkrs.load(new FileInputStream(fdbkMrkrsFile));            
+            for (int i = 0; i < manifest.getCount(); i++) {
+                Quij quiz = (Quij)manifest.getItem(i);
+                String quizId = String.valueOf(quiz.getId());
+                long lastFdbkMrkr = fdbkMrkrs.getProperty(quizId) == null ?
+                        0 : Long.parseLong(fdbkMrkrs.getProperty(quizId));
+                if (lastFdbkMrkr < quiz.getFdbkMrkr()) {
+                    File[] fdbkFiles = feedbackDir.listFiles();
+                    for (File f : fdbkFiles) {
+                        if (f.getName().contains(quizId)) f.delete();
+                    }
+                    fdbkMrkrs.setProperty(quizId, String.valueOf(quiz.getFdbkMrkr()));
+                    fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);
+                }
+            }            
+        } catch (Exception e) { 
+            handleError("Error during fdbkChk", e.getMessage());
+        }        
+    }
 
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
@@ -287,6 +304,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
     ProgressDialog       peedee;
 
     private final String 
+        VERIFY_URL = "http://%s/tokens/verify?email=%s&token=%s",
         SOLN_URL = "http://%s/vault/%s/pg-1.jpg",
         ANSR_URL = "http://%s/locker/%s",
         QUES_URL = "http://%s/vault/%s/notrim.jpg",

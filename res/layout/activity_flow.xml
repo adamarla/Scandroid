@@ -3,7 +3,7 @@
     android:id="@+id/rlFlowActivity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".FlowActivity" >
+    tools:context=".FlowActivity" xmlns:app="http://schemas.android.com/apk/res/com.gradians.collect">
     
     <com.gradians.collect.FlowViewPager 
         android:id="@+id/vpPreview"
@@ -34,16 +34,17 @@
 	            android:textColor="#FFFFFFFF"
 	            android:gravity="center"/>
             
-            <ImageButton
-                android:id="@+id/btnMinFdbk"
+            <TextView
+                android:id="@+id/tvMarks"
                 android:layout_weight="1"
                 android:layout_height="0dp"
                 android:layout_width="match_parent"
                 android:contentDescription="@string/zoom_button"
                 android:onClick="showHide"
                 android:background="@drawable/gray_button"
-                android:gravity="center"
-                android:src="@android:drawable/ic_menu_more"/>
+                android:textColor="#FFFFFFFF"
+                android:textSize="12sp"
+                android:gravity="center"/>
             
         </LinearLayout>
 
@@ -62,12 +63,13 @@
     <com.viewpagerindicator.CirclePageIndicator
         android:id="@+id/circlesFdbk"
         android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="2dp"
-        android:background="@null"
-        android:padding="5dp"/>
+        android:layout_marginTop="4dp"
+        app:fillColor="#F88017"
+        android:paddingTop="2dp"
+        android:background="@null"/>
         
     <LinearLayout
         android:id="@+id/llBtnBar"
@@ -77,15 +79,15 @@
         android:layout_height="40dp" >
         
         <ImageButton
-            android:id="@+id/btnAction"
+            android:id="@+id/btnMin"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:contentDescription="@string/action_button"
+            android:contentDescription="@string/zoom_button"
+            android:onClick="showHide"
             android:background="@drawable/blue_button"
             android:gravity="center"
-            android:src="@android:drawable/ic_menu_info_details"
-            android:onClick="takeAction"/>
+            android:src="@android:drawable/ic_menu_more"/>
         
         <ImageButton 
             android:id="@+id/btnLeft"
@@ -112,15 +114,15 @@
             android:src="@drawable/ic_action_forward"/>        
                        
         <ImageButton
-            android:id="@+id/btnMin"
+            android:id="@+id/btnAction"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:contentDescription="@string/zoom_button"
-            android:onClick="showHide"
+            android:contentDescription="@string/action_button"
             android:background="@drawable/blue_button"
             android:gravity="center"
-            android:src="@android:drawable/ic_menu_more"/>
+            android:src="@android:drawable/ic_menu_info_details"
+            android:onClick="takeAction"/>
         
 	</LinearLayout>
 	

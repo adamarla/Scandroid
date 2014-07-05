@@ -15,6 +15,8 @@ public interface IConstants {
     String QUIZ_NAME_KEY = "quiz";
     String QUIZ_PATH_KEY = "locn";
     String QUIZ_PRICE_KEY = "price";
+    String QUIZ_FDBK_KEY = "fdbkMrkr";
+    String QUESTIONS_KEY = "questions";    
     
     String COMMENTS_KEY = "comments";
     String COMMENT_KEY = "comment";
@@ -27,6 +29,7 @@ public interface IConstants {
     String GR_PATH_KEY = "img";
     String SCAN_KEY = "scan";
     String MARKS_KEY = "marks";
+    String OUT_OF_KEY = "outof";
     
     String QUESTIONS_DIR_NAME = "questions";
     String ANSWERS_DIR_NAME = "answers";
