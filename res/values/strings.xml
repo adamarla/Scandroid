@@ -17,5 +17,6 @@
     <string name="zoom_button">Zoom</string>
     <string name="title_activity_preview">Preview</string>
     <string name="hello_world">Hello world!</string>
+    <string name="title_activity_help">HelpActivity</string>
 
 </resources>

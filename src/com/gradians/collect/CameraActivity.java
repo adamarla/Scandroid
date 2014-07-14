@@ -51,14 +51,13 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
             addView(new CameraPreview(this, camera));
         
         File imagesDir = new File(getIntent().getStringExtra(TAG));
-        String id = getIntent().getStringExtra(TAG_ID).split("-")[1];
+        String id = getIntent().getStringExtra(TAG_ID);
         price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
         picture = new File(imagesDir, id);
         
         String ws_id = id.substring(0, id.indexOf('.'));
         try {
-            url = new URL(String.format(BILL_URL, 
-                    WEB_APP_HOST_PORT, ws_id));
+            url = new URL(String.format(BILL_URL, WEB_APP_HOST_PORT, ws_id));
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
@@ -104,7 +103,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
                     intent.setData(Uri.fromFile(picture));
                     intent.putExtra(TAG_ID, grIds);
                     setResult(Activity.RESULT_OK, intent);
-                    finish();        
+                    finish();
                 } catch (Exception e) { 
                     Log.e(TAG, "Bill Worksheet failed: " + e.getMessage());
                 }
@@ -145,8 +144,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
                         peedee.setIndeterminate(true);
                         peedee.setIcon(ProgressDialog.STYLE_SPINNER);
                         URL[] urls = new URL[] { url };
-                        new HttpCallsAsyncTask(handler, 
-                                BILL_WORKSHEET_TASK_RESULT_CODE).execute(urls);
+                        new HttpCallsAsyncTask(handler, BILL_WORKSHEET_TASK_RESULT_CODE).execute(urls);
                     }
                 }
             });
@@ -209,38 +207,26 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
     }
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
+        params.setColorEffect(Camera.Parameters.EFFECT_MONO);
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
         params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
         Size s = getOptimalSize(params);
+        Log.d("gradians", s.width + "x" + s.height);
         params.setPictureSize(s.width, s.height);
         return params;
     }    
 
     private Size getOptimalSize(Parameters params) {
-        Size match = null;
+        Size s = null;
+        int delta = Integer.MAX_VALUE, index = 0;
         List<Size> availableSizes = camera.getParameters().getSupportedPictureSizes();
-        for (int[] ps : PREFERRED_SIZE) {
-            for (Size s : availableSizes) {
-                if (ps[0] == s.width && ps[1] == s.height) {
-                    match = s;
-                    break;
-                }
-            }            
-            if (match != null) break;
+        for (int i = 0; i < availableSizes.size(); i++) {
+            s = availableSizes.get(i);
+            delta = Math.abs(PREFERRED_SIZE[0] - s.width);
+            index = delta > Math.abs(PREFERRED_SIZE[0] - s.width) ? i : delta;
         }
-        
-        if (match == null) {
-            Size s;
-            for (int i = availableSizes.size(); i > 0; i--) {
-                s = availableSizes.get(i);
-                if (s.width * 3 == s.height * 4) {
-                    match = s;
-                    break;
-                }
-            }            
-        }
-        return match;
+        return availableSizes.get(index);
     }
 
     private boolean captured;
@@ -252,7 +238,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
     private ProgressDialog peedee;
     
     private final int PORTRAIT = 90;
-    private final int[][] PREFERRED_SIZE = {{800, 600}, {1280, 960}, {960, 720}, {1600, 1200}};    
+    private final int[] PREFERRED_SIZE = {1280, 960};// {{1600, 1200}, {1280, 960}, {960, 720}, {800, 600}};
     private final String BILL_URL = "http://%s/tokens/bill_ws?id=%s";
 }
 

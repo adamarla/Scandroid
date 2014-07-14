@@ -24,6 +24,9 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     }
     
     public void add(String title, Uri srcUri, Uri destUri) {
+        for (Download d : downloads) {
+            if (d.srcUri.equals(srcUri)) return;
+        }
         downloads.add(new Download(title, srcUri, destUri));
     }
     

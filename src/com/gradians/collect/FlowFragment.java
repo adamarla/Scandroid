@@ -1,6 +1,9 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -16,23 +19,24 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 public class FlowFragment extends Fragment implements IConstants {
     
     public static final FlowFragment newInstance(Question question,
-            boolean flipped,int x, int y) {
-        Bundle bundle = new Bundle(6);
+            boolean flipped, int x, int y, int page) {
+        Bundle bundle = new Bundle(5);
+        bundle.putParcelable(TAG, question);
         bundle.putInt(X_POSN_KEY, x);
         bundle.putInt(Y_POSN_KEY, y);
-        bundle.putBoolean("flipped", flipped);
-        bundle.putString(SCAN_KEY, question.getScanLocn());
-        bundle.putString(GR_PATH_KEY, question.getImgLocn());
-        bundle.putString(ID_KEY, question.getId()); // Do not delete, is used!
+        bundle.putInt("page", page);        
+        bundle.putBoolean("flipped", flipped);        
         FlowFragment pf = new FlowFragment();
         pf.setArguments(bundle);
         return pf;
@@ -44,31 +48,87 @@ public class FlowFragment extends Fragment implements IConstants {
         dmetrics = getActivity().getApplicationContext().getResources().getDisplayMetrics();
         
         Bundle bundle = this.getArguments();
-        int xPosn = bundle.getInt(X_POSN_KEY);
+        Question question = bundle.getParcelable(TAG);
+        final int xPosn = bundle.getInt(X_POSN_KEY);
         final int yPosn = bundle.getInt(Y_POSN_KEY);
+        final int page = bundle.getInt("page");
         boolean flipped = bundle.getBoolean("flipped");
-        String scan = bundle.getString(SCAN_KEY);
-        String path = bundle.getString(GR_PATH_KEY);
-
-        ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
-        FdbkView ivPreview = (FdbkView)rootView.findViewById(R.id.ivPreview);
-        ivPreview.setPosn(xPosn, yPosn);
-        String imgPath = flipped ? path : scan;
-        final Bitmap bmap = setImage(ivPreview, imgPath);
         
+        ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
+        String[] paths;
+        if (flipped) {
+            if (question.getState() > SENT) {
+                paths = getSolutions(question);
+            } else {
+                paths = getQuestions(question);
+            }
+        } else {
+            if (question.getState() > DOWNLOADED) {
+                paths = getAnswers(question);
+            } else {
+                paths = getQuestions(question);
+            }
+        }
+        
+        FdbkView fdbkView = null;
+        LinearLayout llPreview = (LinearLayout)rootView.findViewById(R.id.llPreview);
+        Bitmap b = null;
+        for (int i = 0; i < paths.length; i++) {
+            fdbkView = new FdbkView(getActivity().getApplicationContext());
+            if (i == page) fdbkView.setPosn(xPosn, yPosn);
+            b = setImage(fdbkView, paths[i]);
+            llPreview.addView(fdbkView);
+        }
+        
+        final Bitmap bmap = b;
         if (yPosn != FdbkView.NO_FEEDBACK) {
             final ScrollView svPreview = (ScrollView)rootView.findViewById(R.id.svPreview);
             svPreview.post(new Runnable() {
                 @Override
                 public void run() {
-                    int scrollTo = bmap.getHeight()*yPosn/100 - dmetrics.heightPixels/2;
+                    int scrollTo = bmap.getHeight()*page + bmap.getHeight()*yPosn/100 - dmetrics.heightPixels/2;
                     svPreview.smoothScrollTo(0, scrollTo);
                 }
-            });            
+            });
         }
         return rootView;
     }
     
+    private String[] getQuestions(Question question) {
+        return new String[] { question.getImgLocn() + "/" + question.getId() };
+    }
+     
+    private String[] getAnswers(Question question) {
+        String map = question.getMap();
+        String[] parts = map.split("-");
+        HashSet<String> pages = new HashSet<String>();
+        for (int i = 0; i < parts.length; i++) {
+            if (!parts[i].equals("0")) {
+                if (!pages.contains(parts[i])) {
+                    pages.add(parts[i]);
+                }
+            }
+        }
+        String[] paths = new String[pages.size()];
+        int i = 0;
+        Iterator<String> iter = pages.iterator();
+        while (iter.hasNext()) {            
+            paths[i] = question.getScanLocn() + "/" + question.getId().split("\\.")[0] + "." + iter.next();
+            i++;
+        }
+        return paths;
+    }
+     
+    private String[] getSolutions(Question question) {
+        String[] paths;
+        String imgLocn = question.getImgLocn();
+        paths = new String[question.getImgSpan()];
+        for (int i = 0; i < paths.length; i++) {
+            paths[i] = imgLocn + "/" + question.getId() + "." + (i+1);
+        }
+        return paths;
+    }
+         
     private Bitmap setImage(FdbkView iv, String path) {
         Bitmap bmap = (new File(path)).exists() ?
             BitmapFactory.decodeFile(path):
@@ -104,7 +164,8 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
         xPosn = yPosn = FdbkView.NO_FEEDBACK;
     }
     
-    public void shift(int x, int y, int position) {
+    public void shift(int pg, int x, int y, int position) {
+        page = pg;
         xPosn = x;
         yPosn = y;
         update(position);
@@ -134,9 +195,9 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     
     @Override
     public int getItemPosition(Object object) {
-        FlowFragment fragment = (FlowFragment) object;
-        String id = fragment.getArguments().getString(ID_KEY);
-        return id.equals(lastChangedId) ? 
+        FlowFragment fragment = (FlowFragment)object;
+        Question question = fragment.getArguments().getParcelable(TAG);
+        return question.getId().equals(lastChangedId) ? 
                 POSITION_NONE : POSITION_UNCHANGED;
     }
 
@@ -148,10 +209,10 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     @Override
     public Fragment getItem(int position) {
         return FlowFragment.newInstance(questions[position], 
-                flipped, xPosn, yPosn);
+                flipped, xPosn, yPosn, 1);
     }
     
-    private int xPosn, yPosn;
+    private int page, xPosn, yPosn;
     private boolean flipped;
     private String lastChangedId;
     private Question[] questions;

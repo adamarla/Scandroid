@@ -18,20 +18,20 @@
 
     <application
         android:allowBackup="true"
+        android:hardwareAccelerated="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppBaseTheme" 
-        android:hardwareAccelerated="false" >
+        android:theme="@style/AppBaseTheme" >
         <activity
-            android:name="com.gradians.collect.LoginActivity"
+            android:name=".LoginActivity"
             android:label="@string/title_activity_login"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
         <activity
-            android:name="com.gradians.collect.CameraActivity"
+            android:name=".CameraActivity"
             android:label="@string/title_activity_camera"
-            android:parentActivityName="com.gradians.collect.MainActivity"
+            android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -39,31 +39,40 @@
         </activity>
 
         <service
-            android:name="com.gradians.collect.ImageUploadService"
+            android:name=".ImageUploadService"
             android:enabled="true" >
         </service>
 
         <activity
-            android:name="com.gradians.collect.SummaryActivity"
+            android:name=".SummaryActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
         </activity>
         <activity
-            android:name="com.gradians.collect.FlowActivity"
+            android:name=".FlowActivity"
             android:label="@string/app_name"
-            android:parentActivityName="com.gradians.collect.SummaryActivity" >
+            android:parentActivityName=".SummaryActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.gradians.collect.ListActivity" />
         </activity>
         <activity
-            android:name="com.gradians.collect.ListActivity"
+            android:name=".ListActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".HelpActivity"
+            android:label="@string/title_activity_help"
+            android:screenOrientation="portrait" >
+            <!-- intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter-->
         </activity>
     </application>
 

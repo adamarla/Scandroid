@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import android.app.Activity;
@@ -139,13 +140,9 @@ public class ListActivity extends Activity implements OnItemClickListener,
     
     private void launchFlowActivity(Quij quiz) {
         Question[] questions = quiz.getQuestions();
-        String[] name_state_score_ids = new String[questions.length];
-        for (int i = 0; i < questions.length; i++) {
-            name_state_score_ids[i] = questions[i].getNameStateScoreId();
-        }
         Intent flowIntent = new Intent(this.getApplicationContext(), 
-            com.gradians.collect.FlowActivity.class);
-        flowIntent.putExtra(TAG_ID, name_state_score_ids);
+                com.gradians.collect.FlowActivity.class);   
+        flowIntent.putExtra(TAG_ID, questions);
         flowIntent.putExtra(TAG, this.studentDir.getPath());
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
@@ -167,49 +164,70 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private void setUpDownloads(DownloadMonitor dlm, Quij quiz) {
         Question[] questions = quiz.getQuestions();
         for (Question question : questions) {
+            Log.d(TAG, question.getName() + " " + question.getState() + " " + question.getMap());
             Uri src, dest;
-            String id;
-            File image = null, fdbk = null;
-            if (question != null) {
-                id = question.getId();
-                switch (question.getState()) {
-                case GRADED:
-                    fdbk = new File(feedbackDir, id);
-                    if (!fdbk.exists()) {
-                        src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, question.getGRId()));
-                        dest = Uri.fromFile(new File(feedbackDir, id));
-                        dlm.add(id, src, dest);
-                    }
-                case RECEIVED:
-                    image = new File(solutionsDir, question.getId());
-                    if (!image.exists()) {
-                        src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, question.getImgLocn()));
-                        dest = Uri.fromFile(image);
-                        dlm.add(question.getId(), src, dest);
-                    }
-                case SENT:
-                    image = new File(answersDir, question.getId());
-                    if (!image.exists()) {
-                        src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, question.getScanLocn()));
-                        dest = Uri.fromFile(image);
-                        dlm.add(question.getId(), src, dest);
-                    }
-                    break;
-                case CAPTURED:
-                    image = new File(answersDir, question.getId());
-                    if (!image.exists()) {
-                        question.setState(DOWNLOADED);
-                    }
-                case DOWNLOADED:
-                case WAITING:
-                    image = new File(questionsDir, question.getId());
-                    if (!image.exists()) {
-                        src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, question.getImgLocn()));
-                        dest = Uri.fromFile(image);
-                        dlm.add(question.getId(), src, dest);
-                    }
-                    question.setState(DOWNLOADED);
+            String id = question.getId();
+            String wsId = id.split("\\.")[0];
+            String GRId = question.getGRId();
+            File image = null, fdbk = null;            
+            String imgLocn = question.getImgLocn();
+            String[] scans = question.getScanLocn().split(",", -1);
+            String map = question.getMap();
+            String[] pageNos = map.split("-");
+            switch (question.getState()) {
+            case GRADED:
+                fdbk = new File(feedbackDir, id);
+                if (!fdbk.exists()) {
+                    src = Uri.parse(String.format(FDBK_URL, "www.gradians.com", GRId));
+                    dest = Uri.fromFile(new File(feedbackDir, id));
+                    dlm.add(id, src, dest);
                 }
+            case RECEIVED:
+                for (short i = 0; i < question.getImgSpan(); i++) {
+                    image = new File(solutionsDir, id + "." + (i+1));
+                    if (!image.exists()) {
+                        src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, imgLocn, (i+1)));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
+                    }
+                }                
+                for (int i = 0; i < pageNos.length; i++) {
+                    if (!pageNos[i].equals("0")) {
+                        image = new File(answersDir, wsId + "." + pageNos[i]);
+                        if (!image.exists()) {
+                            src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, scans[i]));
+                            dest = Uri.fromFile(image);
+                            dlm.add(question.getId(), src, dest);
+                        }                        
+                    }                    
+                }
+                break;
+            case SENT:
+            case CAPTURED:
+                String newmap = "";                
+                for (int i = 0; i < pageNos.length; i++) {
+                    if (!pageNos[i].equals("0")) {
+                        image = new File(answersDir, wsId + "." + pageNos[i]);
+                        if (!image.exists()) {
+                            newmap += "0";
+                        } else {
+                            newmap += pageNos[i];
+                        }
+                    } else {
+                        newmap += "0";
+                    }
+                    if (i != pageNos.length-1) newmap += "-";
+                }
+                question.setMap(newmap);
+            case DOWNLOADED:
+            case WAITING:
+                image = new File(questionsDir, question.getId());
+                if (!image.exists()) {
+                    src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, imgLocn));
+                    dest = Uri.fromFile(image);
+                    dlm.add(question.getId(), src, dest);
+                }
+                question.setState(DOWNLOADED);
             }
         }
     }
@@ -236,8 +254,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
 
     private void initiateAuthActivity() {
         resetPreferences();
-        Intent checkAuthIntent =
-                new Intent(this, com.gradians.collect.LoginActivity.class);
+        Intent checkAuthIntent = new Intent(this, 
+            com.gradians.collect.LoginActivity.class);
         checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
     }
@@ -305,7 +323,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
 
     private final String 
         VERIFY_URL = "http://%s/tokens/verify?email=%s&token=%s",
-        SOLN_URL = "http://%s/vault/%s/pg-1.jpg",
+        SOLN_URL = "http://%s/vault/%s/pg-%d.jpg",
         ANSR_URL = "http://%s/locker/%s",
         QUES_URL = "http://%s/vault/%s/notrim.jpg",
         FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s";

@@ -16,37 +16,37 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true">
         
-    <ImageButton
-        android:id="@+id/btnCapture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:contentDescription="@string/capture_button"
-        android:onClick="capture"
-        android:background="@drawable/blue_button"
-        android:src="@android:drawable/ic_menu_camera" />
-    
-    <ImageButton
-        android:id="@+id/btnUpload"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="2dp"
-        android:layout_marginRight="2dp"
-        android:gravity="center"
-        android:contentDescription="@string/capture_button"
-        android:onClick="upload"
-        android:background="@drawable/gray_button"
-        android:src="@android:drawable/ic_menu_upload" />    
-    
-    <ImageButton
-        android:id="@+id/btnRetake"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:contentDescription="@string/capture_button"
-        android:onClick="retake"
-        android:background="@drawable/gray_button"
-        android:src="@android:drawable/ic_menu_delete" />
+	    <ImageButton
+	        android:id="@+id/btnCapture"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:gravity="center"
+	        android:contentDescription="@string/capture_button"
+	        android:onClick="capture"
+	        android:background="@drawable/blue_button"
+	        android:src="@android:drawable/ic_menu_camera" />
+	    
+	    <ImageButton
+	        android:id="@+id/btnUpload"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="2dp"
+	        android:layout_marginRight="2dp"
+	        android:gravity="center"
+	        android:contentDescription="@string/capture_button"
+	        android:onClick="upload"
+	        android:background="@drawable/gray_button"
+	        android:src="@android:drawable/ic_menu_upload" />    
+	    
+	    <ImageButton
+	        android:id="@+id/btnRetake"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:gravity="center"
+	        android:contentDescription="@string/capture_button"
+	        android:onClick="retake"
+	        android:background="@drawable/gray_button"
+	        android:src="@android:drawable/ic_menu_delete" />
     
     </LinearLayout>
     
