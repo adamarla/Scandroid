@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Properties;
 
 import android.app.Activity;
@@ -15,6 +14,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -85,14 +85,12 @@ public class ListActivity extends Activity implements OnItemClickListener,
         } else if (requestCode == FLOW_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    String[] name_state_ids = data.getStringArrayExtra(TAG_ID);
-                    int itemPosition = 0;
-                    short state;
-                    for (String name_state_id : name_state_ids) {
-                        String[] tokens = name_state_id.split(Question.SEP);
-                        state = Short.parseShort(tokens[1]);
-                        manifest.update(selectedQuizPosition, itemPosition++, state);
+                    Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
+                    Question[] questions = new Question[parcels.length];
+                    for (int i = 0; i < parcels.length; i++) {
+                        questions[i] = (Question)parcels[i];
                     }
+                    manifest.update(selectedQuizPosition, questions);
                 } catch (Exception e) {
                     handleError("Oops, Flow activity request failed",
                             e.getMessage());
@@ -172,7 +170,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private void setUpDownloads(DownloadMonitor dlm, Quij quiz) {
         Question[] questions = quiz.getQuestions();
         for (Question question : questions) {
-            Log.d(TAG, question.getName() + " " + question.getState() + " " + question.getMap());
             Uri src, dest;
             String id = question.getId();
             String wsId = id.split("\\.")[0];
@@ -235,7 +232,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     dest = Uri.fromFile(image);
                     dlm.add(question.getId(), src, dest);
                 }
-                question.setState(DOWNLOADED);
+                if (question.getState() == WAITING)
+                    question.setState(DOWNLOADED);
             }
         }
     }

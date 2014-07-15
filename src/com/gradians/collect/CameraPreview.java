@@ -46,7 +46,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // Nothing to be done
-        Log.d("gradians", "Surface destroyed");
     }        
 
     private Camera camera;

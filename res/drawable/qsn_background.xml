@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/gray_button"
+    <item android:drawable="@drawable/done_button"
           android:state_enabled="false" />
-    <item android:drawable="@drawable/orange_button"
+    <item android:drawable="@drawable/selected_button"
           android:state_selected="true" />
-    <item android:drawable="@drawable/blue_button" />
+    <item android:drawable="@drawable/blank_button" />
 </selector>

@@ -1,7 +1,6 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -53,7 +52,6 @@ public class FlowFragment extends Fragment implements IConstants {
         final int yPosn = bundle.getInt(Y_POSN_KEY);
         final int page = bundle.getInt("page");
         boolean flipped = bundle.getBoolean("flipped");
-        Log.d("gradians", "Rendering on page " + page + " at " + xPosn + " " + yPosn);
         ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
         String[] paths;
         if (flipped) {

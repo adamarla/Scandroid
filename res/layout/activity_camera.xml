@@ -54,7 +54,6 @@
 	        android:gravity="center"
 	        android:contentDescription="@string/capture_button"
 	        android:onClick="retake"
-	        android:enabled="false"
 	        android:background="@drawable/blue_background"
             android:textColor="#FFFFFFFF"
 	        android:text="Discard"

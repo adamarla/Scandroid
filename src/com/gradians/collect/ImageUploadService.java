@@ -29,11 +29,16 @@ public class ImageUploadService extends IntentService implements IConstants {
         OutputStream ostream = null;
         PrintWriter opstream = null;        
         String boundary =  null;
+        String quizId, pageNo, grIds;
         for (String id : ids) {
             boundary = String.valueOf(System.currentTimeMillis());
-            try {
+            try {                
+                String[] tokens = id.split("\\.");
+                quizId = tokens[0];
+                pageNo = tokens[1];
+                grIds = tokens[2];
                 url = new URL(String.format(URL,
-                        BANK_HOST_PORT, id.split("-")[1]));
+                        BANK_HOST_PORT, grIds));
                 Log.i(TAG, url.toString());
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setDoOutput(true);
@@ -57,7 +62,7 @@ public class ImageUploadService extends IntentService implements IConstants {
                 
                 InputStream imgstream = null;
                 byte[] buffer = new byte[1024];
-                imgstream = new FileInputStream(new File(imageDir, id.split("-")[0]));
+                imgstream = new FileInputStream(new File(imageDir, quizId + "." + pageNo));
                 for (int length = 0; (length = imgstream.read(buffer)) > 0;) {
                     ostream.write(buffer, 0, length);
                 }

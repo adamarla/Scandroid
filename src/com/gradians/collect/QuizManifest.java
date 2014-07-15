@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -38,15 +39,16 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         return token;
     }
 
-    public void update(int quizPosn, int itemPosn, short newState) {
-        Question q = quizzes[quizPosn].get(itemPosn);
-        String id = q.getId();
-        if (q.getState() != newState) {
-            q.setState(newState);
-            map.setProperty(id, String.valueOf(newState));
-            quizzes[quizPosn].determineState();
-            this.notifyDataSetChanged();            
+    public void update(int quizPosn, Question[] questions) {
+        Quij quiz = quizzes[quizPosn];
+        Question q = null;
+        for (int i = 0; i < questions.length; i++) {
+            q = quiz.get(i);
+            q.setMap(questions[i].getMap());
+            q.setState(questions[i].getState());
         }
+        quiz.determineState();
+        this.notifyDataSetChanged();
     }
     
     @Override
@@ -166,7 +168,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                 quizzes[i].add(question);
             }
             quizzes[i].determineState();
-            if (quizzes[i].getState() > NOT_YET_BILLED) 
+            if (quizzes[i].getState() > NOT_YET_BILLED)
                 quizzes[i].updateMap();
         }
     }
@@ -214,51 +216,53 @@ class Quij extends ArrayList<Question> implements IConstants {
         Question q = null;
         String map = null;
         int page = 1;
-        if (layout != null) {
-            int partCount = 0;
-            for (int i = 0; i < this.size(); i++) {
-                q = this.get(i);
-                map = "";
-                int parts = q.getGRId().split("-").length;
-                boolean multipart = parts > 1;
-                for (int j = 0; j < parts; j++) {
-                    page = getPage(partCount);
-                    map += page;
-                    if (multipart && j != parts-1) map += "-";
-                    partCount++;
+        
+//         // derive layout from page breaks (for printed worksheets)
+//        if (layout != null) {
+//            int partCount = 0;
+//            for (int i = 0; i < this.size(); i++) {
+//                q = this.get(i);
+//                map = "";
+//                int parts = q.getGRId().split("-").length;
+//                boolean multipart = parts > 1;
+//                for (int j = 0; j < parts; j++) {
+//                    page = getPage(partCount);
+//                    map += page;
+//                    if (multipart && j != parts-1) map += "-";
+//                    partCount++;
+//                }
+//                q.setMap(map);
+//            }
+//        } else {
+//      }
+        HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();            
+        for (int i = 0; i < this.size(); i++) {            
+            q = this.get(i);
+            map = "";            
+            // in case questions are already captured
+            if (q.getMap() != null) {
+                String[] oldmap = q.getMap().split("-");
+                for (String s : oldmap) {
+                    if (page == Integer.parseInt(s)) {
+                        page++;
+                    }
                 }
-                q.setMap(map);
             }
-        } else {
-            HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();            
-            for (int i = 0; i < this.size(); i++) {
-                q = this.get(i);
-                map = "";                
-                // in case questions are already captured
-                if (q.getMap() != null) {
-                    String[] oldmap = q.getMap().split("-");
-                    for (String s : oldmap) {
-                        if (page == Integer.parseInt(s)) {
-                            page++;
-                        }
+            String[] scans = q.getScanLocn().split(",", -1);
+            for (int j = 0; j < scans.length; j++) {
+                if (scans[j].equals("")) {
+                    map += "0";
+                } else {
+                    if (!scanPgMap.containsKey(scans[j])) {
+                        scanPgMap.put(scans[j], page);
+                        page++;
                     }
+                    map += scanPgMap.get(scans[j]);
                 }
-                String[] scans = q.getScanLocn().split(",", -1);
-                for (int j = 0; j < scans.length; j++) {
-                    if (scans[j].equals("")) {
-                        map += "0";
-                    } else {
-                        if (!scanPgMap.containsKey(scans[j])) {
-                            scanPgMap.put(scans[j], page);
-                            page++;
-                        }
-                        map += scanPgMap.get(scans[j]);
-                    }
-                    if (j != scans.length-1) map += "-";                    
-                }
-                q.setMap(map);
-            }            
-        }
+                if (j != scans.length-1) map += "-";                    
+            }
+            q.setMap(map);
+        }            
     }
     
     public void determineState() {
@@ -373,7 +377,6 @@ class Question implements Parcelable {
         this.imgSpan = span;
         if (GRId != null) {
             map = this.GRId.replaceAll("[0-9]+", "0");
-            map = map.replaceAll("-", ",");
         }
     }
     
@@ -469,13 +472,11 @@ class Question implements Parcelable {
 
             @Override
             public Question createFromParcel(Parcel source) {
-                // TODO Auto-generated method stub
                 return new Question(source);
             }
 
             @Override
             public Question[] newArray(int size) {
-                // TODO Auto-generated method stub
                 return new Question[size];
             }
     };

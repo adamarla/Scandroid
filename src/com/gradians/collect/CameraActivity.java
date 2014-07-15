@@ -3,7 +3,6 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
@@ -21,7 +19,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.text.TextUtils;
 import android.util.Log;
@@ -31,14 +28,10 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
-import android.widget.ScrollView;
 import android.support.v4.app.NavUtils;
 import android.annotation.TargetApi;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 
@@ -55,7 +48,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         final int position = params.getIntExtra(TAG_ID, 0);
         imagesDir = new File(getIntent().getStringExtra(SCANS_KEY));
         Parcelable[] parcels = params.getParcelableArrayExtra(TAG);
-        price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
         quizId = ((Question)parcels[0]).getId().split("\\.")[0];
         
         filePartMap = new ArrayList<String>();
@@ -73,12 +65,14 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 btn = new Button(this);
                 btn.setText(pgNos.length == 1 ? questions[i].getName() :
                     questions[i].getName() + (char)((int)'a'+j));
-                btn.setTextColor(Color.WHITE);                
-                btn.setOnClickListener(this);
+                btn.setTextColor(R.drawable.qsn_text_color);
+                btn.setBackgroundResource(R.drawable.qsn_background);
+                btn.setTextSize(14);
                 LayoutParams lp = new LayoutParams(
                     LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-                lp.setMargins(1, 0, 1, 0);
+                lp.setMargins(2, 0, 2, 0);
                 btn.setLayoutParams(lp);
+                btn.setOnClickListener(this);
                 
                 if (questions[i].getState() > SENT) {
                     btn.setEnabled(false);
@@ -87,7 +81,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 } else if (position == i) {
                     btn.setSelected(true);
                 }
-                btn.setBackgroundResource(R.drawable.qsn_selector);
                 llButtons.addView(btn);
             }
         }
@@ -103,21 +96,10 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
             }
         });
 
-//        String id = getIntent().getStringExtra(TAG_ID);
-//        picture = new File(imagesDir, id);
-        
-//        String ws_id = id.substring(0, id.indexOf('.'));
-//        try {
-//            url = new URL(String.format(BILL_URL, WEB_APP_HOST_PORT, ws_id));
-//        } catch (Exception e) {
-//            Log.e(TAG, e.getMessage());
-//        }
-
     }
     
     @Override
     public void onBackPressed() {
-        // TODO Auto-generated method stub
         Intent intent = new Intent();
         intent.putExtra(TAG, filePartMap.toArray(new String[filePartMap.size()]));
         this.setResult(RESULT_OK, intent);
@@ -143,7 +125,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
 
     @Override
     protected void onResume() {
-        // TODO Auto-generated method stub
         super.onResume();
         comandeerCamera();
     }
@@ -190,7 +171,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
             if (selectedParts.size() == 0) return;
             picture = new File(imagesDir, "picture"); 
             camera.takePicture(null, null, new PictureWriter(this, picture));
-
         } else {
             int newPgNo = imagesDir.list(new AnswerFilesFilter(quizId)).length+1;
             String confirmedName = quizId + "." + newPgNo;
@@ -201,47 +181,10 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
             LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
             for (int j : selectedParts) {
                 ((Button)llButtons.getChildAt(j)).setEnabled(false);
+                ((Button)llButtons.getChildAt(j)).setSelected(false);
             }
             selectedParts.clear();
-            retake(null);
-            
-//            final ITaskResult handler = this;
-//            final Context context = this;
-//            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//            if (price == 0) {
-//                builder.setTitle("Send this question?").setMessage(
-//                        "This action is not reversible");
-//            } else {
-//                builder.setTitle("Wan't us to look at your work?").setMessage(
-//                        "Buy this Quiz for " + price + " Gredits");
-//            }
-//            builder.setPositiveButton(android.R.string.ok,
-//                new DialogInterface.OnClickListener() {
-//                    public void onClick(DialogInterface dialog, int id) {
-//                        if (price == 0) {
-//                            // User clicked OK button
-//                            Intent intent = new Intent();
-//                            intent.setData(Uri.fromFile(picture));
-//                            setResult(Activity.RESULT_OK, intent);
-//                            finish();        
-//                        } else {
-//                            peedee = ProgressDialog.show(context, "Executing purchase", 
-//                                    "Please wait...");
-//                            peedee.setIndeterminate(true);
-//                            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-//                            URL[] urls = new URL[] { url };
-//                            new HttpCallsAsyncTask(handler, BILL_WORKSHEET_TASK_RESULT_CODE).execute(urls);
-//                        }
-//                    }
-//                });
-//            builder.setNegativeButton(android.R.string.cancel,
-//                new DialogInterface.OnClickListener() {
-//                    public void onClick(DialogInterface dialog, int id) {
-//                        // User cancelled the dialog
-//                    }
-//                });
-//            AlertDialog dialog = builder.create();
-//            dialog.show();
+            retake(null);        
         }
     }
     
@@ -256,7 +199,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     }
 
     public void retake(View view) {
-        if (!captured) return;
         try {
             camera.stopPreview();
             camera.startPreview();
@@ -336,7 +278,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         params.setPictureFormat(ImageFormat.JPEG);
         params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
         Size s = getOptimalSize(params);
-        Log.d("gradians", s.width + "x" + s.height);
         params.setPictureSize(s.width, s.height);
         return params;
     }    
@@ -358,11 +299,8 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     }
     
     private boolean captured;
-    private URL url;
-    private int price;
     private String quizId;
     private File picture, imagesDir;
-    private Question[] questions;
     private ArrayList<String> filePartMap;
     
     private Camera camera;
@@ -372,8 +310,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     private ProgressDialog peedee;
     
     private final int PORTRAIT = 90;
-    private final int[] PREFERRED_SIZE = {1280, 960};// {{1600, 1200}, {1280, 960}, {960, 720}, {800, 600}};
-    private final String BILL_URL = "http://%s/tokens/bill_ws?id=%s";
+    private final int[] PREFERRED_SIZE = {1280, 960};
 }
 
 class PictureWriter implements PictureCallback {
@@ -386,7 +323,6 @@ class PictureWriter implements PictureCallback {
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         try {
-            Log.d("gradians", "picture " + picture.getName());
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
@@ -411,7 +347,6 @@ class AnswerFilesFilter implements FilenameFilter {
     
     @Override
     public boolean accept(File dir, String filename) {
-        // TODO Auto-generated method stub        
         return filename.startsWith(quizId);
     }
     
