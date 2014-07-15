@@ -14,7 +14,7 @@
         android:id="@+id/action_help"
         android:orderInCategory="99"
         android:showAsAction="always"
-        android:icon="@drawable/ic_action_refresh"
+        android:icon="@android:drawable/ic_menu_help"
         android:title="@string/action_sign_out" />
         
     <item

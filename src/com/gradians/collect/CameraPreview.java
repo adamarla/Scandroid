@@ -26,6 +26,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             int height) {
         // Nothing to be done
     }
+    
+    public void setCamera(Camera camera) {
+        this.camera = camera;
+    }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -42,6 +46,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // Nothing to be done
+        Log.d("gradians", "Surface destroyed");
     }        
 
     private Camera camera;

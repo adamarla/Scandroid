@@ -59,6 +59,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
             initiateAuthActivity();
         else if (item.getItemId() == R.id.action_refresh)
             checkAuth();
+        else if (item.getItemId() == R.id.action_help)
+            launchHelpActivity();
         return super.onOptionsItemSelected(item);
     }
 
@@ -141,12 +143,18 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private void launchFlowActivity(Quij quiz) {
         Question[] questions = quiz.getQuestions();
         Intent flowIntent = new Intent(this.getApplicationContext(), 
-                com.gradians.collect.FlowActivity.class);   
+            com.gradians.collect.FlowActivity.class);   
         flowIntent.putExtra(TAG_ID, questions);
         flowIntent.putExtra(TAG, this.studentDir.getPath());
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
+    }
+    
+    private void launchHelpActivity() {
+        Intent helpIntent = new Intent(this.getApplicationContext(),
+            com.gradians.collect.HelpActivity.class);
+        startActivity(helpIntent);
     }
 
     private void setManifest(QuizManifest manifest) {
@@ -178,7 +186,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             case GRADED:
                 fdbk = new File(feedbackDir, id);
                 if (!fdbk.exists()) {
-                    src = Uri.parse(String.format(FDBK_URL, "www.gradians.com", GRId));
+                    src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, GRId));
                     dest = Uri.fromFile(new File(feedbackDir, id));
                     dlm.add(id, src, dest);
                 }
@@ -204,6 +212,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 break;
             case SENT:
             case CAPTURED:
+            case DOWNLOADED:
+            case WAITING:
                 String newmap = "";                
                 for (int i = 0; i < pageNos.length; i++) {
                     if (!pageNos[i].equals("0")) {
@@ -219,8 +229,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     if (i != pageNos.length-1) newmap += "-";
                 }
                 question.setMap(newmap);
-            case DOWNLOADED:
-            case WAITING:
                 image = new File(questionsDir, question.getId());
                 if (!image.exists()) {
                     src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, imgLocn));

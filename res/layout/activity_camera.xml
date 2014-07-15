@@ -9,44 +9,56 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
     
+    <HorizontalScrollView
+        android:id="@+id/hsvSelectorBtns"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" 
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="10dp">
+        
+        <LinearLayout
+            android:id="@+id/llSelectorBtns"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:orientation="horizontal"/>
+        
+    </HorizontalScrollView>        
+    
     <LinearLayout
         android:id="@+id/btnBarConf"
         android:orientation="horizontal"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true">
+        android:layout_alignParentBottom="true">
         
-	    <ImageButton
+	    <Button
 	        android:id="@+id/btnCapture"
-	        android:layout_width="wrap_content"
+	        android:layout_weight="1"
+	        android:layout_width="0dp"
 	        android:layout_height="wrap_content"
+            android:layout_margin="1dp"
 	        android:gravity="center"
 	        android:contentDescription="@string/capture_button"
 	        android:onClick="capture"
-	        android:background="@drawable/blue_button"
-	        android:src="@android:drawable/ic_menu_camera" />
+	        android:background="@drawable/blue_background"
+	        android:textColor="#FFFFFFFF"
+	        android:text="Capture"
+	        android:drawableRight="@android:drawable/ic_menu_camera"/>
 	    
-	    <ImageButton
-	        android:id="@+id/btnUpload"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_marginLeft="2dp"
-	        android:layout_marginRight="2dp"
-	        android:gravity="center"
-	        android:contentDescription="@string/capture_button"
-	        android:onClick="upload"
-	        android:background="@drawable/gray_button"
-	        android:src="@android:drawable/ic_menu_upload" />    
-	    
-	    <ImageButton
+	    <Button
 	        android:id="@+id/btnRetake"
-	        android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="0dp"
 	        android:layout_height="wrap_content"
+            android:layout_margin="1dp"
 	        android:gravity="center"
 	        android:contentDescription="@string/capture_button"
 	        android:onClick="retake"
-	        android:background="@drawable/gray_button"
-	        android:src="@android:drawable/ic_menu_delete" />
+	        android:enabled="false"
+	        android:background="@drawable/blue_background"
+            android:textColor="#FFFFFFFF"
+	        android:text="Discard"
+	        android:drawableRight="@android:drawable/ic_menu_delete" />
     
     </LinearLayout>
     

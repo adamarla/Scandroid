@@ -2,13 +2,16 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
@@ -16,14 +19,22 @@ import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
+import android.widget.ScrollView;
 import android.support.v4.app.NavUtils;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -31,7 +42,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 
-public class CameraActivity extends Activity implements ITaskResult, IConstants {
+public class CameraActivity extends Activity implements ITaskResult, IConstants, OnClickListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,30 +50,80 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
         setContentView(R.layout.activity_camera);
         
         setupActionBar();
-        try {
-            camera = Camera.open();
-        } catch (Exception e) {
-            finish();
-        }        
-        camera.setParameters(configureParams(camera.getParameters()));
-        camera.setDisplayOrientation(PORTRAIT);
         
-        ((FrameLayout)findViewById(R.id.camera_preview)).
-            addView(new CameraPreview(this, camera));
-        
-        File imagesDir = new File(getIntent().getStringExtra(TAG));
-        String id = getIntent().getStringExtra(TAG_ID);
+        Intent params = getIntent();
+        final int position = params.getIntExtra(TAG_ID, 0);
+        imagesDir = new File(getIntent().getStringExtra(SCANS_KEY));
+        Parcelable[] parcels = params.getParcelableArrayExtra(TAG);
         price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
-        picture = new File(imagesDir, id);
+        quizId = ((Question)parcels[0]).getId().split("\\.")[0];
         
-        String ws_id = id.substring(0, id.indexOf('.'));
-        try {
-            url = new URL(String.format(BILL_URL, WEB_APP_HOST_PORT, ws_id));
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
+        filePartMap = new ArrayList<String>();
+        selectedParts = new ArrayList<Integer>();
+        
+        Question[] questions = new Question[parcels.length];
+        int partsToPosn = 0;
+        Button btn = null;
+        final LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
+        for (int i = 0; i < questions.length; i++) {            
+            questions[i] = (Question)parcels[i];
+            String[] pgNos = questions[i].getMap().split("-");
+            if (position > i) partsToPosn += pgNos.length;
+            for (int j = 0; j < pgNos.length; j++) {
+                btn = new Button(this);
+                btn.setText(pgNos.length == 1 ? questions[i].getName() :
+                    questions[i].getName() + (char)((int)'a'+j));
+                btn.setTextColor(Color.WHITE);                
+                btn.setOnClickListener(this);
+                LayoutParams lp = new LayoutParams(
+                    LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                lp.setMargins(1, 0, 1, 0);
+                btn.setLayoutParams(lp);
+                
+                if (questions[i].getState() > SENT) {
+                    btn.setEnabled(false);
+                } else if (!pgNos[j].equals("0")) {
+                    btn.setEnabled(false);
+                } else if (position == i) {
+                    btn.setSelected(true);
+                }
+                btn.setBackgroundResource(R.drawable.qsn_selector);
+                llButtons.addView(btn);
+            }
         }
+        
+        final int offset = partsToPosn;
+        final HorizontalScrollView hsvSelectors = 
+                (HorizontalScrollView)this.findViewById(R.id.hsvSelectorBtns);
+        hsvSelectors.post(new Runnable() {
+            @Override
+            public void run() {
+                int scrollTo = hsvSelectors.getWidth() * offset / llButtons.getChildCount();
+                hsvSelectors.smoothScrollTo(scrollTo, 0);
+            }
+        });
+
+//        String id = getIntent().getStringExtra(TAG_ID);
+//        picture = new File(imagesDir, id);
+        
+//        String ws_id = id.substring(0, id.indexOf('.'));
+//        try {
+//            url = new URL(String.format(BILL_URL, WEB_APP_HOST_PORT, ws_id));
+//        } catch (Exception e) {
+//            Log.e(TAG, e.getMessage());
+//        }
+
     }
     
+    @Override
+    public void onBackPressed() {
+        // TODO Auto-generated method stub
+        Intent intent = new Intent();
+        intent.putExtra(TAG, filePartMap.toArray(new String[filePartMap.size()]));
+        this.setResult(RESULT_OK, intent);
+        super.onBackPressed();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -78,6 +139,13 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        // TODO Auto-generated method stub
+        super.onResume();
+        comandeerCamera();
     }
 
     @Override
@@ -112,61 +180,91 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
     }
 
     public void capture(View view) {
-        if (captured) return;
-        camera.takePicture(null, null,  
-                new PictureWriter(this, picture));
-    }
-    
-    public void upload(View view) {
-        if (!captured) return;
-        final ITaskResult handler = this;
-        final Context context = this;
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        if (price == 0) {
-            builder.setTitle("Send this question?").setMessage(
-                    "This action is not reversible");
+        if (!captured) {
+            LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);            
+            for (int i = 0; i < llButtons.getChildCount(); i++) {
+                if (llButtons.getChildAt(i).isSelected()) {
+                    selectedParts.add(i);
+                }
+            }
+            if (selectedParts.size() == 0) return;
+            picture = new File(imagesDir, "picture"); 
+            camera.takePicture(null, null, new PictureWriter(this, picture));
+
         } else {
-            builder.setTitle("Wan't us to look at your work?").setMessage(
-                    "Buy this Quiz for " + price + " Gredits");
+            int newPgNo = imagesDir.list(new AnswerFilesFilter(quizId)).length+1;
+            String confirmedName = quizId + "." + newPgNo;
+            picture.renameTo(new File(imagesDir, confirmedName));
+            filePartMap.add(newPgNo + ":" + TextUtils.join("-", selectedParts));
+            
+            // update selector buttons
+            LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
+            for (int j : selectedParts) {
+                ((Button)llButtons.getChildAt(j)).setEnabled(false);
+            }
+            selectedParts.clear();
+            retake(null);
+            
+//            final ITaskResult handler = this;
+//            final Context context = this;
+//            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//            if (price == 0) {
+//                builder.setTitle("Send this question?").setMessage(
+//                        "This action is not reversible");
+//            } else {
+//                builder.setTitle("Wan't us to look at your work?").setMessage(
+//                        "Buy this Quiz for " + price + " Gredits");
+//            }
+//            builder.setPositiveButton(android.R.string.ok,
+//                new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface dialog, int id) {
+//                        if (price == 0) {
+//                            // User clicked OK button
+//                            Intent intent = new Intent();
+//                            intent.setData(Uri.fromFile(picture));
+//                            setResult(Activity.RESULT_OK, intent);
+//                            finish();        
+//                        } else {
+//                            peedee = ProgressDialog.show(context, "Executing purchase", 
+//                                    "Please wait...");
+//                            peedee.setIndeterminate(true);
+//                            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+//                            URL[] urls = new URL[] { url };
+//                            new HttpCallsAsyncTask(handler, BILL_WORKSHEET_TASK_RESULT_CODE).execute(urls);
+//                        }
+//                    }
+//                });
+//            builder.setNegativeButton(android.R.string.cancel,
+//                new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface dialog, int id) {
+//                        // User cancelled the dialog
+//                    }
+//                });
+//            AlertDialog dialog = builder.create();
+//            dialog.show();
         }
-        builder.setPositiveButton(android.R.string.ok,
-            new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    if (price == 0) {
-                        // User clicked OK button
-                        Intent intent = new Intent();
-                        intent.setData(Uri.fromFile(picture));
-                        setResult(Activity.RESULT_OK, intent);
-                        finish();        
-                    } else {
-                        peedee = ProgressDialog.show(context, "Executing purchase", 
-                                "Please wait...");
-                        peedee.setIndeterminate(true);
-                        peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-                        URL[] urls = new URL[] { url };
-                        new HttpCallsAsyncTask(handler, BILL_WORKSHEET_TASK_RESULT_CODE).execute(urls);
-                    }
-                }
-            });
-        builder.setNegativeButton(android.R.string.cancel,
-            new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    // User cancelled the dialog
-                }
-            });
-        AlertDialog dialog = builder.create();
-        dialog.show();
     }
     
+    @Override
+    public void onClick(View v) {
+        if (captured) return;
+        if (!v.isEnabled()) {
+            return;
+        } else {
+            v.setSelected(!v.isSelected());
+        }
+    }
+
     public void retake(View view) {
+        if (!captured) return;
         try {
             camera.stopPreview();
             camera.startPreview();
-            ((ImageButton)findViewById(R.id.btnCapture)).
-                setImageResource(android.R.drawable.ic_menu_camera);
-            findViewById(R.id.btnCapture).setBackgroundResource(R.drawable.blue_button);
-            findViewById(R.id.btnUpload).setBackgroundResource(R.drawable.gray_button);
-            findViewById(R.id.btnRetake).setBackgroundResource(R.drawable.gray_button);
+            
+            Button btnCapture = (Button)findViewById(R.id.btnCapture);
+            btnCapture.setText("Capture");
+            btnCapture.setCompoundDrawablesWithIntrinsicBounds(0, 0, android.R.drawable.ic_menu_camera, 0);
+            
             captured = false;
         } catch (Exception e) {
             finish();
@@ -176,9 +274,9 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
     public void doneTaking(boolean success) {
         if (success) {
             captured = true;
-            findViewById(R.id.btnCapture).setBackgroundResource(R.drawable.gray_button);
-            findViewById(R.id.btnUpload).setBackgroundResource(R.drawable.blue_button);
-            findViewById(R.id.btnRetake).setBackgroundResource(R.drawable.blue_button);
+            Button btnCapture = (Button)findViewById(R.id.btnCapture);
+            btnCapture.setText("Accept");
+            btnCapture.setCompoundDrawablesWithIntrinsicBounds(0, 0, android.R.drawable.ic_menu_save, 0);
         } else {
             releaseCamera();
             // User clicked OK button
@@ -191,11 +289,37 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
     
     private void releaseCamera() {
         if (camera != null) {
+            camera.stopPreview();
             camera.release();
             camera = null;
         }
+        
+//        if (cameraPreview != null) {
+//            ((FrameLayout)findViewById(R.id.camera_preview)).removeAllViews();
+//            cameraPreview = null;
+//        }
     }
     
+    private void comandeerCamera() {
+        if (camera == null) {
+            try {
+                camera = Camera.open();
+            } catch (Exception e) {
+                finish();
+            }
+            camera.setParameters(configureParams(camera.getParameters()));
+            camera.setDisplayOrientation(PORTRAIT);
+        }
+        
+        if (cameraPreview == null) {
+            cameraPreview = new CameraPreview(this, camera);
+            ((FrameLayout)findViewById(R.id.camera_preview)).
+                addView(cameraPreview);
+        } else {
+            cameraPreview.setCamera(camera);
+        }
+    }
+
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
      */
@@ -219,21 +343,31 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants 
 
     private Size getOptimalSize(Parameters params) {
         Size s = null;
-        int delta = Integer.MAX_VALUE, index = 0;
+        int delta, index = 0;
         List<Size> availableSizes = camera.getParameters().getSupportedPictureSizes();
+        delta = Math.abs(PREFERRED_SIZE[0] - availableSizes.get(0).width);
         for (int i = 0; i < availableSizes.size(); i++) {
             s = availableSizes.get(i);
-            delta = Math.abs(PREFERRED_SIZE[0] - s.width);
-            index = delta > Math.abs(PREFERRED_SIZE[0] - s.width) ? i : delta;
+            if ((Math.abs(PREFERRED_SIZE[0] - s.width) < delta) &&
+                (s.width*3 == s.height * 4)) {
+                delta = Math.abs(PREFERRED_SIZE[0] - s.width);
+                index = i;
+            }
         }
         return availableSizes.get(index);
     }
-
+    
     private boolean captured;
     private URL url;
     private int price;
-    private File picture;
+    private String quizId;
+    private File picture, imagesDir;
+    private Question[] questions;
+    private ArrayList<String> filePartMap;
+    
     private Camera camera;
+    private CameraPreview cameraPreview;
+    private ArrayList<Integer> selectedParts;
     
     private ProgressDialog peedee;
     
@@ -252,6 +386,7 @@ class PictureWriter implements PictureCallback {
     @Override
     public void onPictureTaken(byte[] data, Camera camera) {
         try {
+            Log.d("gradians", "picture " + picture.getName());
             FileOutputStream fos = new FileOutputStream(picture);
             fos.write(data);
             fos.close();
@@ -265,4 +400,19 @@ class PictureWriter implements PictureCallback {
     private CameraActivity caller;
     private File picture;
 
+}
+
+class AnswerFilesFilter implements FilenameFilter {
+    
+    String quizId;
+    public AnswerFilesFilter(String quizId) {
+        this.quizId = quizId;
+    }
+    
+    @Override
+    public boolean accept(File dir, String filename) {
+        // TODO Auto-generated method stub        
+        return filename.startsWith(quizId);
+    }
+    
 }

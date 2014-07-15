@@ -53,7 +53,7 @@ public class FlowFragment extends Fragment implements IConstants {
         final int yPosn = bundle.getInt(Y_POSN_KEY);
         final int page = bundle.getInt("page");
         boolean flipped = bundle.getBoolean("flipped");
-        
+        Log.d("gradians", "Rendering on page " + page + " at " + xPosn + " " + yPosn);
         ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
         String[] paths;
         if (flipped) {
@@ -209,7 +209,7 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     @Override
     public Fragment getItem(int position) {
         return FlowFragment.newInstance(questions[position], 
-                flipped, xPosn, yPosn, 1);
+                flipped, xPosn, yPosn, page);
     }
     
     private int page, xPosn, yPosn;
