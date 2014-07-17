@@ -14,6 +14,8 @@ import org.json.simple.parser.JSONParser;
 import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +48,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
             q = quiz.get(i);
             q.setMap(questions[i].getMap());
             q.setState(questions[i].getState());
+            maps.setProperty(q.getId(), q.getMap());
         }
         quiz.determineState();
         this.notifyDataSetChanged();
@@ -96,7 +99,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     }
 
     public void commit() throws Exception {
-        map.store(new FileOutputStream(manifestFile), null);
+        maps.store(new FileOutputStream(manifestFile), null);
     }
     
     private void parse(File appDir, String json) throws Exception {
@@ -114,10 +117,10 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         
         manifestFile = new File(manifests, email.replace('@', '.')); 
         manifestFile.createNewFile(); // creates only if needed
-        
-        Properties lastMap = new Properties();
-        lastMap.load(new FileInputStream(manifestFile));
-        map = new Properties();
+        Log.d("gradians", manifestFile.getPath());
+        Properties mapsPrev = new Properties();
+        mapsPrev.load(new FileInputStream(manifestFile));
+        maps = new Properties();
         
         for (int i = 0; i < items.size(); i++) {
             JSONObject quizItem = (JSONObject) items.get(i);
@@ -148,14 +151,18 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                         break;
                     }
                 }
+                
                 question.setScanLocn(scan);                
                 if (!allPartsReceived) {
-                    // check if any scan was captured
-                    String lm = lastMap.getProperty(question.getId());
+                    // check local state
+                    String lm = mapsPrev.getProperty(question.getId());
                     if (lm == null) {
                         question.setState(WAITING);
                     } else {
-                        question.setState(CAPTURED);
+                        if (!lm.contains("0"))
+                            question.setState(CAPTURED);
+                        else
+                            question.setState(WAITING);
                         question.setMap(lm);
                     }
                 } else {
@@ -169,14 +176,14 @@ public class QuizManifest extends BaseAdapter implements IConstants {
             }
             quizzes[i].determineState();
             if (quizzes[i].getState() > NOT_YET_BILLED)
-                quizzes[i].updateMap();
+                quizzes[i].updateMaps();
         }
     }
         
     private String name, email, token;
     private File manifestFile;
     
-    private Properties map;
+    private Properties maps;
     private Quij[] quizzes;
     
     private LayoutInflater inflater;
@@ -212,34 +219,55 @@ class Quij extends ArrayList<Question> implements IConstants {
         return page;
     }
     
+    public void updateMaps() {
+        Question q = null;
+        String[] map = null;
+        int page = 1;
+        HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();            
+        for (int i = 0; i < this.size(); i++) {
+            q = this.get(i);
+            // in case questions are already captured/sent
+            if (q.getMap() != null) {
+                map = q.getMap().split("-");
+                for (int k = 0; k < map.length; k++) {
+                    if (page == Integer.parseInt(map[k])) {
+                        page++;
+                    }
+                }
+            } else {
+                String mapstring = q.getGRId().replaceAll("[0-9]", "0");
+                map = mapstring.split("-");
+                for (int k = 0; k < map.length; k++) {
+                    map[k] = "0";
+                }
+            }
+            
+            String[] scans = q.getScanLocn().split(",", -1);
+            for (int j = 0; j < scans.length; j++) {
+                if (!scans[j].equals("")) {
+                    if (map[j].equals("0")) {
+                        if (!scanPgMap.containsKey(scans[j])) {
+                            scanPgMap.put(scans[j], page);
+                            page++;
+                        }
+                        map[j] = String.valueOf(scanPgMap.get(scans[j]));
+                    }
+                }
+            }
+            q.setMap(TextUtils.join("-", map));
+        }            
+    }
+    
     public void updateMap() {
         Question q = null;
         String map = null;
         int page = 1;
         
-//         // derive layout from page breaks (for printed worksheets)
-//        if (layout != null) {
-//            int partCount = 0;
-//            for (int i = 0; i < this.size(); i++) {
-//                q = this.get(i);
-//                map = "";
-//                int parts = q.getGRId().split("-").length;
-//                boolean multipart = parts > 1;
-//                for (int j = 0; j < parts; j++) {
-//                    page = getPage(partCount);
-//                    map += page;
-//                    if (multipart && j != parts-1) map += "-";
-//                    partCount++;
-//                }
-//                q.setMap(map);
-//            }
-//        } else {
-//      }
         HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();            
         for (int i = 0; i < this.size(); i++) {            
             q = this.get(i);
             map = "";            
-            // in case questions are already captured
+            // in case questions are already captured/sent
             if (q.getMap() != null) {
                 String[] oldmap = q.getMap().split("-");
                 for (String s : oldmap) {
@@ -263,6 +291,24 @@ class Quij extends ArrayList<Question> implements IConstants {
             }
             q.setMap(map);
         }            
+        Log.d(TAG, "updateMap <-- " + this.getName());
+        
+        // derive layout from page breaks (for printed work sheets)
+//        int partCount = 0;
+//        for (int i = 0; i < this.size(); i++) {
+//            q = this.get(i);
+//            maps = "";
+//            int parts = q.getGRId().split("-").length;
+//            boolean multipart = parts > 1;
+//            for (int j = 0; j < parts; j++) {
+//                page = getPage(partCount);
+//                maps += page;
+//                if (multipart && j != parts-1) maps += "-";
+//                partCount++;
+//            }
+//            q.setMap(maps);
+//        }
+        
     }
     
     public void determineState() {

@@ -24,8 +24,9 @@
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:layout_width="0dp"
+            android:typeface="sans"
             android:background="@drawable/gray_background"
-            android:textColor="#FFFFFFFF"
+            android:textColor="@color/white"
             android:gravity="center"/>
         
         <TextView
@@ -37,7 +38,6 @@
             android:layout_marginRight="2dp"
             android:paddingLeft="10dp"
             android:contentDescription="@string/zoom_button"
-            android:onClick="showHide"
             android:background="@drawable/gray_background"
             android:textColor="#FFFFFFFF"
             android:gravity="left|center" />
@@ -70,7 +70,7 @@
         android:layout_width="match_parent"
         android:layout_below="@id/llTopBar"
         android:layout_marginTop="4dp"
-        app:fillColor="#F88017"
+        app:fillColor="@color/orange"
         android:background="@null"/>
         
     <LinearLayout
@@ -78,52 +78,79 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_height="40dp" >
+        android:layout_height="60dp" 
+        android:layout_marginBottom="2dp"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="2dp">
         
-        <ImageButton
+        <Button android:id="@+id/btnLeft" 
+            android:layout_weight="1"
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:contentDescription="@string/zoom_button" 
+            android:onClick="page"
+            android:gravity="center"            
+            android:textColor="@color/white"
+            android:typeface="sans"
+            android:textSize="@dimen/small_font_size"
+            android:background="@drawable/button_left" 
+            android:drawableTop="@drawable/ic_action_back" />
+        
+        <Button
             android:id="@+id/btnFlip"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_marginLeft="2dp" 
             android:contentDescription="@string/zoom_button"
             android:onClick="flip"
-            android:background="@drawable/blue_button"
+            android:textSize="@dimen/small_font_size" 
+            android:background="@drawable/btn_generic"
             android:gravity="center"
-            android:src="@android:drawable/ic_menu_info_details"/>
-        
-        <ImageButton 
-            android:id="@+id/btnLeft"
-            android:layout_weight="2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/zoom_button"
-            android:onClick="page"
-            android:layout_marginLeft="2dp"
-            android:gravity="center"
-            android:background="@drawable/blue_button"
-            android:src="@drawable/ic_action_back"/>        
-            
-        <ImageButton 
-            android:id="@+id/btnRight"
-            android:layout_weight="2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/zoom_button"
-            android:onClick="page"
-            android:layout_marginRight="2dp"
-            android:gravity="center"
-            android:background="@drawable/blue_button"
-            android:src="@drawable/ic_action_forward"/>        
-                       
-        <ImageButton
-            android:id="@+id/btnAction"
+            android:drawableTop="@android:drawable/ic_menu_info_details"/>
+    	        
+        <Button
+            android:id="@+id/btnUpload"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_marginLeft="2dp" 
+            android:layout_marginRight="2dp"
+            android:text="Upload"
+            android:textSize="@dimen/small_font_size" 
             android:contentDescription="@string/action_button"
-            android:background="@drawable/blue_button"
+            android:background="@drawable/btn_generic"
             android:gravity="center"
-            android:onClick="takeAction"/>
+            android:onClick="takeAction"
+            android:drawableTop="@android:drawable/ic_menu_upload"/>            
+                       
+        <Button
+            android:id="@+id/btnCamera"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginRight="2dp" 
+            android:text="Activate"
+            android:textSize="@dimen/small_font_size" 
+            android:contentDescription="@string/action_button"
+            android:background="@drawable/btn_generic"
+            android:typeface="sans"
+            android:gravity="center"
+            android:onClick="takeAction"
+            android:drawableTop="@android:drawable/ic_menu_camera"/>
+
+        <Button 
+            android:id="@+id/btnRight" 
+            android:layout_weight="1" 
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:contentDescription="@string/zoom_button" 
+            android:onClick="page" 
+            android:textColor="@color/white"
+            android:textSize="@dimen/small_font_size"
+            android:gravity="center" 
+            android:background="@drawable/button_right" 
+            android:drawableTop="@drawable/ic_action_forward" />
         
 	</LinearLayout>
 	
@@ -135,6 +162,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="16dp"
         android:background="@null"
+        android:visibility="invisible"
         android:padding="2dp"/>
             	    
 </RelativeLayout>

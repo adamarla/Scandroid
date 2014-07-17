@@ -67,20 +67,13 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                     questions[i].getName() + (char)((int)'a'+j));
                 btn.setTextColor(R.drawable.qsn_text_color);
                 btn.setBackgroundResource(R.drawable.qsn_background);
-                btn.setTextSize(14);
+                btn.setTextSize(getResources().getDimension(R.dimen.small_font_size));
                 LayoutParams lp = new LayoutParams(
                     LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
                 lp.setMargins(2, 0, 2, 0);
                 btn.setLayoutParams(lp);
-                btn.setOnClickListener(this);
-                
-                if (questions[i].getState() > SENT) {
-                    btn.setEnabled(false);
-                } else if (!pgNos[j].equals("0")) {
-                    btn.setEnabled(false);
-                } else if (position == i) {
-                    btn.setSelected(true);
-                }
+                btn.setOnClickListener(this);                
+                btn.setEnabled(pgNos[j].equals("0"));                
                 llButtons.addView(btn);
             }
         }

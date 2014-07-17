@@ -24,7 +24,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -35,7 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ImageButton;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -304,36 +303,62 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     private void adjustView(int position, int fdbkPosn) {
-        Drawable img = null;        
-        ImageButton btnAction = (ImageButton)this.findViewById(R.id.btnAction);
-        Question q = adapter.getQuestions()[position];
+        Button btnCamera = (Button)this.findViewById(R.id.btnCamera);
+        Button btnUpload = (Button)this.findViewById(R.id.btnUpload);
+        Button btnFlip = (Button)this.findViewById(R.id.btnFlip);
+        Button btnLeft = (Button)this.findViewById(R.id.btnLeft);
+        Button btnRight = (Button)this.findViewById(R.id.btnRight);
+        
+        Question[] questions = adapter.getQuestions();
+        btnLeft.setText(position == 0 ? questions[questions.length-1].getName():
+            questions[position-1].getName());
+        btnRight.setText(position == questions.length-1 ? questions[0].getName():
+            questions[position+1].getName());
+        
+        Question q = questions[position];
         ((TextView)findViewById(R.id.tvName)).setText(q.getName());
         switch (q.getState()) {
-        case DOWNLOADED:
-            img = getResources().getDrawable(R.drawable.ic_action_camera);
-            btnAction.setImageDrawable(img);
-            break;
         case CAPTURED:
-        case WAITING:
-            img = getResources().getDrawable(android.R.drawable.ic_menu_delete);
-            btnAction.setImageDrawable(img);
+            btnUpload.setEnabled(true);
+            btnCamera.setEnabled(true);
+            btnFlip.setEnabled(true);
             break;
-        case SENT:
-        case RECEIVED:
-            btnAction.setImageResource(0);
-            ((TextView)findViewById(R.id.tvMarks)).setText("TBD");
+        case DOWNLOADED:
+            btnCamera.setEnabled(true);            
+            btnUpload.setEnabled(false);
+            btnFlip.setEnabled(false);
+            break;
+        case WAITING:
+            btnUpload.setEnabled(false);
+            btnCamera.setEnabled(false);
+            btnFlip.setEnabled(false);
             break;
         case GRADED:
-            btnAction.setImageResource(0);
             ((TextView)findViewById(R.id.tvMarks)).setText(
                 String.format("%2.1f/%1d", q.getMarks(), q.getOutOf()));
+        case RECEIVED:
+        case SENT:
+            btnFlip.setEnabled(true);
+            btnUpload.setEnabled(false);
+            btnCamera.setEnabled(false);
         }
         
-        if (!adapter.getFlipped() && q.getState() == GRADED) {
-            renderFeedback(position, fdbkPosn);
+        if (adapter.getFlipped()) {
+            if (q.getState() > DOWNLOADED)
+                btnFlip.setText("Answer");
+            else
+                btnFlip.setText("---");                
         } else {
-            unrenderFeedback(position);
-        }
+            if (q.getState() > CAPTURED)
+                btnFlip.setText("Solution");
+            else
+                btnFlip.setText("Question");
+            
+            if (q.getState() == GRADED)
+                renderFeedback(position, fdbkPosn);
+            else
+                unrenderFeedback(position);
+        }        
     }
     
     private void renderFeedback(int position, int fdbkPosn) {
@@ -362,7 +387,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private void unrenderFeedback(int position) {
         fdbkShown = false;
         vpFdbk.setVisibility(View.INVISIBLE);
-        findViewById(R.id.circlesFdbk).setVisibility(View.VISIBLE);
+        findViewById(R.id.circlesFdbk).setVisibility(View.INVISIBLE);
         findViewById(R.id.tvMarks).setVisibility(View.INVISIBLE);
         adapter.shift(0, FdbkView.NO_FEEDBACK, FdbkView.NO_FEEDBACK, position);
     }
