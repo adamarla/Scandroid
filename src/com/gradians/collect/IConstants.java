@@ -27,6 +27,7 @@ public interface IConstants {
     
     String STATE_KEY = "state";
     String ID_KEY = "id";
+    String SUBPARTS_COUNT_KEY = "subparts";
     String GR_ID_KEY = "grId";
     String IMG_PATH_KEY = "img";
     String SCAN_KEY = "scan";

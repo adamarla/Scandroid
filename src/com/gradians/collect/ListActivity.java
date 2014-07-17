@@ -173,17 +173,16 @@ public class ListActivity extends Activity implements OnItemClickListener,
             Uri src, dest;
             String id = question.getId();
             String wsId = id.split("\\.")[0];
-            String GRId = question.getGRId();
+            String grId = question.getGRId("-");
             File image = null, fdbk = null;            
             String imgLocn = question.getImgLocn();
-            String[] scans = question.getScanLocn().split(",", -1);
-            String map = question.getMap();
-            String[] pageNos = map.split("-");
+            String[] scans = question.getScanLocn();
+            int[] pageNos = question.getPgMap();
             switch (question.getState()) {
             case GRADED:
                 fdbk = new File(feedbackDir, id);
                 if (!fdbk.exists()) {
-                    src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, GRId));
+                    src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, grId));
                     dest = Uri.fromFile(new File(feedbackDir, id));
                     dlm.add(id, src, dest);
                 }
@@ -197,7 +196,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     }
                 }                
                 for (int i = 0; i < pageNos.length; i++) {
-                    if (!pageNos[i].equals("0")) {
+                    if (pageNos[i] != 0) {
                         image = new File(answersDir, wsId + "." + pageNos[i]);
                         if (!image.exists()) {
                             src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, scans[i]));
@@ -211,21 +210,15 @@ public class ListActivity extends Activity implements OnItemClickListener,
             case CAPTURED:
             case DOWNLOADED:
             case WAITING:
-                String newmap = "";                
                 for (int i = 0; i < pageNos.length; i++) {
-                    if (!pageNos[i].equals("0")) {
+                    if (pageNos[i] != 0) {
                         image = new File(answersDir, wsId + "." + pageNos[i]);
                         if (!image.exists()) {
-                            newmap += "0";
-                        } else {
-                            newmap += pageNos[i];
+                            pageNos[i] = 0;
                         }
-                    } else {
-                        newmap += "0";
                     }
-                    if (i != pageNos.length-1) newmap += "-";
                 }
-                question.setMap(newmap);
+                question.setPgMap(pageNos);
                 image = new File(questionsDir, question.getId());
                 if (!image.exists()) {
                     src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, imgLocn));

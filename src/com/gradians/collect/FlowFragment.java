@@ -34,8 +34,8 @@ public class FlowFragment extends Fragment implements IConstants {
         bundle.putParcelable(TAG, question);
         bundle.putInt(X_POSN_KEY, x);
         bundle.putInt(Y_POSN_KEY, y);
-        bundle.putInt("page", page);        
-        bundle.putBoolean("flipped", flipped);        
+        bundle.putInt("page", page);
+        bundle.putBoolean("flipped", flipped);
         FlowFragment pf = new FlowFragment();
         pf.setArguments(bundle);
         return pf;
@@ -44,29 +44,17 @@ public class FlowFragment extends Fragment implements IConstants {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        dmetrics = getActivity().getApplicationContext().getResources().getDisplayMetrics();
+        FlowActivity activity = (FlowActivity)getActivity();
+        dmetrics = activity.getApplicationContext().getResources().getDisplayMetrics();
         
-        Bundle bundle = this.getArguments();
+        Bundle bundle = getArguments();
         Question question = bundle.getParcelable(TAG);
         final int xPosn = bundle.getInt(X_POSN_KEY);
         final int yPosn = bundle.getInt(Y_POSN_KEY);
         final int page = bundle.getInt("page");
         boolean flipped = bundle.getBoolean("flipped");
         ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
-        String[] paths;
-        if (flipped) {
-            if (question.getState() > SENT) {
-                paths = getSolutions(question);
-            } else {
-                paths = getQuestions(question);
-            }
-        } else {
-            if (question.getState() > DOWNLOADED) {
-                paths = getAnswers(question);
-            } else {
-                paths = getQuestions(question);
-            }
-        }
+        String[] paths = activity.getPaths(question, flipped);
         
         FdbkView fdbkView = null;
         LinearLayout llPreview = (LinearLayout)rootView.findViewById(R.id.llPreview);
@@ -90,41 +78,6 @@ public class FlowFragment extends Fragment implements IConstants {
             });
         }
         return rootView;
-    }
-    
-    private String[] getQuestions(Question question) {
-        return new String[] { question.getImgLocn() + "/" + question.getId() };
-    }
-     
-    private String[] getAnswers(Question question) {
-        String map = question.getMap();
-        String[] parts = map.split("-");
-        HashSet<String> pages = new HashSet<String>();
-        for (int i = 0; i < parts.length; i++) {
-            if (!parts[i].equals("0")) {
-                if (!pages.contains(parts[i])) {
-                    pages.add(parts[i]);
-                }
-            }
-        }
-        String[] paths = new String[pages.size()];
-        int i = 0;
-        Iterator<String> iter = pages.iterator();
-        while (iter.hasNext()) {            
-            paths[i] = question.getScanLocn() + "/" + question.getId().split("\\.")[0] + "." + iter.next();
-            i++;
-        }
-        return paths;
-    }
-     
-    private String[] getSolutions(Question question) {
-        String[] paths;
-        String imgLocn = question.getImgLocn();
-        paths = new String[question.getImgSpan()];
-        for (int i = 0; i < paths.length; i++) {
-            paths[i] = imgLocn + "/" + question.getId() + "." + (i+1);
-        }
-        return paths;
     }
          
     private Bitmap setImage(FdbkView iv, String path) {

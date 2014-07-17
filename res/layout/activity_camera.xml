@@ -32,32 +32,30 @@
         android:layout_alignParentBottom="true">
         
 	    <Button
-	        android:id="@+id/btnCapture"
-	        android:layout_weight="1"
+	        android:id="@+id/btnAction"
+	        android:layout_weight="2"
 	        android:layout_width="0dp"
 	        android:layout_height="wrap_content"
             android:layout_margin="1dp"
 	        android:gravity="center"
 	        android:contentDescription="@string/capture_button"
-	        android:onClick="capture"
+	        android:onClick="action"
 	        android:background="@drawable/blue_background"
-	        android:textColor="#FFFFFFFF"
-	        android:text="Capture"
+	        android:textColor="@color/white"
+	        android:enabled="false"
 	        android:drawableRight="@android:drawable/ic_menu_camera"/>
 	    
-	    <Button
-	        android:id="@+id/btnRetake"
+	    <TextView
+	        android:id="@+id/tvStatus"
             android:layout_weight="1"
             android:layout_width="0dp"
 	        android:layout_height="wrap_content"
             android:layout_margin="1dp"
 	        android:gravity="center"
 	        android:contentDescription="@string/capture_button"
-	        android:onClick="retake"
-	        android:background="@drawable/blue_background"
-            android:textColor="#FFFFFFFF"
-	        android:text="Discard"
-	        android:drawableRight="@android:drawable/ic_menu_delete" />
+	        android:background="@drawable/gray_background"
+            android:textColor="@color/offwhite" 
+            android:textSize="@dimen/tiny_font_size"/>
     
     </LinearLayout>
     
