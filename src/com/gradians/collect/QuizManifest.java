@@ -15,7 +15,6 @@ import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -124,8 +123,8 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         
         Properties pgMapPrev = new Properties();
         pgMapPrev.load(new FileInputStream(pgMapFile));
-        Properties sendStatePrev = new Properties();
-        sendStatePrev.load(new FileInputStream(sentStateFile));
+        Properties sentStatePrev = new Properties();
+        sentStatePrev.load(new FileInputStream(sentStateFile));
         
         pgMap = new Properties();
         sendState = new Properties();
@@ -149,43 +148,42 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                     (String)item.get(IMG_PATH_KEY),
                     ((Long)item.get(IMG_SPAN_KEY)).shortValue());
                 
-                question.setGRId((String)item.get(GR_ID_KEY));
-                question.setScanLocn((String)item.get(SCANS_KEY));
-                
-                boolean allPartsReceived = true;
-                for (String s : question.getScanLocn())
-                    allPartsReceived = s.equals("");                
-                if (!allPartsReceived) {
-                    // check local state
-                    String pm = pgMapPrev.getProperty(question.getId());
-                    String ss = sendStatePrev.getProperty(question.getId());
-                    if (pm == null) {
-                        question.setState(WAITING);
-                    } else {
-                        if (!pm.contains("0")) {
-                            if (!ss.contains("0")) {
-                                question.setState(SENT);
-                            } else {
-                                question.setState(CAPTURED);
-                            }
-                        } else {
-                            question.setState(WAITING);
+                if (item.get(GR_ID_KEY) != null) {
+                    question.setGRId((String)item.get(GR_ID_KEY));
+                    question.setScanLocn((String)item.get(SCANS_KEY));
+
+                    boolean allPartsReceived = true;
+                    for (String s : question.getScanLocn()) {
+                        if (s.equals("")) {
+                            allPartsReceived = false;
+                            break;
                         }
-                        question.setPgMap(pm);
-                        question.setSentState(ss);
                     }
-                } else {
-                    float marks = item.get(MARKS_KEY) == null ? -1f : ((Double)item.get(MARKS_KEY)).floatValue();
-                    short outof = item.get(OUT_OF_KEY) == null ? 0 : ((Long)item.get(OUT_OF_KEY)).shortValue();
-                    question.setState(marks < 0 ? RECEIVED : GRADED);
-                    question.setMarks(marks);
-                    question.setOutOf(outof);
-                }
+                    
+                    if (!allPartsReceived) {
+                        // check local state
+                        String pm = pgMapPrev.getProperty(question.getId());
+                        String ss = sentStatePrev.getProperty(question.getId());                        
+                        if (pm != null) {
+                            question.setPgMap(pm);
+                            question.setSentState(ss);
+                            if (!pm.contains("0")) question.setState(CAPTURED);
+                            if (!ss.contains("0")) question.setState(SENT);
+                        }
+                    } else {
+                        float marks = item.get(MARKS_KEY) == null ? -1f : ((Double)item.get(MARKS_KEY)).floatValue();
+                        short outof = item.get(OUT_OF_KEY) == null ? 0 : ((Long)item.get(OUT_OF_KEY)).shortValue();
+                        question.setState(marks < 0 ? RECEIVED : GRADED);
+                        question.setMarks(marks);
+                        question.setOutOf(outof);
+                    }                    
+                }                
                 quizzes[i].add(question);
             }
             quizzes[i].determineState();
-            if (quizzes[i].getState() > NOT_YET_BILLED)
+            if (quizzes[i].getState() > NOT_YET_BILLED) {
                 quizzes[i].updatePgMaps();
+            }
         }
     }
         
@@ -214,7 +212,7 @@ class Quij extends ArrayList<Question> implements IConstants {
         Question q = null;
         int[] map = null;
         int page = 1;
-        HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();            
+        HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();
         for (int i = 0; i < this.size(); i++) {
             q = this.get(i);
             // in case questions are already captured/sent
@@ -228,17 +226,15 @@ class Quij extends ArrayList<Question> implements IConstants {
             String[] scans = q.getScanLocn();
             for (int j = 0; j < scans.length; j++) {
                 if (!scans[j].equals("")) {
-                    if (map[j] == 0) {
-                        if (!scanPgMap.containsKey(scans[j])) {
-                            scanPgMap.put(scans[j], page);
-                            page++;
-                        }
-                        map[j] = scanPgMap.get(scans[j]);
+                    if (!scanPgMap.containsKey(scans[j])) {
+                        scanPgMap.put(scans[j], page);
+                        page++;
                     }
+                    map[j] = scanPgMap.get(scans[j]);
                 }
             }
             q.setPgMap(map);
-        }            
+        }
     }
     
 //    public void updateMapFromLayout() {        
@@ -375,7 +371,7 @@ class Quij extends ArrayList<Question> implements IConstants {
         return name;
     }
     
-    private int[] pgBrks;
+//    private int[] pgBrks;
     private int price;
     private String name, path, layout;
     private long id, fdbkMrkr;
@@ -473,6 +469,10 @@ class Question implements Parcelable {
         }
     }
     
+    public void setGRId(int[] grId) {
+        this.grId = grId;
+    }
+    
     public void setImgLocn(String imgLocn) {
         this.imgLocn = imgLocn;
     }
@@ -503,6 +503,10 @@ class Question implements Parcelable {
     
     public void setPgMap(int[] map) {
         pgMap = map;
+    }
+    
+    public void setSentState(boolean[] state) {
+        sentState = state;
     }
     
     public void setMarks(float marks) {
@@ -567,7 +571,7 @@ class Question implements Parcelable {
     private String[] scans;
     private int[] pgMap;
     private boolean[] sentState;
-    private short state, imgSpan;
+    private short state = IConstants.WAITING, imgSpan;
     private float marks;
     private short outof;
     

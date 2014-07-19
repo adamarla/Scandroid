@@ -90,7 +90,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     for (int i = 0; i < parcels.length; i++) {
                         questions[i] = (Question)parcels[i];
                     }
-                    manifest.update(selectedQuizPosition, questions);
+                    
                 } catch (Exception e) {
                     handleError("Oops, Flow activity request failed",
                             e.getMessage());
@@ -202,8 +202,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
                             src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, scans[i]));
                             dest = Uri.fromFile(image);
                             dlm.add(question.getId(), src, dest);
-                        }                        
-                    }                    
+                        }
+                    }
                 }
                 break;
             case SENT:
@@ -294,6 +294,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             fdbkMrkrs.load(new FileInputStream(fdbkMrkrsFile));            
             for (int i = 0; i < manifest.getCount(); i++) {
                 Quij quiz = (Quij)manifest.getItem(i);
+                if (quiz.getState() < GRADED) continue;                
                 String quizId = String.valueOf(quiz.getId());
                 long lastFdbkMrkr = fdbkMrkrs.getProperty(quizId) == null ?
                         0 : Long.parseLong(fdbkMrkrs.getProperty(quizId));
@@ -303,9 +304,9 @@ public class ListActivity extends Activity implements OnItemClickListener,
                         if (f.getName().contains(quizId)) f.delete();
                     }
                     fdbkMrkrs.setProperty(quizId, String.valueOf(quiz.getFdbkMrkr()));
-                    fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);
                 }
-            }            
+            }
+            fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);            
         } catch (Exception e) { 
             handleError("Error during fdbkChk", e.getMessage());
         }        

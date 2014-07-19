@@ -78,7 +78,7 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_height="60dp" 
+        android:layout_height="60dp"
         android:layout_marginBottom="2dp"
         android:layout_marginLeft="2dp"
         android:layout_marginRight="2dp">
@@ -91,9 +91,8 @@
             android:onClick="page"
             android:gravity="center"            
             android:textColor="@color/white"
-            android:typeface="sans"
             android:textSize="@dimen/small_font_size"
-            android:background="@drawable/button_left" 
+            android:background="@drawable/btn_left" 
             android:drawableTop="@drawable/ic_action_back" />
         
         <Button
@@ -121,7 +120,7 @@
             android:contentDescription="@string/action_button"
             android:background="@drawable/btn_generic"
             android:gravity="center"
-            android:onClick="takeAction"
+            android:onClick="upload"
             android:drawableTop="@android:drawable/ic_menu_upload"/>            
                        
         <Button
@@ -134,9 +133,8 @@
             android:textSize="@dimen/small_font_size" 
             android:contentDescription="@string/action_button"
             android:background="@drawable/btn_generic"
-            android:typeface="sans"
             android:gravity="center"
-            android:onClick="takeAction"
+            android:onClick="launchCameraActivity"
             android:drawableTop="@android:drawable/ic_menu_camera"/>
 
         <Button 
@@ -149,7 +147,7 @@
             android:textColor="@color/white"
             android:textSize="@dimen/small_font_size"
             android:gravity="center" 
-            android:background="@drawable/button_right" 
+            android:background="@drawable/btn_right" 
             android:drawableTop="@drawable/ic_action_forward" />
         
 	</LinearLayout>
