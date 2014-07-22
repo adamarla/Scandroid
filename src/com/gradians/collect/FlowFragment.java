@@ -1,8 +1,6 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Iterator;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -18,7 +16,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -83,11 +80,11 @@ public class FlowFragment extends Fragment implements IConstants {
     private Bitmap setImage(FdbkView iv, String path) {
         Bitmap bmap = (new File(path)).exists() ?
             BitmapFactory.decodeFile(path):
-            getBitmapFromAssets("albert_einstein.jpg");
+            getBitmapFromAssets("hwi.jpg");
             
         float bmapAspectRatio = (float)bmap.getWidth()/bmap.getHeight();
         int w = dmetrics.widthPixels < MIN_WIDTH ? MIN_WIDTH : dmetrics.widthPixels;
-        bmap = Bitmap.createScaledBitmap(bmap, w, (int)(w/bmapAspectRatio), false);               
+        bmap = Bitmap.createScaledBitmap(bmap, w, (int)(w/bmapAspectRatio), false);
         iv.setImageBitmap(bmap);
         return bmap;
     }

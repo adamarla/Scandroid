@@ -56,6 +56,7 @@ public interface IConstants {
     short NOT_YET_BILLED = 0,
           NOT_YET_STARTED = 1,
           NOT_YET_COMPLETED = 2,
-          NOT_YET_GRADED = 3,
-          DONE = 4;    
+          NOT_YET_SENT = 3,
+          NOT_YET_GRADED = 4,
+          DONE = 5;
 }

@@ -11,21 +11,15 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.TextView;
+import android.util.Log;
 
-public class QuizManifest extends BaseAdapter implements IConstants {
+public class QuizManifest implements IConstants {
     
-    public QuizManifest(Context context, String json) throws Exception {
-        this.inflater = LayoutInflater.from(context);
-        parse(context.getFilesDir(), json);
+    public QuizManifest(File manifests, String json) throws Exception {
+        parse(manifests, json);
     }
     
     public String getName() {
@@ -39,71 +33,65 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     public String getAuthToken() {
         return token;
     }
-
-    public void update(int quizPosn, Question[] questions) {
-        Quij quiz = quizzes[quizPosn];
-        Question q = null;
-        for (int i = 0; i < questions.length; i++) {
-            q = quiz.get(i);
-            q.setPgMap(questions[i].getPgMap());
-            q.setState(questions[i].getState());            
-            pgMap.setProperty(q.getId(), q.getPgMap("-"));
-            sendState.setProperty(q.getId(), q.getSentState("-"));
-        }
-        quiz.determineState();
-        this.notifyDataSetChanged();
+    
+    public Quij[] get() {
+        return quizzes;
     }
     
-    @Override
-    public int getCount() {
-        return quizzes.length;
-    }
-
-    @Override
-    public Object getItem(int position) {
-        return quizzes[position];
-    }
-
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if(convertView == null) {
-            convertView = inflater.inflate(R.layout.layout_quiz, parent, false);
+    public void update(Question[] questions) {
+        Question question;
+        for (Question q : questions) {
+            question = questionByIdMap.get(q.getId());
+            question.setPgMap(q.getPgMap());
+            question.setState(q.getState());
+            
+            pgMap.setProperty(q.getId(), q.getPgMap("-"));
+            sendState.setProperty(q.getId(), q.getSentState("-"));            
         }
         
-        Quij quiz = (Quij)getItem(position);
+        for (Quij quiz : quizzes)
+            quiz.determineState();
         
-        TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
-        tv.setTag(position);
-        tv.setText(quiz.toString());
-
-        TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
-        tvTotal.setText(String.valueOf(quiz.size()));
-        
-        if (quiz.getState() == NOT_YET_BILLED) {
-            tvTotal.setBackgroundResource(R.drawable.blue_background);
-        } else if (quiz.getState() == NOT_YET_STARTED) {
-            tvTotal.setBackgroundResource(R.drawable.gray_background);
-        } else if (quiz.getState() == NOT_YET_GRADED) {    
-            tvTotal.setBackgroundResource(R.drawable.lt_green_background);
-        } else if (quiz.getState() == GRADED) {
-            tvTotal.setBackgroundResource(R.drawable.green_background);
-            tvTotal.setText(String.format("%2.1f/%2d", quiz.getScore(), quiz.getMax()));
+        try {
+            commit();
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
         }
-        
-        return convertView;
     }
-
+        
+    public Quij[] getInboxItems() {
+        ArrayList<Quij> items = new ArrayList<Quij>();
+        for (Quij quiz : quizzes) {
+            if (quiz.getState() < NOT_YET_GRADED)
+                items.add(quiz);
+        }
+        return items.toArray(new Quij[items.size()]);
+    }
+    
+    public Quij[] getOutboxItems() {
+        ArrayList<Quij> items = new ArrayList<Quij>();
+        for (Quij quiz : quizzes) {
+            if (quiz.getState() == NOT_YET_GRADED)
+                items.add(quiz);
+        }
+        return items.toArray(new Quij[items.size()]);
+    }
+    
+    public Quij[] getGradedItems() {
+        ArrayList<Quij> items = new ArrayList<Quij>();
+        for (Quij quiz : quizzes) {
+            if (quiz.getState() > NOT_YET_GRADED)
+                items.add(quiz);
+        }
+        return items.toArray(new Quij[items.size()]);
+    }
+    
     public void commit() throws Exception {
         pgMap.store(new FileOutputStream(pgMapFile), null);
         sendState.store(new FileOutputStream(sentStateFile), null);
     }
     
-    private void parse(File appDir, String json) throws Exception {
+    private void parse(File manifests, String json) throws Exception {
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject = (JSONObject)jsonParser.parse(json);
         
@@ -113,9 +101,9 @@ public class QuizManifest extends BaseAdapter implements IConstants {
         JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
         quizzes = new Quij[items.size()];
         
-        File manifests = new File(appDir, "manifests"); 
-        manifests.mkdir();
+        questionByIdMap = new HashMap<String, Question>();
         
+        manifests.mkdir();
         pgMapFile = new File(manifests, email.replace('@', '.') + ".pg"); 
         pgMapFile.createNewFile(); // creates only if needed
         sentStateFile = new File(manifests, email.replace('@', '.') + ".ss"); 
@@ -179,6 +167,7 @@ public class QuizManifest extends BaseAdapter implements IConstants {
                     }                    
                 }                
                 quizzes[i].add(question);
+                questionByIdMap.put(question.getId(), question);
             }
             quizzes[i].determineState();
             if (quizzes[i].getState() > NOT_YET_BILLED) {
@@ -188,16 +177,15 @@ public class QuizManifest extends BaseAdapter implements IConstants {
     }
         
     private String name, email, token;
-    private File pgMapFile, sentStateFile;
-    
+    private File pgMapFile, sentStateFile;    
     private Properties pgMap, sendState;
-    private Quij[] quizzes;
     
-    private LayoutInflater inflater;
+    private HashMap<String, Question> questionByIdMap;
+    private Quij[] quizzes;
 
 }
 
-class Quij extends ArrayList<Question> implements IConstants {
+class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     
     public Quij(String name, String path, long id, int price, String layout, long fdbkMrkr) {
         this.name = name;
@@ -215,7 +203,7 @@ class Quij extends ArrayList<Question> implements IConstants {
         HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();
         for (int i = 0; i < this.size(); i++) {
             q = this.get(i);
-            // in case questions are already captured/sent
+            // in case questionByIdMap are already captured/sent
             map = q.getPgMap();
             for (int k = 0; k < map.length; k++) {
                 if (page == map[k]) {
@@ -237,77 +225,33 @@ class Quij extends ArrayList<Question> implements IConstants {
         }
     }
     
-//    public void updateMapFromLayout() {        
-//        // derive layout from page breaks (for printed work sheets)
-//        if (layout != null) {
-//            String[] tokens = layout.length() == 0 ? 
-//                    new String[0] : layout.split(",");
-//            pgBrks = new int[tokens.length];
-//            for (int i = 0; i < pgBrks.length; i++)
-//                pgBrks[i] = Integer.valueOf(tokens[i]);
-//        }
-//        
-//        Question q = null;
-//        String[] map = null;
-//        int page = 1;
-//        int partCount = 0;
-//        for (int i = 0; i < this.size(); i++) {
-//            q = this.get(i);
-//            String maps = "";
-//            int parts = q.getGRId().split("-").length;
-//            boolean multipart = parts > 1;
-//            for (int j = 0; j < parts; j++) {
-//                page = getPage(partCount);
-//                maps += page;
-//                if (multipart && j != parts-1) maps += "-";
-//                partCount++;
-//            }
-//            q.setMap(maps);
-//        }
-//        
-//    }
-//    
-//    private int getPage(int partIndex) {
-//        int page = pgBrks.length+1;
-//        for (int i = 0; i < pgBrks.length; i++) {
-//            if (partIndex <= pgBrks[i]) {
-//                page = i+1;
-//                break;
-//            }
-//        }
-//        return page;
-//    }       
-    
     public void determineState() {
         if (this.get(0).getGRId()[0] == 0) {
             state = NOT_YET_BILLED;
             return;
         }
         
-        short mostFarAlong = this.get(0).getState(), 
-              leastFarAlong = this.get(this.size()-1).getState();
-        for (Question q : this) {            
-            mostFarAlong = q.getState() > mostFarAlong ? 
-                q.getState() : mostFarAlong;
+        short leastFarAlong = this.get(this.size()-1).getState();
+        for (Question q : this) {
             leastFarAlong = q.getState() < leastFarAlong ?
                 q.getState() : leastFarAlong;
         }
         
-        switch (mostFarAlong) {
+        switch (leastFarAlong) {
         case WAITING:
         case DOWNLOADED:
-            state = NOT_YET_STARTED;
+            state = NOT_YET_COMPLETED;
             break;
         case CAPTURED:
+            state = NOT_YET_SENT;
+            break;
         case SENT:
         case RECEIVED:
-            state = leastFarAlong == DOWNLOADED ? 
-                    NOT_YET_COMPLETED : NOT_YET_GRADED;
+            state = NOT_YET_GRADED;
             break;
         case GRADED:
-            state = leastFarAlong == GRADED ? 
-                    GRADED : NOT_YET_GRADED;
-        }
+            state = GRADED;
+        }        
     }
     
     public short getState() {
@@ -364,6 +308,41 @@ class Quij extends ArrayList<Question> implements IConstants {
             }
         }
         return filtered.toArray(new Question[filtered.size()]);
+    }
+    
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+    
+    public static final Parcelable.Creator<Quij> CREATOR
+        = new Parcelable.Creator<Quij>() {
+
+            @Override
+            public Quij createFromParcel(Parcel source) {
+                return new Quij(source);
+            }
+
+            @Override
+            public Quij[] newArray(int size) {
+                return new Quij[size];
+            }
+    };
+    
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(name);
+        dest.writeLong(id);
+        dest.writeInt(state);
+        dest.writeInt(price);
+    }
+    
+    private Quij(Parcel in) {
+        name = in.readString();
+        id = in.readLong();
+        state = (short)in.readInt();
+        price = in.readInt();
     }
     
     @Override
@@ -552,6 +531,8 @@ class Question implements Parcelable {
         dest.writeInt(outof);
         dest.writeIntArray(grId);
         dest.writeInt(imgSpan);
+        dest.writeString(imgLocn);
+        dest.writeStringArray(scans);
     }
     
     private Question(Parcel in) {
@@ -564,6 +545,8 @@ class Question implements Parcelable {
         outof = (short)in.readInt();
         grId = in.createIntArray();
         imgSpan = (short)in.readInt();
+        imgLocn = in.readString();
+        scans = in.createStringArray();
     }
     
     private String name, id, imgLocn;

@@ -1,0 +1,284 @@
+package com.gradians.collect;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Properties;
+
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.os.Bundle;
+import android.os.Parcelable;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends Activity implements ITaskResult, IConstants {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        checkAuth();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_sign_out)
+            initiateAuthActivity();
+        else if (item.getItemId() == R.id.action_refresh)
+            checkAuth();
+        else if (item.getItemId() == R.id.action_help)
+            launchHelpActivity();
+        return super.onOptionsItemSelected(item);
+    }
+    
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                try {
+                    File dir = new File(getFilesDir(), "manifests"); dir.mkdir();
+                    manifest = new QuizManifest(dir, data.getStringExtra(TAG));
+                    setPreferences(manifest);
+                    initialize(manifest);
+                } catch (Exception e) {
+                    handleError("Oops, Auth activity request failed",
+                            e.getMessage());
+                }
+            } else if (resultCode != Activity.RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(),
+                        "Oops.. auth check failed. Please try again",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                this.finish();
+            }
+        } else if (requestCode == LIST_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                try {
+                    Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
+                    Question[] questions = new Question[parcels.length];
+                    for (int i = 0; i < parcels.length; i++) {
+                        questions[i] = (Question)parcels[i];
+                    }
+                    manifest.update(questions);
+                    setCounts(manifest);
+                } catch (Exception e) {
+                    handleError("Oops, Flow activity request failed",
+                            e.getMessage());
+                }
+            } else if (resultCode != Activity.RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(),
+                        "Oops we had an error, you may have lost work :/",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+    
+    @Override
+    public void onTaskResult(int requestCode, int resultCode, String resultData) {
+        if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
+            if (peedee != null) peedee.dismiss();
+            if (resultCode == RESULT_OK) {
+                try {
+                    File dir = new File(getFilesDir(), "manifests"); dir.mkdir(); 
+                    manifest = new QuizManifest(dir, resultData);
+                    initialize(manifest);
+                } catch (Exception e) {
+                    handleError("Oops, Verify auth task failed", e.getMessage());
+                }
+            } else {
+                initiateAuthActivity();
+            }
+        }
+    }
+    
+    public void onClick(View v) {
+        Quij[] items = null;
+        switch (v.getId()) {
+        case R.id.btnInbox:
+            items = manifest.getInboxItems();
+            break;
+        case R.id.btnOutbox:
+            items = manifest.getOutboxItems();
+            break;
+        case R.id.btnGraded:
+            items = manifest.getGradedItems();
+        }
+        if (items.length != 0) {
+            launchListActivity(items);
+        }
+    }
+    
+    private void launchListActivity(Quij[] items) {
+        ArrayList<Question> questions = new ArrayList<Question>();
+        for (Quij quiz : items) {
+            questions.addAll(quiz);
+        }
+        Intent listIntent = new Intent(getApplicationContext(),
+            com.gradians.collect.ListActivity.class);
+        listIntent.putExtra("studentDir", studentDir.getPath());
+        listIntent.putExtra(TAG, items);
+        listIntent.putExtra(TAG_ID, questions.toArray(new Question[questions.size()]));
+        startActivityForResult(listIntent, LIST_ACTIVITY_REQUEST_CODE);
+    }
+
+    private void launchHelpActivity() {
+        Intent helpIntent = new Intent(this.getApplicationContext(),
+            com.gradians.collect.HelpActivity.class);
+        startActivity(helpIntent);
+    }
+
+    private void initialize(QuizManifest manifest) {
+        setTitle(String.format("Hi %s", manifest.getName()));
+        try {
+            ((TextView)findViewById(R.id.tvVers)).setText(getPackageManager()
+                .getPackageInfo(getPackageName(), 0).versionName);
+        } catch (NameNotFoundException e) { }
+        setCounts(manifest);
+        mkdirs(manifest.getEmail().replace('@', '.'));
+        recordFdbkMrkrs(manifest);
+    }
+    
+    private void checkAuth() {
+        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        String email = prefs.getString(EMAIL_KEY, null);
+        String token = prefs.getString(TOKEN_KEY, null);
+        if (token == null) {
+            initiateAuthActivity();
+        } else {
+            String urlString = String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token);
+            try {
+                peedee = ProgressDialog.show(this, "Initializing", "Please wait...");
+                peedee.setIndeterminate(true);
+                peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+                URL[] urls = { new URL(urlString) };
+                new HttpCallsAsyncTask(this, VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
+            } catch (Exception e) {
+                handleError("Auth Check Failed", e.getMessage());
+            }
+        }
+    }
+
+    private void initiateAuthActivity() {
+        resetPreferences();
+        Intent checkAuthIntent = new Intent(this, 
+            com.gradians.collect.LoginActivity.class);
+        checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
+    }
+
+    private void setPreferences(QuizManifest manifest) {
+        SharedPreferences prefs =
+                this.getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        Editor edit = prefs.edit();
+        edit.putString(TOKEN_KEY, manifest.getAuthToken());
+        edit.putString(NAME_KEY, manifest.getName());
+        edit.putString(EMAIL_KEY, manifest.getEmail());
+        edit.commit();
+    }
+
+    private void resetPreferences() {
+        SharedPreferences prefs =
+                getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        Editor edit = prefs.edit();
+        edit.clear();
+        edit.commit();
+    }
+
+    private void mkdirs(String studentDirName) {        
+        (studentDir = new File(this.getExternalFilesDir(null), studentDirName)).mkdir();
+        String[] dirs = {QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
+            FEEDBACK_DIR_NAME, UPLOAD_DIR_NAME};
+        for (String dir : dirs)
+            (new File(studentDir, dir)).mkdir();
+    }
+    
+    private void setCounts(QuizManifest manifest) {
+        ((MainButton)findViewById(R.id.btnInbox)).setCount(manifest.getInboxItems().length, 
+            "Inbox", R.drawable.ic_action_unread);
+//            setText(String.format("Inbox (%s)", manifest.getInboxItems().length));
+        ((MainButton)findViewById(R.id.btnOutbox)).setCount(manifest.getOutboxItems().length, 
+            "Outbox", R.drawable.ic_action_sent);
+//            setText(String.format("Outbox (%s)", manifest.getOutboxItems().length));
+        ((MainButton)findViewById(R.id.btnGraded)).setCount(manifest.getGradedItems().length, 
+            "Graded", R.drawable.ic_action_chat);
+//            setText(String.format("Graded (%s)", manifest.getGradedItems().length));        
+    }
+    
+    private void recordFdbkMrkrs(QuizManifest manifest) {
+        Properties fdbkMrkrs = new Properties();
+        try {
+            File fdbkDir = new File(studentDir, FEEDBACK_DIR_NAME);
+            File fdbkMrkrsFile = new File(studentDir, "fdbkIds");
+            fdbkMrkrsFile.createNewFile(); // creates only if needed
+            fdbkMrkrs.load(new FileInputStream(fdbkMrkrsFile));
+            Quij[] quizzes = manifest.get();
+            for (Quij quiz : quizzes) {
+                if (quiz.getState() < GRADED) continue;
+                
+                String quizId = String.valueOf(quiz.getId());
+                long lastFdbkMrkr = Long.parseLong(fdbkMrkrs.getProperty(quizId, "0"));
+                if (lastFdbkMrkr < quiz.getFdbkMrkr()) {
+                    File[] fdbkFiles = fdbkDir.listFiles();
+                    for (File f : fdbkFiles) {
+                        if (f.getName().contains(quizId)) f.delete();
+                    }
+                    fdbkMrkrs.setProperty(quizId, String.valueOf(quiz.getFdbkMrkr()));
+                }
+            }
+            fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);
+        } catch (Exception e) { 
+            handleError("Error during fdbkChk", e.getMessage());
+        }
+    }
+
+    private void handleError(String error, String message) {
+        Log.e(TAG, error + " " + message);
+    }
+
+    private QuizManifest manifest;
+    private File studentDir;
+    ProgressDialog peedee;
+
+    private final String 
+        VERIFY_URL = "http://%s/tokens/verify?email=%s&token=%s";
+
+}
+
+class MainButton extends RelativeLayout {
+
+    public MainButton (Context context, AttributeSet attrs) {
+        super(context, attrs);
+        LayoutInflater inflater = (LayoutInflater)context.
+            getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            inflater.inflate(R.layout.layout_big_btn, this, true);
+    }
+    
+    public void setCount(int count, String text, int drawable) {
+        ((TextView)findViewById(R.id.tvLabel)).setText(text);
+        ((TextView)findViewById(R.id.tvCount)).setText(String.valueOf(count));
+        ((ImageView)findViewById(R.id.ivIcon)).setImageResource(drawable);
+    }
+    
+}

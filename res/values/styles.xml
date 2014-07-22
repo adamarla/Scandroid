@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
         Base application theme, dependent on API level. This theme is replaced
@@ -16,8 +16,16 @@
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
-    </style>
-
+        <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>
+        <item name="android:buttonStyle">@style/RobotoButtonStyle</item>    
+    </style>        
+	<style name="RobotoTextViewStyle" parent="android:Widget.TextView">
+	    <item name="android:fontFamily">sans-serif-condensed</item>
+	</style>
+	<style name="RobotoButtonStyle" parent="android:Widget.Holo.Button">
+	    <item name="android:fontFamily">sans-serif-condensed</item>
+	</style>
+	
     <style name="LoginFormContainer">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

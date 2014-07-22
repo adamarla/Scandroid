@@ -274,6 +274,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         if (flipped) {
             if (question.getState() > SENT) {
                 paths = getSolution(question);
+            } else if (question.getState() == DOWNLOADED) {
+                paths = new String[] { "Instruction" };
             } else {
                 paths = getQuestion(question);
             }
@@ -301,7 +303,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
         Question q = questions[position];
         ((TextView)findViewById(R.id.tvName)).setText(q.getName());
-        btnFlip.setText("---");
+        btnFlip.setText("Instruction");
         if (adapter.getFlipped()) {
             if (q.getState() > DOWNLOADED)
                 btnFlip.setText("Answer");
@@ -314,8 +316,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 btnFlip.setText("Solution");
             else if (q.getState() > DOWNLOADED)
                 btnFlip.setText("Question");
-            else
-                btnFlip.setText("---");
             
             if (q.getState() == GRADED) {
                 renderFeedback(position, fdbkPosn);
