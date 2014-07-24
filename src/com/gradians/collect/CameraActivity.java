@@ -61,7 +61,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         
         questions = new Question[parcels.length];
         int partsToPosn = 0;
-        int sentCount = 0;
         PartButton btn = null;
         final LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
         for (int i = 0; i < questions.length; i++) {
@@ -100,22 +99,13 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 }
                 btn.refreshDrawableState();
                 llButtons.addView(btn);
-                if (btn.isSent()) sentCount++;
             }
         }
         
         btnAction = (ImageButton)findViewById(R.id.btnAction);
         btnAction.setEnabled(false);
         
-        TextView tvSent = (TextView)findViewById(R.id.tvSent);
-        LayoutParams lp = (LayoutParams)tvSent.getLayoutParams();
-        lp.weight = sentCount;
-        tvSent.setLayoutParams(lp);
-        
-        TextView tvUnsent = (TextView)findViewById(R.id.tvRemaining);
-        lp = (LayoutParams)tvUnsent.getLayoutParams();
-        lp.weight = llButtons.getChildCount() - sentCount;
-        tvUnsent.setLayoutParams(lp);
+        updateCounts();
         
         final int offset = partsToPosn;
         final HorizontalScrollView hsvSelectors = 
@@ -248,6 +238,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
             }
             selectedParts.clear();
             comandeerCamera();
+            updateCounts();
         }
     }
     
@@ -259,7 +250,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         
         pb.setSelected(!pb.isSelected());
         if (pb.isCaptured()) {
-            btnAction.setImageResource(android.R.drawable.ic_menu_delete);
+            btnAction.setImageResource(android.R.drawable.ic_menu_revert);
             
             int pg = this.partPgMap.get(pb.getTag());            
             // unselect other buttons
@@ -309,7 +300,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         }
     }
 
-    public void doneTaking(boolean success) {
+    protected void doneTaking(boolean success) {
         cameraOn = false;
         if (success) {
             // update selector buttons
@@ -333,7 +324,8 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 questions[i].setPgMap(map);
             }
             selectedParts.clear();
-            btnAction.setImageResource(android.R.drawable.ic_menu_delete);
+            btnAction.setImageResource(android.R.drawable.ic_menu_revert);
+            updateCounts();
         } else {
             releaseCamera();
             Intent intent = new Intent();
@@ -343,17 +335,16 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     }
     
     private void releaseCamera() {
-//        if (!cameraOn) return;
         if (camera != null) {
             camera.stopPreview();
             camera.release();
             camera = null;
         }
         
-//        if (cameraPreview != null) {
-//            ((FrameLayout)findViewById(R.id.camera_preview)).removeAllViews();
-//            cameraPreview = null;
-//        }
+        if (cameraPreview != null) {
+            ((FrameLayout)findViewById(R.id.camera_preview)).removeAllViews();
+            cameraPreview = null;
+        }
     }
     
     @SuppressWarnings("deprecation")
@@ -368,7 +359,8 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 finish();
                 return;
             }
-        }        
+        }
+        
         if (cameraPreview == null) {
             cameraPreview = new CameraPreview(this, camera);
             ((FrameLayout)findViewById(R.id.camera_preview)).
@@ -383,9 +375,28 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 cameraPreview.setBackgroundDrawable(null);
             }
         }
-//        cameraOn = true;
         btnAction.setImageResource(android.R.drawable.ic_menu_camera);
     }
+    
+    private void updateCounts() {
+        int sentCount = 0, capturedCount = 0;
+        PartButton btn;
+        LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
+        for (int i = 0; i < llButtons.getChildCount(); i++) {
+            btn = (PartButton)llButtons.getChildAt(i);
+            if (btn.isSent()) sentCount++;
+            if (btn.isCaptured()) capturedCount++;
+        }
+        
+        TextView tvSent = (TextView)findViewById(R.id.tvSentCount);
+        tvSent.setText(String.format("Sent %3d", sentCount));
+        
+        TextView tvCaptured = (TextView)findViewById(R.id.tvCapturedCount);
+        tvCaptured.setText(String.format("Captured %3d", capturedCount));
+        
+        TextView tvTotal = (TextView)findViewById(R.id.tvTotalCount);
+        tvTotal.setText(String.format("Total %3d", llButtons.getChildCount()));
+    }    
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.

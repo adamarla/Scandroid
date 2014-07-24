@@ -30,41 +30,53 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"        
         android:gravity="center"
+        android:scaleType="center"        
         android:contentDescription="@string/capture_button"
         android:onClick="action"
         android:background="@drawable/btn_background_selector"
         android:src="@android:drawable/ic_menu_camera"/>
     
     <LinearLayout
-        android:id="@+id/btnBarProgress"
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="20dp"
-        android:layout_alignParentBottom="true">
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="10dp">
         
-        <TextView
-	        android:id="@+id/tvRemaining"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-	        android:layout_height="match_parent"
-            android:layout_margin="1dp"
-	        android:gravity="center"
-	        android:contentDescription="@string/capture_button"
-	        android:background="@color/white"
-            android:textSize="@dimen/tiny_font_size"/>
+	    <TextView
+	        android:id="@+id/tvCapturedCount"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:gravity="right"
+	        android:background="@drawable/btn_quiz"
+	        android:paddingRight="2dp"
+	        android:layout_marginBottom="2dp"
+	        android:textColor="@color/white"
+	        android:textSize="@dimen/tiny_font_size"/>
+
+	    <TextView
+	        android:id="@+id/tvSentCount"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginBottom="2dp"
+            android:gravity="right"
+            android:paddingRight="2dp"
+	        android:background="@drawable/btn_quiz"
+	        android:textColor="@color/white"
+	        android:textSize="@dimen/tiny_font_size"/>
     
-            <TextView
-            android:id="@+id/tvSent"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_margin="1dp"
-            android:gravity="center"
-            android:contentDescription="@string/capture_button"
-            android:background="@color/gray"
-            android:textSize="@dimen/tiny_font_size"/>
-    
+	    <TextView
+	        android:id="@+id/tvTotalCount"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+            android:gravity="right"
+            android:paddingRight="2dp"
+	        android:background="@drawable/btn_quiz"
+	        android:textColor="@color/white"
+	        android:textSize="@dimen/tiny_font_size"/>
+        
     </LinearLayout>
-    
     	    
 </RelativeLayout>

@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
 public class DownloadMonitor extends BroadcastReceiver implements OnDismissListener {
     
@@ -56,8 +57,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     }
     
     @Override
-    public void onReceive(Context context, Intent intent) {
-        
+    public void onReceive(Context context, Intent intent) {        
         long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0L);
         if (!requestIds.contains(id)) {
             return;
@@ -76,9 +76,11 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         }            
         
         int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-        int filenameIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
+        int filenameIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);        
         if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(statusIndex)) {
             onDownloadComplete(id, cursor.getString(filenameIndex));
+        } else if (DownloadManager.STATUS_FAILED == cursor.getInt(statusIndex)) {
+            Log.d("gradians", cursor.getString(filenameIndex) + " " + cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON)));
         }
         cursor.close();
     }
@@ -87,7 +89,8 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     public void onDismiss(DialogInterface dialog) {
         activity.unregisterReceiver(this);
         if (resultHandler != null)
-            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, Activity.RESULT_FIRST_USER, null);       
+            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, 
+                Activity.RESULT_FIRST_USER, null);       
     }
     
     private void onDownloadComplete(long requestId, String uri) {
@@ -105,7 +108,8 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             }
         }
         if (requestIds.size() == 0 && resultHandler != null) 
-                resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, Activity.RESULT_OK, null);        
+            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, 
+                Activity.RESULT_OK, null);        
     }
 
     private Activity activity;

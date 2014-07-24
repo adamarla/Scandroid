@@ -4,22 +4,24 @@
     tools:context="com.gradians.collect.MainActivity" >
 
     <item
-        android:id="@+id/action_refresh"
+        android:id="@+id/action_sign_out"
         android:orderInCategory="98"
+        android:icon="@drawable/ic_sign_out"
+        android:showAsAction="always"
+        android:title="@string/action_sign_out" />        
+
+    <item
+        android:id="@+id/action_refresh"
+        android:orderInCategory="99"
         android:icon="@drawable/ic_action_refresh"
+        android:showAsAction="ifRoom"
         android:title="@string/action_sign_refresh" />
         
     <item
         android:id="@+id/action_help"
-        android:orderInCategory="99"
+        android:orderInCategory="100"
         android:icon="@android:drawable/ic_menu_help"
+        android:showAsAction="ifRoom"
         android:title="@string/action_sign_help" />
         
-    <item
-        android:id="@+id/action_sign_out"
-        android:orderInCategory="100"
-        android:icon="@drawable/ic_sign_out"
-        android:title="@string/action_sign_out" />
-        
-
 </menu>

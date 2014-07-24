@@ -76,7 +76,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         } else if (requestCode == LIST_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
+                    Parcelable[] parcels = data.getParcelableArrayExtra(TAG_ID);
                     Question[] questions = new Question[parcels.length];
                     for (int i = 0; i < parcels.length; i++) {
                         questions[i] = (Question)parcels[i];
@@ -137,7 +137,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         }
         Intent listIntent = new Intent(getApplicationContext(),
             com.gradians.collect.ListActivity.class);
-        listIntent.putExtra("studentDir", studentDir.getPath());
+        listIntent.putExtra(NAME_KEY, studentDir.getPath());
         listIntent.putExtra(TAG, items);
         listIntent.putExtra(TAG_ID, questions.toArray(new Question[questions.size()]));
         startActivityForResult(listIntent, LIST_ACTIVITY_REQUEST_CODE);
@@ -150,7 +150,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
     }
 
     private void initialize(QuizManifest manifest) {
-        setTitle(String.format("Hi %s", manifest.getName()));
+        setTitle(String.format("Hi %s", manifest.getName()));        
         try {
             ((TextView)findViewById(R.id.tvVers)).setText(getPackageManager()
                 .getPackageInfo(getPackageName(), 0).versionName);
@@ -217,13 +217,10 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
     private void setCounts(QuizManifest manifest) {
         ((MainButton)findViewById(R.id.btnInbox)).setCount(manifest.getInboxItems().length, 
             "Inbox", R.drawable.ic_action_unread);
-//            setText(String.format("Inbox (%s)", manifest.getInboxItems().length));
         ((MainButton)findViewById(R.id.btnOutbox)).setCount(manifest.getOutboxItems().length, 
             "Outbox", R.drawable.ic_action_sent);
-//            setText(String.format("Outbox (%s)", manifest.getOutboxItems().length));
         ((MainButton)findViewById(R.id.btnGraded)).setCount(manifest.getGradedItems().length, 
             "Graded", R.drawable.ic_action_chat);
-//            setText(String.format("Graded (%s)", manifest.getGradedItems().length));        
     }
     
     private void recordFdbkMrkrs(QuizManifest manifest) {
@@ -278,6 +275,7 @@ class MainButton extends RelativeLayout {
     public void setCount(int count, String text, int drawable) {
         ((TextView)findViewById(R.id.tvLabel)).setText(text);
         ((TextView)findViewById(R.id.tvCount)).setText(String.valueOf(count));
+        ((TextView)findViewById(R.id.tvCount)).setVisibility(View.VISIBLE);
         ((ImageView)findViewById(R.id.ivIcon)).setImageResource(drawable);
     }
     

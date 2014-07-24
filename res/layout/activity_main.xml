@@ -3,37 +3,38 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.gradians.collect.MainActivity" >
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical">
         
-    <com.gradians.collect.MainButton
-        android:id="@+id/btnInbox"
-        android:layout_width="240dp"
-        android:layout_height="80dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="40dp"
-        android:background="@drawable/btn_huge"
-        android:onClick="onClick"/>
-
-    <com.gradians.collect.MainButton
-        android:id="@+id/btnOutbox"
-        android:layout_width="240dp"
-        android:layout_height="80dp"
-        android:layout_below="@id/btnInbox"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="40dp"
-        android:background="@drawable/btn_huge"
-        android:onClick="onClick"/>
-    
-    <com.gradians.collect.MainButton
-        android:id="@+id/btnGraded"
-        android:layout_width="240dp"
-        android:layout_height="80dp"
-        android:layout_below="@id/btnOutbox"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="40dp"
-        android:background="@drawable/btn_huge"
-        android:onClick="onClick"/>
-    
+	    <com.gradians.collect.MainButton
+	        android:id="@+id/btnInbox"
+	        android:layout_width="240dp"
+	        android:layout_height="80dp"
+	        android:background="@drawable/btn_huge"
+	        android:onClick="onClick"/>
+	
+	    <com.gradians.collect.MainButton
+	        android:id="@+id/btnOutbox"
+	        android:layout_width="240dp"
+	        android:layout_height="80dp"
+	        android:layout_marginTop="60dp"
+	        android:background="@drawable/btn_huge"
+	        android:onClick="onClick"/>
+	    
+	    <com.gradians.collect.MainButton
+	        android:id="@+id/btnGraded"
+	        android:layout_width="240dp"
+	        android:layout_height="80dp"
+	        android:layout_marginTop="60dp"
+	        android:background="@drawable/btn_huge"
+	        android:onClick="onClick"/>    
+        
+    </LinearLayout>
+        
     <TextView 
         android:id="@+id/tvVers"
         android:layout_alignParentRight="true"

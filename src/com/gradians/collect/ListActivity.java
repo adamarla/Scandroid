@@ -2,6 +2,7 @@ package com.gradians.collect;
 
 
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 
 import android.app.Activity;
@@ -24,35 +25,35 @@ public class ListActivity extends Activity implements OnItemClickListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
+        
+        Parcelable[] quizItems;
+        Parcelable[] qstnItems;
+        String path;
+        if (savedInstanceState != null) {
+            quizItems = savedInstanceState.getParcelableArray(TAG);
+            qstnItems = savedInstanceState.getParcelableArray(TAG_ID);
+            path = savedInstanceState.getString(NAME_KEY);
+        } else {
+            quizItems = getIntent().getParcelableArrayExtra(TAG);
+            qstnItems = getIntent().getParcelableArrayExtra(TAG_ID);
+            path = getIntent().getStringExtra(NAME_KEY);
+        }
 
-        Parcelable[] quizItems = getIntent().getParcelableArrayExtra(TAG);
-        quizzes = new Quij[quizItems.length];
-        for (int i = 0; i < quizItems.length; i++) {
-            quizzes[i] = (Quij)quizItems[i];
-            Log.d(TAG, quizzes[i].getName() + " " + quizzes[i].getState());
+        initialize(quizItems, qstnItems, path);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // TODO Auto-generated method stub
+        outState.putParcelableArray(TAG, quizzes);
+        ArrayList<Question> questions = new ArrayList<Question>();
+        for (Quij quiz : quizzes) {
+            questions.addAll(quiz);
         }
-        
-        Parcelable[] qstnItems = getIntent().getParcelableArrayExtra(TAG_ID);
-        this.studentDirPath = getIntent().getStringExtra("studentDir");
-        String quizId = ((Question)qstnItems[0]).getId().split("\\.")[0];
-        int quizIdx = 0;
-        Question q;
-        for (int i = 0; i < qstnItems.length; i++) {
-            q = (Question)qstnItems[i];
-            if (!quizId.equals(q.getId().split("\\.")[0])) {
-                quizId = q.getId().split("\\.")[0];
-                quizIdx++;
-            }
-            quizzes[quizIdx].add(q);            
-        }
-        
-        adapter = new QuizListAdapter(this, quizzes);
-        ListView lv = (ListView) this.findViewById(R.id.lvQuiz);
-        lv.setAdapter(adapter);
-        lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        lv.setOnItemClickListener(this);
-        
-        setUpPaths(studentDirPath);
+        outState.putParcelableArray(TAG_ID, 
+            questions.toArray(new Question[questions.size()]));
+        outState.putString(NAME_KEY, studentDirPath);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -62,7 +63,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             questions.addAll(quiz);
         }
         Intent intent = new Intent();
-        intent.putExtra(TAG, questions.toArray(new Question[questions.size()]));
+        intent.putExtra(TAG_ID, questions.toArray(new Question[questions.size()]));
         this.setResult(RESULT_OK, intent);
         super.onBackPressed();
     }
@@ -118,6 +119,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             com.gradians.collect.FlowActivity.class);   
         flowIntent.putExtra(TAG_ID, questions);
         flowIntent.putExtra(TAG, studentDirPath);
+        flowIntent.putExtra(NAME_KEY, quiz.getName());
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
@@ -140,7 +142,14 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 if (!fdbk.exists()) {
                     src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, grId));
                     dest = Uri.fromFile(new File(feedbackDir, id));
-                    dlm.add(id, src, dest);
+//                    dlm.add(id, src, dest);
+                    HttpCallsAsyncTask hcat = new HttpCallsAsyncTask(null, 0);
+                    hcat.setDestination(new String[] { (new File(dest.getPath())).toString() });
+                    try {
+                        hcat.execute(new URL[] { new URL(src.toString()) });
+                    } catch (Exception e) { 
+                        Log.e(TAG, e.getMessage());
+                    }
                 }
             case RECEIVED:
                 for (short i = 0; i < question.getImgSpan(); i++) {
@@ -187,12 +196,53 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
     }
 
-    private void setUpPaths(String studentDirPath) {
-        studentDir = new File(studentDirPath);
+    private void initialize(Parcelable[] quizItems, Parcelable[] qstnItems, String path) {
+        quizzes = new Quij[quizItems.length];
+        for (int i = 0; i < quizItems.length; i++) {
+            quizzes[i] = (Quij)quizItems[i];
+        }
+        
+        String quizId = ((Question)qstnItems[0]).getId().split("\\.")[0];
+        int quizIdx = 0;
+        Question q;
+        for (int i = 0; i < qstnItems.length; i++) {
+            q = (Question)qstnItems[i];
+            if (!quizId.equals(q.getId().split("\\.")[0])) {
+                quizId = q.getId().split("\\.")[0];
+                quizIdx++;
+            }
+            quizzes[quizIdx].add(q);            
+        }
+        
+        String title;
+        switch (quizzes[0].getState()) {
+        case GRADED:
+            title = "Graded";
+            break;
+        case NOT_YET_GRADED:
+            title = "Outbox";
+            break;
+        default:
+            title = "Inbox";
+        }
+        setTitle(title);
+        
+        adapter = new QuizListAdapter(this, quizzes);
+        ListView lv = (ListView) this.findViewById(R.id.lvQuiz);
+        lv.setAdapter(adapter);
+        lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        lv.setOnItemClickListener(this);
+        
+        setUpPaths(path);
+    }
+
+    private void setUpPaths(String path) {
+        studentDir = new File(path);
         questionsDir = new File(studentDir, QUESTIONS_DIR_NAME);
         answersDir = new File(studentDir, ANSWERS_DIR_NAME);
         solutionsDir = new File(studentDir, SOLUTIONS_DIR_NAME);
         feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME);
+        studentDirPath = path;
     }
     
     private void handleError(String error, String message) {
