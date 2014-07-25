@@ -105,7 +105,7 @@
             android:textSize="@dimen/small_font_size" 
             android:background="@drawable/btn_generic_selector"
             android:gravity="center"
-            android:drawableTop="@android:drawable/ic_menu_info_details"/>
+            android:drawableTop="@drawable/ic_action_chat"/>
     	        
         <Button
             android:id="@+id/btnUpload"

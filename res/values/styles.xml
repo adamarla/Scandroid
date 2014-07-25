@@ -5,12 +5,13 @@
         Base application theme, dependent on API level. This theme is replaced
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
-    <style name="AppBaseTheme" parent="android:Theme.Black">
+    <style name="AppBaseTheme" parent="android:Theme.Holo">
         <!--
             Theme customizations available in newer API levels can go in
             res/values-vXX/styles.xml, while customizations related to
             backward-compatibility can go here.
         -->
+        <item name="titleTextStyle">@style/RobotoTitleTextStyle</item>    
     </style>
 
     <!-- Application theme. -->
@@ -19,8 +20,8 @@
         <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>
         <item name="android:buttonStyle">@style/RobotoButtonStyle</item>
         <item name="android:editTextStyle">@style/RobotoEditTextStyle</item>
-        <item name="titleTextStyle">@style/RobotoTitleTextStyle</item>
-    </style>        
+    </style>
+    
 	<style name="RobotoTextViewStyle" parent="android:Widget.TextView">
 	    <item name="android:fontFamily">sans-serif-condensed</item>
 	</style>
@@ -33,7 +34,7 @@
     <style name="RobotoTitleTextStyle" 
            parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">
         <item name="android:fontFamily">sans-serif-condensed</item>
-        </style>
+    </style>
 			
     <style name="LoginFormContainer">
         <item name="android:layout_width">match_parent</item>

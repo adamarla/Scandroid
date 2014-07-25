@@ -250,7 +250,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         
         pb.setSelected(!pb.isSelected());
         if (pb.isCaptured()) {
-            btnAction.setImageResource(android.R.drawable.ic_menu_revert);
+            btnAction.setImageResource(R.drawable.ic_action_rotate_right);
             
             int pg = this.partPgMap.get(pb.getTag());            
             // unselect other buttons
@@ -324,7 +324,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 questions[i].setPgMap(map);
             }
             selectedParts.clear();
-            btnAction.setImageResource(android.R.drawable.ic_menu_revert);
+            btnAction.setImageResource(R.drawable.ic_action_rotate_right);
             updateCounts();
         } else {
             releaseCamera();
@@ -389,10 +389,10 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         }
         
         TextView tvSent = (TextView)findViewById(R.id.tvSentCount);
-        tvSent.setText(String.format("Sent %3d", sentCount));
+        tvSent.setText(String.format("Sent %3d", (sentCount)));
         
         TextView tvCaptured = (TextView)findViewById(R.id.tvCapturedCount);
-        tvCaptured.setText(String.format("Captured %3d", capturedCount));
+        tvCaptured.setText(String.format("Captured %3d", (capturedCount+sentCount)));
         
         TextView tvTotal = (TextView)findViewById(R.id.tvTotalCount);
         tvTotal.setText(String.format("Total %3d", llButtons.getChildCount()));

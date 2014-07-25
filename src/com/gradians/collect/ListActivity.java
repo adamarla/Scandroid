@@ -2,8 +2,11 @@ package com.gradians.collect;
 
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -51,7 +54,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
         outState.putParcelableArray(TAG_ID, 
             questions.toArray(new Question[questions.size()]));
-        outState.putString(NAME_KEY, studentDirPath);
+        outState.putString(NAME_KEY, studentDir.getPath());
         super.onSaveInstanceState(outState);
     }
 
@@ -103,6 +106,9 @@ public class ListActivity extends Activity implements OnItemClickListener,
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Quij quiz = (Quij)adapter.getItem(position);
 
+        mkdirs(String.valueOf(quiz.getId()));
+        recordFdbkMrkrs(quiz);
+        
         DownloadMonitor dlm = new DownloadMonitor(this);
         setUpDownloads(dlm, quiz);
         selectedQuizPosition = position;
@@ -117,7 +123,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         Intent flowIntent = new Intent(this.getApplicationContext(), 
             com.gradians.collect.FlowActivity.class);   
         flowIntent.putExtra(TAG_ID, questions);
-        flowIntent.putExtra(TAG, studentDirPath);
+        flowIntent.putExtra(TAG, quizDir.getPath());
         flowIntent.putExtra(NAME_KEY, quiz.getName());
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
@@ -125,11 +131,11 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
     
     private void setUpDownloads(DownloadMonitor dlm, Quij quiz) {
+        String wsId = String.valueOf(quiz.getId());
         Question[] questions = quiz.getQuestions();
         for (Question question : questions) {
             Uri src, dest;
             String id = question.getId();
-            String wsId = id.split("\\.")[0];
             String grId = question.getGRId("-");
             File image = null, fdbk = null;            
             String imgLocn = question.getImgLocn();
@@ -206,10 +212,11 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     private void initialize(Parcelable[] quizItems, Parcelable[] qstnItems, String path) {
+        studentDir = new File(path);
+        
         quizzes = new Quij[quizItems.length];
-        for (int i = 0; i < quizItems.length; i++) {
+        for (int i = 0; i < quizItems.length; i++)
             quizzes[i] = (Quij)quizItems[i];
-        }
         
         String quizId = ((Question)qstnItems[0]).getId().split("\\.")[0];
         int quizIdx = 0;
@@ -220,7 +227,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 quizId = q.getId().split("\\.")[0];
                 quizIdx++;
             }
-            quizzes[quizIdx].add(q);            
+            quizzes[quizIdx].add(q);
         }
         
         String title;
@@ -240,30 +247,50 @@ public class ListActivity extends Activity implements OnItemClickListener,
         ListView lv = (ListView) this.findViewById(R.id.lvQuiz);
         lv.setAdapter(adapter);
         lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        lv.setOnItemClickListener(this);
-        
-        setUpPaths(path);
+        lv.setOnItemClickListener(this);        
+    }
+    
+    private void mkdirs(String quizId) {
+        (quizDir = new File(studentDir, quizId)).mkdir();
+        (questionsDir = new File(quizDir, QUESTIONS_DIR_NAME)).mkdir();
+        (answersDir = new File(quizDir, ANSWERS_DIR_NAME)).mkdir();
+        (solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME)).mkdir();
+        (feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME)).mkdir();
     }
 
-    private void setUpPaths(String path) {
-        studentDir = new File(path);
-        questionsDir = new File(studentDir, QUESTIONS_DIR_NAME);
-        answersDir = new File(studentDir, ANSWERS_DIR_NAME);
-        solutionsDir = new File(studentDir, SOLUTIONS_DIR_NAME);
-        feedbackDir = new File(studentDir, FEEDBACK_DIR_NAME);
-        studentDirPath = path;
+    private void recordFdbkMrkrs(Quij quiz) {
+        Properties fdbkMrkrs = new Properties();
+        try {
+            File fdbkMrkrsFile = new File(studentDir, "fdbkIds");
+            fdbkMrkrsFile.createNewFile(); // creates only if needed
+            fdbkMrkrs.load(new FileInputStream(fdbkMrkrsFile));
+            if (quiz.getState() < GRADED) return;
+            
+            String quizId = String.valueOf(quiz.getId());
+            long lastFdbkMrkr = Long.parseLong(fdbkMrkrs.getProperty(quizId, 
+                String.valueOf(0)));
+            if (lastFdbkMrkr < quiz.getFdbkMrkr()) {
+                File[] fdbkFiles = feedbackDir.listFiles();
+                for (File f : fdbkFiles) {
+                    f.delete();
+                }
+                fdbkMrkrs.setProperty(quizId, String.valueOf(quiz.getFdbkMrkr()));
+            }
+            fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);
+        } catch (Exception e) { 
+            handleError("Error during fdbkChk", e.getMessage());
+        }
     }
     
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
     }
 
-    private String studentDirPath;
     private Quij[] quizzes;
     private QuizListAdapter adapter;
     
     private int selectedQuizPosition;
-    private File studentDir, questionsDir, answersDir, solutionsDir, feedbackDir;
+    private File studentDir, quizDir, questionsDir, answersDir, solutionsDir, feedbackDir;
     ProgressDialog peedee;
 
     private final String 

@@ -1,11 +1,8 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Properties;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -156,8 +153,8 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
                 .getPackageInfo(getPackageName(), 0).versionName);
         } catch (NameNotFoundException e) { }
         setCounts(manifest);
-        mkdirs(manifest.getEmail().replace('@', '.'));
-        recordFdbkMrkrs(manifest);
+        (studentDir = new File(getExternalFilesDir(null), 
+            manifest.getEmail().replace('@', '.'))).mkdir();
     }
     
     private void checkAuth() {
@@ -206,14 +203,6 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         edit.commit();
     }
 
-    private void mkdirs(String studentDirName) {        
-        (studentDir = new File(getExternalFilesDir(null), studentDirName)).mkdir();
-        String[] dirs = {QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
-            FEEDBACK_DIR_NAME, UPLOAD_DIR_NAME};
-        for (String dir : dirs)
-            (new File(studentDir, dir)).mkdir();
-    }
-    
     private void setCounts(QuizManifest manifest) {
         ((MainButton)findViewById(R.id.btnInbox)).setCount(manifest.getInboxItems().length, 
             "Inbox", R.drawable.ic_action_unread);
@@ -223,33 +212,6 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
             "Graded", R.drawable.ic_action_chat);
     }
     
-    private void recordFdbkMrkrs(QuizManifest manifest) {
-        Properties fdbkMrkrs = new Properties();
-        try {
-            File fdbkDir = new File(studentDir, FEEDBACK_DIR_NAME);
-            File fdbkMrkrsFile = new File(studentDir, "fdbkIds");
-            fdbkMrkrsFile.createNewFile(); // creates only if needed
-            fdbkMrkrs.load(new FileInputStream(fdbkMrkrsFile));
-            Quij[] quizzes = manifest.get();
-            for (Quij quiz : quizzes) {
-                if (quiz.getState() < GRADED) continue;
-                
-                String quizId = String.valueOf(quiz.getId());
-                long lastFdbkMrkr = Long.parseLong(fdbkMrkrs.getProperty(quizId, "0"));
-                if (lastFdbkMrkr < quiz.getFdbkMrkr()) {
-                    File[] fdbkFiles = fdbkDir.listFiles();
-                    for (File f : fdbkFiles) {
-                        if (f.getName().contains(quizId)) f.delete();
-                    }
-                    fdbkMrkrs.setProperty(quizId, String.valueOf(quiz.getFdbkMrkr()));
-                }
-            }
-            fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);
-        } catch (Exception e) { 
-            handleError("Error during fdbkChk", e.getMessage());
-        }
-    }
-
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
     }

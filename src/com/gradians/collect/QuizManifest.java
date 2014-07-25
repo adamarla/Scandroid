@@ -337,6 +337,7 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         dest.writeLong(id);
         dest.writeInt(state);
         dest.writeInt(price);
+        dest.writeLong(fdbkMrkr);
     }
     
     private Quij(Parcel in) {
@@ -344,6 +345,7 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         id = in.readLong();
         state = (short)in.readInt();
         price = in.readInt();
+        fdbkMrkr = in.readLong();
     }
     
     @Override
@@ -351,7 +353,6 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         return name;
     }
     
-//    private int[] pgBrks;
     private int price;
     private String name, path, layout;
     private long id, fdbkMrkr;
