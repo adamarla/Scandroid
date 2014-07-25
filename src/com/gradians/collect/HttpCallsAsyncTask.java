@@ -53,7 +53,7 @@ public class HttpCallsAsyncTask extends AsyncTask<URL, Void, String> implements 
                         result = "";
                     }
                 } else {
-                    Log.e(TAG, "Response Code " + responseCode);
+                    throw new Exception("HTTP Response Code: " + responseCode);
                 }
             } catch (Exception e){
                 Log.e(TAG, e.getClass().getName());

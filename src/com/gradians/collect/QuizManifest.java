@@ -135,11 +135,14 @@ public class QuizManifest implements IConstants {
                     ((Long)item.get(SUBPARTS_COUNT_KEY)).shortValue(),
                     (String)item.get(IMG_PATH_KEY),
                     ((Long)item.get(IMG_SPAN_KEY)).shortValue());
-                
+
                 if (item.get(GR_ID_KEY) != null) {
+                    question.setExaminer(item.get(EXAMINER_KEY) == null ? 
+                        0 : ((Long)item.get(EXAMINER_KEY)).intValue());
                     question.setGRId((String)item.get(GR_ID_KEY));
                     question.setScanLocn((String)item.get(SCANS_KEY));
-
+                    question.setOutOf(((Long)item.get(OUT_OF_KEY)).shortValue());
+                    
                     boolean allPartsReceived = true;
                     for (String s : question.getScanLocn()) {
                         if (s.equals("")) {
@@ -160,10 +163,8 @@ public class QuizManifest implements IConstants {
                         }
                     } else {
                         float marks = item.get(MARKS_KEY) == null ? -1f : ((Double)item.get(MARKS_KEY)).floatValue();
-                        short outof = item.get(OUT_OF_KEY) == null ? 0 : ((Long)item.get(OUT_OF_KEY)).shortValue();
                         question.setState(marks < 0 ? RECEIVED : GRADED);
                         question.setMarks(marks);
-                        question.setOutOf(outof);
                     }                    
                 }                
                 quizzes[i].add(question);
@@ -440,9 +441,13 @@ class Question implements Parcelable {
         return imgSpan;
     }
     
+    public int getExaminer() {
+        return examiner;
+    }
+
     public void setGRId(String grIds) {
         if (grIds != null) {
-            String[] tokens = grIds.split("-");
+            String[] tokens = grIds.split(",");
             for (int i = 0; i < tokens.length; i++)
                 grId[i] = Integer.parseInt(tokens[i]);
         }
@@ -498,6 +503,10 @@ class Question implements Parcelable {
     
     public void setImgSpan(short imgSpan) {
         this.imgSpan = imgSpan;
+    }
+
+    public void setExaminer(int examiner) {
+        this.examiner = examiner;
     }
 
     @Override
@@ -557,6 +566,7 @@ class Question implements Parcelable {
     private short state = IConstants.WAITING, imgSpan;
     private float marks;
     private short outof;
+    private int examiner;
     
     public static final String SEP = ",";
 

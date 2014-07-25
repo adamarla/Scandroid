@@ -35,6 +35,7 @@ public interface IConstants {
     String IMG_SPAN_KEY = "imgspan";
     String MARKS_KEY = "marks";
     String OUT_OF_KEY = "outof";
+    String EXAMINER_KEY = "examiner";
     
     // Directory names
     String QUESTIONS_DIR_NAME = "questions";

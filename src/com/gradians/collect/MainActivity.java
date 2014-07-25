@@ -207,7 +207,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
     }
 
     private void mkdirs(String studentDirName) {        
-        (studentDir = new File(this.getExternalFilesDir(null), studentDirName)).mkdir();
+        (studentDir = new File(getExternalFilesDir(null), studentDirName)).mkdir();
         String[] dirs = {QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
             FEEDBACK_DIR_NAME, UPLOAD_DIR_NAME};
         for (String dir : dirs)

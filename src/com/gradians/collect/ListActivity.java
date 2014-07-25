@@ -44,7 +44,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        // TODO Auto-generated method stub
         outState.putParcelableArray(TAG, quizzes);
         ArrayList<Question> questions = new ArrayList<Question>();
         for (Quij quiz : quizzes) {
@@ -136,6 +135,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             String imgLocn = question.getImgLocn();
             String[] scans = question.getScanLocn();
             int[] pageNos = question.getPgMap();
+            boolean[] sentState = question.getSentState();
             switch (question.getState()) {
             case GRADED:
                 fdbk = new File(feedbackDir, id);
@@ -172,18 +172,27 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
                 break;
             case SENT:
+                for (int i = 0; i < scans.length; i++) {
+                    if (scans[i].equals("") && question.getExaminer() != 0) {
+                        pageNos[i] = 0; // to be resent
+                        sentState[i] = false;
+                        question.setState(DOWNLOADED);
+                    }
+                }
+                question.setSentState(sentState);
             case CAPTURED:
-            case DOWNLOADED:
-            case WAITING:
                 for (int i = 0; i < pageNos.length; i++) {
                     if (pageNos[i] != 0) {
                         image = new File(answersDir, wsId + "." + pageNos[i]);
                         if (!image.exists()) {
                             pageNos[i] = 0;
+                            question.setState(DOWNLOADED);
                         }
                     }
                 }
                 question.setPgMap(pageNos);
+            case DOWNLOADED:
+            case WAITING:
                 image = new File(questionsDir, question.getId());
                 if (!image.exists()) {
                     src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, imgLocn));
