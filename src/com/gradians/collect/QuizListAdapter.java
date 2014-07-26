@@ -47,11 +47,12 @@ public class QuizListAdapter extends BaseAdapter implements IConstants {
             convertView = inflater.inflate(R.layout.layout_quiz, parent, false);
         }
         
-        int completed = 0, graded = 0;;
+        int completed = 0, graded = 0, total = 0;
         Quij quiz = (Quij)getItem(position);
         Question[] questions = quiz.getQuestions();
         for (Question q : questions ) {
-            if (q.getState() > DOWNLOADED) completed++;
+            for (int pg : q.getPgMap()) if (pg != 0) completed++;
+            total += q.getPgMap().length;
             if (q.getState() == GRADED) graded++;
         }
         
@@ -65,7 +66,7 @@ public class QuizListAdapter extends BaseAdapter implements IConstants {
         else if (quiz.getState() == GRADED) {
             tvTotal.setText(String.format("%2d%%", (int)(quiz.getScore()*100/quiz.getMax())));
         } else {
-            tvTotal.setText(String.format("%2d%%", (int)(completed*100/quiz.size())));
+            tvTotal.setText(String.format("%2d%%", (int)(completed*100/total)));
         }
         
         return convertView;
