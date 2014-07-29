@@ -256,6 +256,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         (answersDir = new File(quizDir, ANSWERS_DIR_NAME)).mkdir();
         (solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME)).mkdir();
         (feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME)).mkdir();
+        (uploadsDir = new File(quizDir, UPLOAD_DIR_NAME)).mkdir();
     }
 
     private void recordFdbkMrkrs(Quij quiz) {
@@ -290,7 +291,9 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private QuizListAdapter adapter;
     
     private int selectedQuizPosition;
-    private File studentDir, quizDir, questionsDir, answersDir, solutionsDir, feedbackDir;
+    private File 
+        studentDir, quizDir, questionsDir, answersDir, 
+        solutionsDir, feedbackDir, uploadsDir;
     ProgressDialog peedee;
 
     private final String 
