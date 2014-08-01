@@ -61,12 +61,31 @@
         android:layout_below="@id/llTopBar"
         android:background="@drawable/gray_background"
         android:gravity="center"/>
-            
+    
     <com.viewpagerindicator.CirclePageIndicator
         android:id="@+id/circlesFdbk"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:layout_below="@id/llTopBar"
+        android:layout_alignTop="@id/vpFeedback"
+        android:layout_marginTop="4dp"
+        app:fillColor="@color/orange"
+        android:background="@null"/>
+        
+    <android.support.v4.view.ViewPager
+        android:id="@+id/vpHints"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="64dp"
+        android:visibility="invisible"
+        android:background="@drawable/gray_background"
+        android:gravity="center"/>
+            
+    <com.viewpagerindicator.CirclePageIndicator
+        android:id="@+id/circlesHints"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_alignTop="@id/vpHints"
         android:layout_marginTop="4dp"
         app:fillColor="@color/orange"
         android:background="@null"/>
@@ -153,15 +172,4 @@
         
 	</LinearLayout>
 	
-    <com.viewpagerindicator.CirclePageIndicator
-        android:id="@+id/circlesQn"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="16dp"
-        android:background="@null"
-        android:visibility="invisible"
-        android:padding="2dp"/>
-            	    
 </RelativeLayout>

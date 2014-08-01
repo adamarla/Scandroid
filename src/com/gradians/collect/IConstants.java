@@ -27,7 +27,8 @@ public interface IConstants {
     
     String STATE_KEY = "state";
     String ID_KEY = "id";
-    String SUBPARTS_COUNT_KEY = "subparts";
+    String QUESN_ID_KEY = "qid";
+    String SBPRTS_ID_KEY = "sid";
     String GR_ID_KEY = "grId";
     String IMG_PATH_KEY = "img";
     String SCAN_KEY = "scan";
@@ -36,6 +37,8 @@ public interface IConstants {
     String MARKS_KEY = "marks";
     String OUT_OF_KEY = "outof";
     String EXAMINER_KEY = "examiner";
+    String FDBK_MRKR_KEY = "fdbkMrkr";
+    String HINT_MRKR_KEY = "hintMrkr";
     
     // Directory names
     String QUESTIONS_DIR_NAME = "questions";
@@ -44,6 +47,7 @@ public interface IConstants {
     String MANIFEST_DIR_NAME = "manifests";
     String FEEDBACK_DIR_NAME = "feedback";
     String UPLOAD_DIR_NAME = "upload";
+    String HINTS_DIR_NAME = "hints";
     
     // States: Question
     short WAITING = 0,

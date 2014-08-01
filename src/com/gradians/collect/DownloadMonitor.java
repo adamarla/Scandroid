@@ -14,8 +14,9 @@ import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
-import android.util.Log;
 
 public class DownloadMonitor extends BroadcastReceiver implements OnDismissListener {
     
@@ -29,6 +30,10 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             if (d.srcUri.equals(srcUri)) return;
         }
         downloads.add(new Download(title, srcUri, destUri));
+    }
+    
+    public int getCount() {
+        return downloads.size();
     }
     
     public boolean start(String title, String message, ITaskResult handler) {
@@ -79,8 +84,6 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         int filenameIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);        
         if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(statusIndex)) {
             onDownloadComplete(id, cursor.getString(filenameIndex));
-        } else if (DownloadManager.STATUS_FAILED == cursor.getInt(statusIndex)) {
-            Log.d("gradians", cursor.getString(filenameIndex) + " " + cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON)));
         }
         cursor.close();
     }
@@ -93,6 +96,13 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
                 Activity.RESULT_FIRST_USER, null);       
     }
     
+    public boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager 
+            = (ConnectivityManager)activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null ? activeNetworkInfo.isConnected() : false;
+    }
+
     private void onDownloadComplete(long requestId, String uri) {
         File file = new File(Uri.parse(uri).getPath());
         String name = file.getName();
@@ -111,7 +121,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, 
                 Activity.RESULT_OK, null);        
     }
-
+    
     private Activity activity;
     private ArrayList<Download> downloads;
     private ProgressDialog peedee;

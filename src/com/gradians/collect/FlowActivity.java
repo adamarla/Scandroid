@@ -1,9 +1,6 @@
 package com.gradians.collect;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,6 +24,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -40,6 +38,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 public class FlowActivity extends FragmentActivity implements ViewPager.OnPageChangeListener, ITaskResult, IConstants {
@@ -58,36 +57,41 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             questions[i] = (Question)parcels[i];
         }
 
-        feedback = new Feedback[questions.length];
         adapter = new FlowAdapter(questions, this.getSupportFragmentManager());
+        
+        feedback = new Feedback[questions.length];
+        hints = new Hint[questions.length];
         
         vpPreview = (ViewPager)this.findViewById(R.id.vpPreview);
         vpPreview.setAdapter(adapter);
 
         vpFdbk = (ViewPager)findViewById(R.id.vpFeedback);
-        
-        //Bind the circle indicator to the adapter
-        CirclePageIndicator questionIndicator = (CirclePageIndicator)findViewById(R.id.circlesQn);
-        questionIndicator.setViewPager(vpPreview);
+        vpHints = (ViewPager)findViewById(R.id.vpHints);
 
+        fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
+        hintsIndicator = (CirclePageIndicator)findViewById(R.id.circlesHints);
+        
         String title;
+        int page = 0, fdbkPg = 0;
         if (savedInstanceState == null) {
             title = getIntent().getStringExtra(NAME_KEY);
             price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
             quizDir = new File(getIntent().getStringExtra(TAG));
             vpPreview.setCurrentItem(0);
-            adjustView(0, 0);
         } else {
             title = savedInstanceState.getString(NAME_KEY);
             price = savedInstanceState.getInt(QUIZ_PRICE_KEY, 0);
             quizDir = new File(savedInstanceState.getString(TAG));
-            int page = savedInstanceState.getInt("page");
+            page = savedInstanceState.getInt("page");
             vpPreview.setCurrentItem(page);
             adapter.setFlipped(savedInstanceState.getBoolean("flipped"));
-            int fdbkPg = savedInstanceState.getInt("fdbkPage", FdbkView.NO_FEEDBACK);
-            adjustView(page, fdbkPg);
+            fdbkPg = savedInstanceState.getInt("fdbkIdx", FdbkView.NO_FEEDBACK);
+            fdbkShown = savedInstanceState.getBoolean("fdbkShown");
+            hintShown = savedInstanceState.getBoolean("hintShown");
         }
-        setTitle(title);        
+        setTitle(title);
+        loadHints(quizDir);
+        adjustView(page, fdbkPg);
     }
     
     @Override
@@ -97,9 +101,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         outState.putString(TAG, quizDir.getPath());
         outState.putInt("page", vpPreview.getCurrentItem());
         outState.putBoolean("flipped", adapter.getFlipped());
-        if (!adapter.getFlipped() && feedback[vpPreview.getCurrentItem()] != null) {
-            outState.putInt("fdbkPage", fdbkIdx);
-        }
+        outState.putInt("fdbkIdx", fdbkIdx);
+        outState.putBoolean("fdbkShown", fdbkShown);
+        outState.putBoolean("hintShown", hintShown);
+//        if (!adapter.getFlipped() && feedback[vpPreview.getCurrentItem()] != null) {
+//            outState.putInt("fdbkPage", fdbkIdx);
+//        }
         super.onSaveInstanceState(outState);
     }
     
@@ -168,6 +175,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 } catch (Exception e) {
                     Log.e(TAG, "Bill Worksheet failed: " + e.getMessage());
                 }
+            } else {
+                Toast.makeText(getApplicationContext(), 
+                    "Sorry, could not conclude purchase, no Internet connectivity", 
+                    Toast.LENGTH_LONG).show();
             }
         }
     }    
@@ -178,10 +189,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     public void onPageScrolled(int arg0, float arg1, int arg2) { }
     @Override
     public void onPageSelected(int position) {
-        fdbkIdx = position;
-        Feedback fdbk = feedback[vpPreview.getCurrentItem()];
-        adapter.shift(fdbk.page[position], fdbk.x[position], fdbk.y[position], 
-            vpPreview.getCurrentItem());
+        if (fdbkShown) {
+            fdbkIdx = position;
+            Feedback fdbk = feedback[vpPreview.getCurrentItem()];
+            adapter.shift(fdbk.page[position], fdbk.x[position], fdbk.y[position],
+                vpPreview.getCurrentItem());
+        }
     }
     
     public void page(View view) {
@@ -196,8 +209,40 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
     public void flip(View view) {
         int currentIndex = vpPreview.getCurrentItem();
-        adapter.flip(currentIndex);
-        adjustView(currentIndex, fdbkIdx);
+        Question question = adapter.getQuestions()[currentIndex];
+        if (question.getState() > DOWNLOADED) {            
+            adapter.flip(currentIndex);
+            adjustView(currentIndex, fdbkIdx);
+        } else {
+            if (hintShown) {
+                unrenderHint();
+            } else {
+                ArrayList<String> partsWithHints = new ArrayList<String>();
+                Hint h = hints[currentIndex];
+                for (int i = 0; i < h.subparts; i++) {
+                    if (h.getText(i) != null) {
+                        partsWithHints.add((char)((int)'a'+i) + ")");
+                    }
+                }
+                if (h.subparts > 1 && partsWithHints.size() > 1) {
+                    final int qsnIdx = currentIndex;
+                    final String[] parts = partsWithHints.toArray(new String[partsWithHints.size()]);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Hint(s) for part..")
+                        .setItems(parts, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                int partIdx = (int)parts[which].charAt(0)-(int)'a';
+                                renderHint(qsnIdx, partIdx);
+                            }
+                    });
+                    builder.show();
+                } else if (h.subparts > 1 && partsWithHints.size() == 1) {
+                    renderHint(currentIndex, ((int)partsWithHints.get(0).charAt(0)-(int)'a'));
+                } else if (partsWithHints.size() == 1) {
+                    renderHint(currentIndex, 0);
+                }
+            }
+        }
     }
     
     public void showHide(View view) {
@@ -209,11 +254,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }        
         if (fdbkShown) {
             vpFdbk.setVisibility(vpFdbk.getVisibility() == View.INVISIBLE ?
-                    View.VISIBLE : View.INVISIBLE);
-            fdbkIndicator.setVisibility(vpFdbk.getVisibility() == View.INVISIBLE ?
-                    View.VISIBLE : View.INVISIBLE);
+                View.VISIBLE : View.INVISIBLE);
+            fdbkIndicator.setVisibility(fdbkIndicator.getVisibility() == View.INVISIBLE ?
+                View.VISIBLE : View.INVISIBLE);
+        } else if (hintShown) {
+            vpHints.setVisibility(vpHints.getVisibility() == View.INVISIBLE ?
+                View.VISIBLE : View.INVISIBLE);
+            hintsIndicator.setVisibility(hintsIndicator.getVisibility() == View.INVISIBLE ?
+                View.VISIBLE : View.INVISIBLE);
         }
-        findViewById(R.id.btnMin).setVisibility(View.VISIBLE);
     }
     
     public void launchCameraActivity(View view) {
@@ -305,6 +354,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
         btnCamera.setEnabled(!nothingToCapture(questions));
         btnUpload.setEnabled(!nothingToUpload(questions));
+        btnFlip.setEnabled(true);
         
         Question q = questions[position];
         ((TextView)findViewById(R.id.tvName)).setText(q.getName());
@@ -313,10 +363,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 btnFlip.setText("Response");
             } else {
                 btnFlip.setText("Question");
-                btnLeft.setEnabled(false);
-                btnRight.setEnabled(false);
-                btnCamera.setEnabled(false);
-                btnUpload.setEnabled(false);
+//                btnLeft.setEnabled(false);
+//                btnRight.setEnabled(false);
+//                btnCamera.setEnabled(false);
+//                btnUpload.setEnabled(false);
             }
             
             if (q.getState() == GRADED) {
@@ -328,11 +378,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             } else if (q.getState() > DOWNLOADED) {
                 btnFlip.setText("Question");
             } else {
-                btnLeft.setEnabled(true);
-                btnRight.setEnabled(true);
-                btnFlip.setText("Guidelines");
-                btnCamera.setEnabled(!nothingToCapture(questions));
-                btnUpload.setEnabled(!nothingToUpload(questions));
+                btnFlip.setText("Hint");
+                btnFlip.setEnabled(hints[position] != null);
+//                btnLeft.setEnabled(true);
+//                btnRight.setEnabled(true);
+//                btnCamera.setEnabled(!nothingToCapture(questions));
+//                btnUpload.setEnabled(!nothingToUpload(questions));
             }
             
             if (q.getState() == GRADED) {
@@ -342,7 +393,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 unrenderFeedback(position);
                 tvMarks.setText("");
             }
-        }
+        }        
+        if (hintShown) unrenderHint();
         
         btnLeft.refreshDrawableState();
         btnFlip.refreshDrawableState();
@@ -374,21 +426,20 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     private void renderFeedback(int position, int fdbkPosn) {
-        if (feedback[position] == null) {
-            feedback[position] = loadFeedback(position);
-        }
+        if (feedback[position] == null)
+            feedback[position] = Feedback.load(quizDir, 
+                adapter.getQuestions()[position]);
         if (feedback[position] == null) return;
         
-        fdbkAdapter = new FeedbackAdapter(feedback[position], this);
+        fdbkAdapter = new LatexAdapter(feedback[position].text, this);
         
         vpFdbk.setOffscreenPageLimit(3);
         vpFdbk.setAdapter(fdbkAdapter);
         vpFdbk.setVisibility(View.VISIBLE);
         fdbkShown = true;
-        findViewById(R.id.circlesFdbk).setVisibility(View.VISIBLE);
         
         //Bind the circle indicator to the adapter
-        fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
+        fdbkIndicator.setVisibility(View.VISIBLE);
         fdbkIndicator.setViewPager(vpFdbk, fdbkPosn);
         fdbkIndicator.setOnPageChangeListener(this);
         
@@ -398,58 +449,43 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private void unrenderFeedback(int position) {
         fdbkShown = false;
         vpFdbk.setVisibility(View.INVISIBLE);
-        findViewById(R.id.circlesFdbk).setVisibility(View.INVISIBLE);
+        fdbkIndicator.setVisibility(View.INVISIBLE);
         adapter.shift(0, FdbkView.NO_FEEDBACK, FdbkView.NO_FEEDBACK, position);
     }
     
-    private Feedback loadFeedback(int position) {
-        Question question = adapter.getQuestions()[position];
-        File feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME);
-        File latex = new File(feedbackDir, question.getId());
-        if (!latex.exists()) return null;
+    private void renderHint(int qsnPosn, int part) {
+        if (hints[qsnPosn].getText(part) == null) return;
         
-        int[] partOnPg = question.getPgMap();
-        int highestPg = partOnPg[0];
-        for (int i = 0; i < partOnPg.length; i++) {
-            if (partOnPg[i] < highestPg) {
-                highestPg = partOnPg[i];
-            }
-        }        
+        hintsAdapter = new LatexAdapter(hints[qsnPosn].getText(part), this);
         
-        BufferedReader br = null;
-        Feedback feedback = null;
-        try {
-            br = new BufferedReader(new FileReader(latex));
-            JSONParser jsonParser = new JSONParser();
-            JSONObject respObject = (JSONObject)jsonParser.parse(br.readLine());
-            JSONArray comments = (JSONArray)respObject.get(COMMENTS_KEY);
-            br.close();
-            String[] text = new String[comments.size()];
-            int[] page = new int[text.length];
-            int[] x = new int[text.length]; 
-            int[] y = new int[text.length];
-            JSONObject firstComment = (JSONObject)comments.get(0);
-            int id = ((Long)firstComment.get(ID_KEY)).intValue();            
-            int partIdx = 0;
-            for (int i = 0; i < comments.size(); i++) {
-                JSONObject comment = (JSONObject)comments.get(i);
-                text[i] = (String)comment.get(COMMENT_KEY);
-                x[i] = ((Long)comment.get(X_POSN_KEY)).intValue();
-                y[i] = ((Long)comment.get(Y_POSN_KEY)).intValue();
-                if (id != ((Long)comment.get(ID_KEY)).intValue()) {
-                    id = ((Long)comment.get(ID_KEY)).intValue();
-                    partIdx++;
-                }                
-                page[i] = partOnPg[partIdx]-highestPg;
-            }
-            feedback = new Feedback(text, page, x, y);
-        } catch (Exception e) { 
-            Log.e(TAG, "Error loading feedback " + e.getMessage());
-        }
-        return feedback;
+        vpHints.setOffscreenPageLimit(3);
+        vpHints.setAdapter(hintsAdapter);
+        vpHints.setVisibility(View.VISIBLE);
+        hintShown = true;
+        
+        //Bind the circle indicator to the adapter
+        hintsIndicator.setVisibility(View.VISIBLE);
+        hintsIndicator.setViewPager(vpHints, 0);
+        hintsIndicator.setOnPageChangeListener(this);
+        
+        onPageSelected(0);
     }
     
-    private void triggerUploads(Question[] questions) {        
+    private void unrenderHint() {
+        hintShown = false;
+        vpHints.setVisibility(View.INVISIBLE);
+        hintsIndicator.setVisibility(View.INVISIBLE);
+    }
+    
+    private void loadHints(File quizDir) {
+        File hintsDir = new File(quizDir, HINTS_DIR_NAME);
+        Question[] questions = adapter.getQuestions();
+        for (int i = 0; i < hints.length; i++) {
+            hints[i] = Hint.load(hintsDir, questions[i]);            
+        }
+    }
+    
+    private void triggerUploads(Question[] questions) {
         SparseArray<ArrayList<Integer>>
             toSend = new SparseArray<ArrayList<Integer>>();
         
@@ -506,16 +542,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private void triggerPurchase(Question[] questions) {
         String id = questions[0].getId();
         String ws_id = id.substring(0, id.indexOf('.'));
-        URL url;
-        try {
-            url = new URL(String.format(BILL_URL,
-                    WEB_APP_HOST_PORT, ws_id));
-            URL[] urls = new URL[] { url };
-            new HttpCallsAsyncTask(this,
-                BILL_WORKSHEET_TASK_RESULT_CODE).execute(urls);        
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }        
+        Uri src = Uri.parse(String.format(BILL_URL, WEB_APP_HOST_PORT, ws_id));
+        Download download = new Download(null, src, null);
+        new HttpCallsAsyncTask(this,
+            BILL_WORKSHEET_TASK_RESULT_CODE).execute(new Download[] { download });
     }
     
     private String[] getQuestion(Question question) {
@@ -568,16 +598,17 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
     private int price;
     private Feedback[] feedback;
+    private Hint[] hints;
     private File quizDir;
 
     private ViewPager vpPreview;
     private FlowAdapter adapter;
     
     private int fdbkIdx;
-    private boolean fdbkShown;
-    private ViewPager vpFdbk;
-    private FeedbackAdapter fdbkAdapter;
-    private CirclePageIndicator fdbkIndicator;
+    private boolean fdbkShown, hintShown;
+    private ViewPager vpFdbk, vpHints;
+    private LatexAdapter fdbkAdapter, hintsAdapter;
+    private CirclePageIndicator fdbkIndicator, hintsIndicator;
     
     private final String BILL_URL = "http://%s/tokens/bill_ws?id=%s";
     
@@ -607,25 +638,17 @@ class FlowViewPager extends ViewPager {
 
 }
 
-class Feedback {
-    public Feedback(String[] text, int[] page, int[] x, int[] y) {
-        this.text = text; this.page = page; this.x = x; this.y = y;
-    }
-    public int[] page, x, y;
-    public String[] text;
-}
-
-class FeedbackAdapter extends PagerAdapter {
+class LatexAdapter extends PagerAdapter {
     
-    public FeedbackAdapter(Feedback feedback, Activity activity) {
-        this.feedback = feedback;
+    public LatexAdapter(String[] latex, Activity activity) {
+        this.latex = latex;
         this.activity = activity;
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
-        final String latex = feedback.text[position];
+        final String latexString = latex[position];
         final WebView webView = new WebView(activity);
         final int scale = activity.getResources().getConfiguration().
             orientation == Configuration.ORIENTATION_LANDSCAPE ? 100 : 80;
@@ -638,16 +661,13 @@ class FeedbackAdapter extends PagerAdapter {
                     webView.evaluateJavascript("MathJax.Hub.Queue(['Typeset', MathJax.Hub]);", null);
             }
         });
-//        webView.clearCache(true);
-//        webView.destroyDrawingCache();
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setJavaScriptEnabled(true);
-//        webView.getSettings().setBuiltInZoomControls(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
             webView.getSettings().setDisplayZoomControls(false);
         webView.loadDataWithBaseURL("file:///android_asset/mathjax-svg",
-                String.format(HTML, scale, latex), "text/html", "utf-8", "");
+                String.format(HTML, scale, latexString), "text/html", "utf-8", "");
             
         container.addView(webView);
         return webView;
@@ -660,7 +680,7 @@ class FeedbackAdapter extends PagerAdapter {
 
     @Override
     public int getCount() {
-        return feedback.text.length;
+        return latex.length;
     }
 
     @Override
@@ -668,7 +688,7 @@ class FeedbackAdapter extends PagerAdapter {
         return container == object;
     }
     
-    private Feedback feedback;
+    private String[] latex;
     private Activity activity;
     
     private final String HTML = 

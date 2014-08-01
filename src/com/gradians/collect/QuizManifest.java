@@ -14,7 +14,6 @@ import org.json.simple.parser.JSONParser;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
-import android.util.Log;
 
 public class QuizManifest implements IConstants {
     
@@ -43,20 +42,13 @@ public class QuizManifest implements IConstants {
         for (Question q : questions) {
             question = questionByIdMap.get(q.getId());
             question.setPgMap(q.getPgMap());
-            question.setState(q.getState());
-            
-            pgMap.setProperty(q.getId(), q.getPgMap("-"));
-            sendState.setProperty(q.getId(), q.getSentState("-"));            
+            question.setSentState(q.getSentState());
+            question.setState(q.getState());            
+            stateMap.setProperty(q.getId(), q.toString());
         }
         
         for (Quij quiz : quizzes)
-            quiz.determineState();
-        
-        try {
-            commit();
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
+            quiz.determineState();        
     }
         
     public Quij[] getInboxItems() {
@@ -87,8 +79,7 @@ public class QuizManifest implements IConstants {
     }
     
     public void commit() throws Exception {
-        pgMap.store(new FileOutputStream(pgMapFile), null);
-        sendState.store(new FileOutputStream(sentStateFile), null);
+        stateMap.store(new FileOutputStream(stateFile), null);
     }
     
     private void parse(File manifests, String json) throws Exception {
@@ -104,18 +95,13 @@ public class QuizManifest implements IConstants {
         questionByIdMap = new HashMap<String, Question>();
         
         manifests.mkdir();
-        pgMapFile = new File(manifests, email.replace('@', '.') + ".pg"); 
-        pgMapFile.createNewFile(); // creates only if needed
-        sentStateFile = new File(manifests, email.replace('@', '.') + ".ss"); 
-        sentStateFile.createNewFile(); // creates only if needed
+        stateFile = new File(manifests, email.replace('@', '.'));
+        stateFile.createNewFile();
         
-        Properties pgMapPrev = new Properties();
-        pgMapPrev.load(new FileInputStream(pgMapFile));
-        Properties sentStatePrev = new Properties();
-        sentStatePrev.load(new FileInputStream(sentStateFile));
+        Properties lastState = new Properties();
+        lastState.load(new FileInputStream(stateFile));
         
-        pgMap = new Properties();
-        sendState = new Properties();
+        stateMap = new Properties();
         for (int i = 0; i < items.size(); i++) {
             JSONObject quizItem = (JSONObject) items.get(i);
             quizzes[i] = new Quij((
@@ -123,8 +109,7 @@ public class QuizManifest implements IConstants {
                 (String)quizItem.get(QUIZ_PATH_KEY), 
                 (Long)quizItem.get(QUIZ_ID_KEY),
                 ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue(),
-                (String)quizItem.get(QUIZ_LAYOUT_KEY),
-                (Long)quizItem.get(QUIZ_FDBK_KEY));
+                (String)quizItem.get(QUIZ_LAYOUT_KEY));
             
             JSONArray questions = (JSONArray)quizItem.get(QUESTIONS_KEY);
             for (int j = 0; j < questions.size(); j++) {
@@ -132,16 +117,21 @@ public class QuizManifest implements IConstants {
                 Question question = new Question((
                     (String)item.get(NAME_KEY)).replace("-", ""),
                     (String)item.get(ID_KEY),
-                    ((Long)item.get(SUBPARTS_COUNT_KEY)).shortValue(),
+                    (Long)item.get(QUESN_ID_KEY),
+                    (String)item.get(SBPRTS_ID_KEY),
                     (String)item.get(IMG_PATH_KEY),
                     ((Long)item.get(IMG_SPAN_KEY)).shortValue());
 
                 if (item.get(GR_ID_KEY) != null) {
-                    question.setExaminer(item.get(EXAMINER_KEY) == null ? 
-                        0 : ((Long)item.get(EXAMINER_KEY)).intValue());
                     question.setGRId((String)item.get(GR_ID_KEY));
                     question.setScanLocn((String)item.get(SCANS_KEY));
                     question.setOutOf(((Long)item.get(OUT_OF_KEY)).shortValue());
+                    question.setExaminer(item.get(EXAMINER_KEY) == null ? 
+                        0 : ((Long)item.get(EXAMINER_KEY)).intValue());
+                    question.setFdbkMarker(item.get(FDBK_MRKR_KEY) == null ? 
+                        0 : (Long)item.get(FDBK_MRKR_KEY));
+                    question.setHintMarker(item.get(HINT_MRKR_KEY) == null ? 
+                        0 : (Long)item.get(HINT_MRKR_KEY));
                     
                     boolean allPartsReceived = true;
                     for (String s : question.getScanLocn()) {
@@ -153,33 +143,33 @@ public class QuizManifest implements IConstants {
                     
                     if (!allPartsReceived) {
                         // check local state
-                        String pm = pgMapPrev.getProperty(question.getId());
-                        String ss = sentStatePrev.getProperty(question.getId());                        
-                        if (pm != null) {
-                            question.setPgMap(pm);
-                            question.setSentState(ss);
-                            if (!pm.contains("0")) question.setState(CAPTURED);
-                            if (!ss.contains("0")) question.setState(SENT);
-                        }
+                        String qsnState = lastState.getProperty(question.getId());
+                        if (qsnState != null) {
+                            String[] tokens = qsnState.split(",");
+                            
+                            if (!tokens[0].contains("0")) question.setState(CAPTURED);
+                            if (!tokens[1].contains("0")) question.setState(SENT);                            
+                            question.setPgMap(tokens[0]);
+                            question.setSentState(tokens[1]);
+                        }                        
                     } else {
-                        float marks = item.get(MARKS_KEY) == null ? -1f : ((Double)item.get(MARKS_KEY)).floatValue();
+                        float marks = item.get(MARKS_KEY) == null ? -1f : 
+                            ((Double)item.get(MARKS_KEY)).floatValue();
                         question.setState(marks < 0 ? RECEIVED : GRADED);
                         question.setMarks(marks);
-                    }                    
-                }                
+                    }
+                }
                 quizzes[i].add(question);
                 questionByIdMap.put(question.getId(), question);
             }
             quizzes[i].determineState();
-            if (quizzes[i].getState() > NOT_YET_BILLED) {
-                quizzes[i].updatePgMaps();
-            }
+            quizzes[i].updatePgMaps();
         }
     }
         
     private String name, email, token;
-    private File pgMapFile, sentStateFile;    
-    private Properties pgMap, sendState;
+    private File stateFile;
+    private Properties stateMap;
     
     private HashMap<String, Question> questionByIdMap;
     private Quij[] quizzes;
@@ -188,23 +178,23 @@ public class QuizManifest implements IConstants {
 
 class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     
-    public Quij(String name, String path, long id, int price, String layout, long fdbkMrkr) {
+    public Quij(String name, String path, long id, int price, String layout) {
         this.name = name;
         this.id = id;
         this.path = path;
         this.price = price;
         this.layout = layout;
-        this.fdbkMrkr = fdbkMrkr;
     }
     
     public void updatePgMaps() {
+        if (this.state == NOT_YET_BILLED) return;
+        
         Question q = null;
         int[] map = null;
         int page = 1;
         HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();
         for (int i = 0; i < this.size(); i++) {
             q = this.get(i);
-            // in case questionByIdMap are already captured/sent
             map = q.getPgMap();
             for (int k = 0; k < map.length; k++) {
                 if (page == map[k]) {
@@ -293,10 +283,6 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         return layout;
     }
     
-    public long getFdbkMrkr() {
-        return fdbkMrkr;
-    }
-
     public Question[] getQuestions() {
         return this.toArray(new Question[this.size()]);
     }
@@ -337,7 +323,6 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         dest.writeLong(id);
         dest.writeInt(state);
         dest.writeInt(price);
-        dest.writeLong(fdbkMrkr);
     }
     
     private Quij(Parcel in) {
@@ -345,7 +330,6 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         id = in.readLong();
         state = (short)in.readInt();
         price = in.readInt();
-        fdbkMrkr = in.readLong();
     }
     
     @Override
@@ -355,7 +339,7 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     
     private int price;
     private String name, path, layout;
-    private long id, fdbkMrkr;
+    private long id;
     private short state;
     
     private static final long serialVersionUID = 1L;
@@ -363,12 +347,15 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
 
 class Question implements Parcelable {
     
-    public Question(String name, String id, short subparts, String imgLocn, short span) {
+    public Question(String name, String id, long qsnId, String spId, String imgLocn, short span) {
         this.name = name;
         this.id = id;
+        this.qsnId = qsnId;
         this.imgLocn = imgLocn;
         this.imgSpan = span;
         
+        this.spId = spId.split(",");
+        int subparts = this.spId.length;
         this.grId = new int[subparts];
         this.pgMap = new int[subparts];
         this.scans = new String[subparts];
@@ -377,6 +364,14 @@ class Question implements Parcelable {
     
     public String getId() {
         return id;
+    }
+    
+    public long getQsnId() {
+        return qsnId;
+    }
+    
+    public String[] getSubpartId() {
+        return this.spId;
     }
     
     public int[] getGRId() {
@@ -445,6 +440,14 @@ class Question implements Parcelable {
     public int getExaminer() {
         return examiner;
     }
+    
+    public long getFdbkMarker() {
+        return fdbkMrkr;
+    }
+    
+    public long getHintMarker() {
+        return hintMrkr;
+    }
 
     public void setGRId(String grIds) {
         if (grIds != null) {
@@ -509,6 +512,14 @@ class Question implements Parcelable {
     public void setExaminer(int examiner) {
         this.examiner = examiner;
     }
+    
+    public void setFdbkMarker(long marker) {
+        this.fdbkMrkr = marker;        
+    }
+    
+    public void setHintMarker(long marker) {
+        this.hintMrkr = marker;
+    }
 
     @Override
     public int describeContents() {
@@ -534,6 +545,8 @@ class Question implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
         dest.writeString(id);
+        dest.writeLong(qsnId);
+        dest.writeStringArray(spId);
         dest.writeInt(state);
         dest.writeIntArray(pgMap);
         dest.writeBooleanArray(sentState);
@@ -548,6 +561,8 @@ class Question implements Parcelable {
     private Question(Parcel in) {
         name = in.readString();
         id = in.readString();
+        qsnId = in.readLong();
+        spId = in.createStringArray();
         state = (short)in.readInt();
         pgMap = in.createIntArray();
         sentState = in.createBooleanArray();
@@ -559,7 +574,15 @@ class Question implements Parcelable {
         scans = in.createStringArray();
     }
     
+    @Override
+    public String toString() {
+        return getPgMap("-") + ","
+            + getSentState("-");
+    }
+    
     private String name, id, imgLocn;
+    private long qsnId, hintMrkr, fdbkMrkr;
+    private String[] spId;
     private int[] grId;
     private String[] scans;
     private int[] pgMap;

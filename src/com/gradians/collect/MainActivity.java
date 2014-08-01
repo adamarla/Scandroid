@@ -1,7 +1,6 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 
 import android.app.Activity;
@@ -11,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -79,6 +79,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
                         questions[i] = (Question)parcels[i];
                     }
                     manifest.update(questions);
+                    manifest.commit();
                     setCounts(manifest);
                 } catch (Exception e) {
                     handleError("Oops, Flow activity request failed",
@@ -105,7 +106,9 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
                     handleError("Oops, Verify auth task failed", e.getMessage());
                 }
             } else {
-                initiateAuthActivity();
+                Toast.makeText(getApplicationContext(), 
+                    "Sorry, cannot refresh, no Internet access right now.", 
+                    Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -164,16 +167,13 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         if (token == null) {
             initiateAuthActivity();
         } else {
-            String urlString = String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token);
-            try {
-                peedee = ProgressDialog.show(this, "Initializing", "Please wait...");
-                peedee.setIndeterminate(true);
-                peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-                URL[] urls = { new URL(urlString) };
-                new HttpCallsAsyncTask(this, VERIFY_AUTH_TASK_RESULT_CODE).execute(urls);
-            } catch (Exception e) {
-                handleError("Auth Check Failed", e.getMessage());
-            }
+            peedee = ProgressDialog.show(this, "Initializing", "Please wait...");
+            peedee.setIndeterminate(true);
+            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+            Uri src = Uri.parse(String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token));
+            Download download = new Download(null, src, null);
+            new HttpCallsAsyncTask(this,
+                VERIFY_AUTH_TASK_RESULT_CODE).execute(new Download[] { download });
         }
     }
 

@@ -3,8 +3,6 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -105,61 +103,80 @@ public class ListActivity extends Activity implements OnItemClickListener,
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Quij quiz = (Quij)adapter.getItem(position);
-
-        mkdirs(String.valueOf(quiz.getId()));
-        recordFdbkMrkrs(quiz);
-        
-        DownloadMonitor dlm = new DownloadMonitor(this);
-        setUpDownloads(dlm, quiz);
         selectedQuizPosition = position;
-        
-        if (!dlm.start("Synchronizing Files", "Please wait...", this)) {
+
+        DownloadMonitor dlm = new DownloadMonitor(this);
+        HttpCallsAsyncTask hcat = new HttpCallsAsyncTask(null, 0);
+        setUpDownloads(dlm, hcat, quiz);
+        if (dlm.getCount() > 0) {
+            if (dlm.isNetworkAvailable()) {
+                dlm.start("Synchronizing Files", "Please wait...", this);
+            } else {
+                Toast.makeText(getApplicationContext(), 
+                    "Sorry, can't view the Quiz, no Internet at the moment", 
+                    Toast.LENGTH_LONG).show();
+            }
+        } else {
             launchFlowActivity(quiz);
-        }
+        }        
     }
     
-    private void launchFlowActivity(Quij quiz) {
-        Question[] questions = quiz.getQuestions();
-        Intent flowIntent = new Intent(this.getApplicationContext(), 
-            com.gradians.collect.FlowActivity.class);   
-        flowIntent.putExtra(TAG_ID, questions);
-        flowIntent.putExtra(TAG, quizDir.getPath());
-        flowIntent.putExtra(NAME_KEY, quiz.getName());
-        if (quiz.getState() == NOT_YET_BILLED)
-            flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
-        startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
-    }
-    
-    private void setUpDownloads(DownloadMonitor dlm, Quij quiz) {
+    private void setUpDownloads(DownloadMonitor dlm, HttpCallsAsyncTask hcat, Quij quiz) {
         String wsId = String.valueOf(quiz.getId());
+        
+        File quizDir = new File(studentDir, wsId); quizDir.mkdir();
+        String[] dirs = new String[] {
+            QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
+            FEEDBACK_DIR_NAME, UPLOAD_DIR_NAME, HINTS_DIR_NAME};
+        for (String dir : dirs)
+            (new File(quizDir, dir)).mkdir();
+        
+        File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
+        File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
+        File solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME);
+        File feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME);
+        File hintsDir = new File(quizDir, HINTS_DIR_NAME);
+        
+        Properties markers = new Properties();
+        File markerFile = new File(studentDir, "markers");
+        try {
+            markerFile.createNewFile();
+            markers.load(new FileInputStream(markerFile));
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+        ArrayList<Download> jsonReqs = new ArrayList<Download>();
         Question[] questions = quiz.getQuestions();
         for (Question question : questions) {
             Uri src, dest;
-            String id = question.getId();
-            String grId = question.getGRId("-");
-            File image = null, fdbk = null;            
+            File image = null;
             String imgLocn = question.getImgLocn();
             String[] scans = question.getScanLocn();
             int[] pageNos = question.getPgMap();
             boolean[] sentState = question.getSentState();
+            
+            long hintMarker, fdbkMarker;
+            String marker = (String)markers.get(question.getId());
+            hintMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[0]);
+            fdbkMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[1]);
+            
             switch (question.getState()) {
             case GRADED:
-                fdbk = new File(feedbackDir, id);
+                File fdbk = new File(feedbackDir, question.getId());
+                if (fdbkMarker < question.getFdbkMarker()) {
+                    fdbk.delete();
+                    fdbkMarker = question.getFdbkMarker();                    
+                }
                 if (!fdbk.exists()) {
+                    String grId = question.getGRId("-");
                     src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, grId));
-                    dest = Uri.fromFile(new File(feedbackDir, id));
-//                    dlm.add(id, src, dest);
-                    HttpCallsAsyncTask hcat = new HttpCallsAsyncTask(null, 0);
-                    hcat.setDestination(new String[] { (new File(dest.getPath())).toString() });
-                    try {
-                        hcat.execute(new URL[] { new URL(src.toString()) });
-                    } catch (Exception e) { 
-                        Log.e(TAG, e.getMessage());
-                    }
+                    dest = Uri.fromFile(fdbk);
+                    jsonReqs.add(new Download(null, src, dest));
                 }
             case RECEIVED:
                 for (short i = 0; i < question.getImgSpan(); i++) {
-                    image = new File(solutionsDir, id + "." + (i+1));
+                    image = new File(solutionsDir, question.getId() + "." + (i+1));
                     if (!image.exists()) {
                         src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, imgLocn, (i+1)));
                         dest = Uri.fromFile(image);
@@ -180,7 +197,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             case SENT:
                 for (int i = 0; i < scans.length; i++) {
                     if (scans[i].equals("") && question.getExaminer() != 0) {
-                        pageNos[i] = 0; // to be resent
+                        pageNos[i] = 0; // re-send
                         sentState[i] = false;
                         question.setState(DOWNLOADED);
                     }
@@ -190,7 +207,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 for (int i = 0; i < pageNos.length; i++) {
                     if (pageNos[i] != 0) {
                         image = new File(answersDir, wsId + "." + pageNos[i]);
-                        if (!image.exists()) {
+                        if (!image.exists()) { // recapture
                             pageNos[i] = 0;
                             question.setState(DOWNLOADED);
                         }
@@ -207,8 +224,36 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
                 if (question.getState() == WAITING)
                     question.setState(DOWNLOADED);
+                
+                File hint = new File(hintsDir, question.getId());
+                if (hintMarker < question.getHintMarker()) {
+                    hint.delete();
+                    hintMarker = question.getHintMarker();                    
+                }                
+                if (!hint.exists()) {
+                    src = Uri.parse(String.format(HINT_URL, WEB_APP_HOST_PORT, question.getQsnId()));
+                    dest = Uri.fromFile(hint);
+                    jsonReqs.add(new Download(null, src, dest));
+                }
             }
+            markers.put(question.getId(), hintMarker + "," + fdbkMarker);
         }
+        if (jsonReqs.size() > 0) {
+            hcat.execute(jsonReqs.toArray(new Download[jsonReqs.size()]));
+        }
+    }
+
+    private void launchFlowActivity(Quij quiz) {
+        File quizDir = new File(studentDir, String.valueOf(quiz.getId()));
+        Question[] questions = quiz.getQuestions();
+        Intent flowIntent = new Intent(this.getApplicationContext(), 
+            com.gradians.collect.FlowActivity.class);   
+        flowIntent.putExtra(TAG_ID, questions);
+        flowIntent.putExtra(TAG, quizDir.getPath());
+        flowIntent.putExtra(NAME_KEY, quiz.getName());
+        if (quiz.getState() == NOT_YET_BILLED)
+            flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
+        startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
 
     private void initialize(Parcelable[] quizItems, Parcelable[] qstnItems, String path) {
@@ -250,39 +295,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         lv.setOnItemClickListener(this);        
     }
     
-    private void mkdirs(String quizId) {
-        (quizDir = new File(studentDir, quizId)).mkdir();
-        (questionsDir = new File(quizDir, QUESTIONS_DIR_NAME)).mkdir();
-        (answersDir = new File(quizDir, ANSWERS_DIR_NAME)).mkdir();
-        (solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME)).mkdir();
-        (feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME)).mkdir();
-        (uploadsDir = new File(quizDir, UPLOAD_DIR_NAME)).mkdir();
-    }
-
-    private void recordFdbkMrkrs(Quij quiz) {
-        Properties fdbkMrkrs = new Properties();
-        try {
-            File fdbkMrkrsFile = new File(studentDir, "fdbkIds");
-            fdbkMrkrsFile.createNewFile(); // creates only if needed
-            fdbkMrkrs.load(new FileInputStream(fdbkMrkrsFile));
-            if (quiz.getState() < GRADED) return;
-            
-            String quizId = String.valueOf(quiz.getId());
-            long lastFdbkMrkr = Long.parseLong(fdbkMrkrs.getProperty(quizId, 
-                String.valueOf(0)));
-            if (lastFdbkMrkr < quiz.getFdbkMrkr()) {
-                File[] fdbkFiles = feedbackDir.listFiles();
-                for (File f : fdbkFiles) {
-                    f.delete();
-                }
-                fdbkMrkrs.setProperty(quizId, String.valueOf(quiz.getFdbkMrkr()));
-            }
-            fdbkMrkrs.store(new FileOutputStream(fdbkMrkrsFile), null);
-        } catch (Exception e) { 
-            handleError("Error during fdbkChk", e.getMessage());
-        }
-    }
-    
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
     }
@@ -291,15 +303,14 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private QuizListAdapter adapter;
     
     private int selectedQuizPosition;
-    private File 
-        studentDir, quizDir, questionsDir, answersDir, 
-        solutionsDir, feedbackDir, uploadsDir;
+    private File studentDir;
     ProgressDialog peedee;
 
     private final String 
         SOLN_URL = "http://%s/vault/%s/pg-%d.jpg",
         ANSR_URL = "http://%s/locker/%s",
         QUES_URL = "http://%s/vault/%s/notrim.jpg",
-        FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s";
+        FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s",
+        HINT_URL = "http://%s/tokens/view_hints?id=%s";
 
 }
