@@ -14,6 +14,8 @@ import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -42,12 +44,13 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         resultHandler = handler;
         activity.registerReceiver(this, downloadCompleteIntentFilter);
         dm = (DownloadManager)activity.getSystemService(Context.DOWNLOAD_SERVICE);
-        peedee = new ProgressDialog(activity);
+        peedee = new ProgressDialog(activity, R.style.RobotoDialogTitleStyle);
         peedee.setMessage(message);
         peedee.setIndeterminate(false);
         peedee.setMax(downloads.size());
         peedee.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         peedee.setOnDismissListener(this);
+        peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         peedee.show();
         
         DownloadManager.Request request = null;

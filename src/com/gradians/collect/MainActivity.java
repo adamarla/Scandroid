@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -167,9 +169,13 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         if (token == null) {
             initiateAuthActivity();
         } else {
-            peedee = ProgressDialog.show(this, "Initializing", "Please wait...");
+            peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
+            peedee.setTitle("Initializing");
+            peedee.setMessage("Please wait...");
             peedee.setIndeterminate(true);
             peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+            peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            peedee.show();
             Uri src = Uri.parse(String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token));
             Download download = new Download(null, src, null);
             new HttpCallsAsyncTask(this,

@@ -3,6 +3,7 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -95,7 +96,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         if (requestCode == DOWNLOAD_MONITOR_TASK_RESULT_CODE) {
             if (resultCode == RESULT_OK) {
                 Quij quiz = (Quij)adapter.getItem(selectedQuizPosition);
-                launchFlowActivity(quiz);
+                launchFlowActivity(quiz, true);
             }
         }
     }
@@ -113,11 +114,11 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 dlm.start("Synchronizing Files", "Please wait...", this);
             } else {
                 Toast.makeText(getApplicationContext(), 
-                    "Sorry, can't view the Quiz, no Internet at the moment", 
+                    "Sorry, no Internet connection", 
                     Toast.LENGTH_LONG).show();
             }
         } else {
-            launchFlowActivity(quiz);
+            launchFlowActivity(quiz, false);
         }        
     }
     
@@ -166,7 +167,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 File fdbk = new File(feedbackDir, question.getId());
                 if (fdbkMarker < question.getFdbkMarker()) {
                     fdbk.delete();
-                    fdbkMarker = question.getFdbkMarker();                    
+                    fdbkMarker = question.getFdbkMarker();
                 }
                 if (!fdbk.exists()) {
                     String grId = question.getGRId("-");
@@ -238,12 +239,19 @@ public class ListActivity extends Activity implements OnItemClickListener,
             }
             markers.put(question.getId(), hintMarker + "," + fdbkMarker);
         }
+        
+        try {
+            markers.store(new FileOutputStream(markerFile), null);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+        
         if (jsonReqs.size() > 0) {
             hcat.execute(jsonReqs.toArray(new Download[jsonReqs.size()]));
         }
     }
 
-    private void launchFlowActivity(Quij quiz) {
+    private void launchFlowActivity(Quij quiz, boolean firstTime) {
         File quizDir = new File(studentDir, String.valueOf(quiz.getId()));
         Question[] questions = quiz.getQuestions();
         Intent flowIntent = new Intent(this.getApplicationContext(), 
@@ -251,6 +259,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         flowIntent.putExtra(TAG_ID, questions);
         flowIntent.putExtra(TAG, quizDir.getPath());
         flowIntent.putExtra(NAME_KEY, quiz.getName());
+        flowIntent.putExtra(STATE_KEY, firstTime);
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);

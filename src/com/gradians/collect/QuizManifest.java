@@ -556,6 +556,8 @@ class Question implements Parcelable {
         dest.writeInt(imgSpan);
         dest.writeString(imgLocn);
         dest.writeStringArray(scans);
+        dest.writeLong(hintMrkr);
+        dest.writeLong(fdbkMrkr);
     }
     
     private Question(Parcel in) {
@@ -572,6 +574,8 @@ class Question implements Parcelable {
         imgSpan = (short)in.readInt();
         imgLocn = in.readString();
         scans = in.createStringArray();
+        hintMrkr = in.readLong();
+        fdbkMrkr = in.readLong();
     }
     
     @Override

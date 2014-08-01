@@ -166,6 +166,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     @Override
     protected void onPause() {
         releaseCamera();
+        releaseButtons();
         super.onPause();
     }
 
@@ -248,6 +249,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         PartButton pb = (PartButton)v;
         if (pb.isSent()) return;
         
+        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
         pb.setSelected(!pb.isSelected());
         if (pb.isCaptured()) {
             btnAction.setImageResource(R.drawable.ic_action_rotate_right);
@@ -255,7 +257,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
             int pg = this.partPgMap.get(pb.getTag());            
             // unselect other buttons
             PartButton other;
-            LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);
             for (int i = 0; i < llButtons.getChildCount(); i++) {
                 other = (PartButton)llButtons.getChildAt(i);
                 if (!other.isCaptured()) 
@@ -264,6 +265,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                     other.setSelected(false);
                 else
                     other.setSelected(pb.isSelected());
+                other.refreshDrawableState();
             }
             
             if (pb.isSelected()) {
@@ -281,22 +283,27 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
             }
         } else {
             btnAction.setImageResource(android.R.drawable.ic_menu_camera);
-            btnAction.setEnabled(pb.isSelected());
-            if (pb.isSelected()) {
+            
+            boolean anySelected = false;
+            PartButton other;
+            for (int i = 0; i < llButtons.getChildCount(); i++) {
+                other = (PartButton)llButtons.getChildAt(i);
+                if (other.isSelected()) {
+                    if (other.isCaptured()) {
+                        other.setSelected(false);
+                    } else {
+                        anySelected = true;
+                    }
+                }                
+                other.refreshDrawableState();
+            }            
+            if (anySelected) {
                 if (!cameraOn) {
                     cameraOn = true;
                     comandeerCamera();
-                    // unselect the "captured" buttons
-                    PartButton other;
-                    LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);
-                    for (int i = 0; i < llButtons.getChildCount(); i++) {
-                        other = (PartButton)llButtons.getChildAt(i);
-                        if (other.isCaptured()) {
-                            other.setSelected(false);
-                        }
-                    }
                 }
             }
+            btnAction.setEnabled(anySelected);
         }
     }
 
@@ -378,6 +385,13 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         btnAction.setImageResource(android.R.drawable.ic_menu_camera);
     }
     
+    private void releaseButtons() {
+        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
+        for (int i = 0; i < llButtons.getChildCount(); i++) {
+            llButtons.getChildAt(i).setSelected(false);            
+        }        
+    }
+    
     private void updateCounts() {
         int sentCount = 0, capturedCount = 0;
         PartButton btn;
@@ -410,9 +424,11 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
         if (params.getColorEffect() != null)
-            params.setColorEffect(Camera.Parameters.EFFECT_MONO);
+            params.setColorEffect(Camera.Parameters.EFFECT_WHITEBOARD);
         if (params.getFlashMode() != null)
             params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+        params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_SHADE);
+        params.setSceneMode(Camera.Parameters.SCENE_MODE_STEADYPHOTO);
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
         Size s = getOptimalSize(params);
@@ -422,14 +438,15 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
 
     private Size getOptimalSize(Parameters params) {
         Size s = null;
-        int delta, index = 0;
+        int delta = Integer.MAX_VALUE, index = 0;
         List<Size> availableSizes = camera.getParameters().getSupportedPictureSizes();
-        delta = Math.abs(PREFERRED_SIZE[0] - availableSizes.get(0).width);
         for (int i = 0; i < availableSizes.size(); i++) {
             s = availableSizes.get(i);
-            if ((Math.abs(PREFERRED_SIZE[0] - s.width) < delta) &&
+            if (s.width < PREFERRED_SIZE[0]) continue;
+            
+            if ((s.width - PREFERRED_SIZE[0]) <= delta &&
                 (s.width*3 == s.height * 4)) {
-                delta = Math.abs(PREFERRED_SIZE[0] - s.width);
+                delta = s.width - PREFERRED_SIZE[0];
                 index = i;
             }
         }
@@ -450,7 +467,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     private ProgressDialog peedee;
     
     private final int PORTRAIT = 90;
-    private final int[] PREFERRED_SIZE = {1280, 960};
+    private final int[] PREFERRED_SIZE = {1600, 1200};
 }
 
 class PartButton extends Button {

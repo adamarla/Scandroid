@@ -6,7 +6,6 @@
     -->
     <style name="AppBaseTheme" parent="android:Theme.Holo">
         <!-- API 11 theme customizations can go here. -->
-        <item name="titleTextStyle">@style/RobotoTitleTextStyle</item>    
     </style>
 
 </resources>

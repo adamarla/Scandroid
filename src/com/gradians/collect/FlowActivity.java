@@ -19,11 +19,16 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,6 +42,7 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -78,6 +84,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
             quizDir = new File(getIntent().getStringExtra(TAG));
             vpPreview.setCurrentItem(0);
+            if (getIntent().getBooleanExtra(STATE_KEY, false)) 
+                displayInstruction();
         } else {
             title = savedInstanceState.getString(NAME_KEY);
             price = savedInstanceState.getInt(QUIZ_PRICE_KEY, 0);
@@ -104,9 +112,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         outState.putInt("fdbkIdx", fdbkIdx);
         outState.putBoolean("fdbkShown", fdbkShown);
         outState.putBoolean("hintShown", hintShown);
-//        if (!adapter.getFlipped() && feedback[vpPreview.getCurrentItem()] != null) {
-//            outState.putInt("fdbkPage", fdbkIdx);
-//        }
         super.onSaveInstanceState(outState);
     }
     
@@ -177,7 +182,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 }
             } else {
                 Toast.makeText(getApplicationContext(), 
-                    "Sorry, could not conclude purchase, no Internet connectivity", 
+                    "Sorry, no Internet connection", 
                     Toast.LENGTH_LONG).show();
             }
         }
@@ -207,7 +212,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         adjustView(nextItem, fdbkIdx);
     }
         
-    public void flip(View view) {
+    public void action(View view) {
         int currentIndex = vpPreview.getCurrentItem();
         Question question = adapter.getQuestions()[currentIndex];
         if (question.getState() > DOWNLOADED) {            
@@ -221,23 +226,27 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 Hint h = hints[currentIndex];
                 for (int i = 0; i < h.subparts; i++) {
                     if (h.getText(i) != null) {
-                        partsWithHints.add((char)((int)'a'+i) + ")");
+                        partsWithHints.add("Part " + (char)((int)'A'+i));
                     }
                 }
                 if (h.subparts > 1 && partsWithHints.size() > 1) {
                     final int qsnIdx = currentIndex;
-                    final String[] parts = partsWithHints.toArray(new String[partsWithHints.size()]);
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Hint(s) for part..")
+                    final String[] parts = partsWithHints.toArray(
+                        new String[partsWithHints.size()]);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this, 
+                        R.style.RobotoDialogTitleStyle);
+                    builder.setTitle("Show hints for...")
                         .setItems(parts, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                int partIdx = (int)parts[which].charAt(0)-(int)'a';
+                                int partIdx = (int)parts[which].charAt(5)-(int)'A';
                                 renderHint(qsnIdx, partIdx);
                             }
                     });
-                    builder.show();
+                    builder.show().getWindow().
+                        setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
                 } else if (h.subparts > 1 && partsWithHints.size() == 1) {
-                    renderHint(currentIndex, ((int)partsWithHints.get(0).charAt(0)-(int)'a'));
+                    renderHint(currentIndex, 
+                        ((int)partsWithHints.get(0).charAt(0)-(int)'a'));
                 } else if (partsWithHints.size() == 1) {
                     renderHint(currentIndex, 0);
                 }
@@ -337,9 +346,30 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
         return paths;
     }
+    
+    private void displayInstruction() {
+        ImageView iv = new ImageView(this);
+        AssetManager assetManager = getAssets();
+        Bitmap bitmap = null;
+        try {
+            bitmap = BitmapFactory.decodeStream(assetManager.open("hwi.jpg"));
+        } catch (Exception e) { }
+        iv.setImageBitmap(bitmap);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
+            R.style.RobotoDialogTitleStyle);
+        builder.setTitle("Instruction").setView(iv).setCancelable(true);
+        builder.setPositiveButton("OK", null);
+        builder.show().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+//        Dialog dialog = new Dialog(this, 
+//            R.style.RobotoDialogTitleStyle);
+//        dialog.setTitle("Instruction");
+//        dialog.setContentView(iv);
+//        dialog.setCancelable(true);
+//        dialog.show();        
+    }
 
     private void adjustView(int position, int fdbkPosn) {
-        Button btnFlip = (Button)this.findViewById(R.id.btnFlip);
+        ActionButton btnAction = (ActionButton)this.findViewById(R.id.btnAction);
         Button btnLeft = (Button)this.findViewById(R.id.btnLeft);
         Button btnRight = (Button)this.findViewById(R.id.btnRight);
         Button btnCamera = (Button)this.findViewById(R.id.btnCamera);
@@ -354,19 +384,17 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
 
         btnCamera.setEnabled(!nothingToCapture(questions));
         btnUpload.setEnabled(!nothingToUpload(questions));
-        btnFlip.setEnabled(true);
+        btnAction.setEnabled(true);
         
         Question q = questions[position];
+        btnAction.setIsCaptured(q.getState() > DOWNLOADED);
+        btnAction.setIsSent(q.getState() > CAPTURED);
         ((TextView)findViewById(R.id.tvName)).setText(q.getName());
         if (adapter.getFlipped()) {
             if (q.getState() > DOWNLOADED) {
-                btnFlip.setText("Response");
+                btnAction.setText("Response");
             } else {
-                btnFlip.setText("Question");
-//                btnLeft.setEnabled(false);
-//                btnRight.setEnabled(false);
-//                btnCamera.setEnabled(false);
-//                btnUpload.setEnabled(false);
+                btnAction.setText("Question");
             }
             
             if (q.getState() == GRADED) {
@@ -374,21 +402,18 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             }
         } else {
             if (q.getState() > SENT) {
-                btnFlip.setText("Solution");
+                btnAction.setText("Solution");
             } else if (q.getState() > DOWNLOADED) {
-                btnFlip.setText("Question");
+                btnAction.setText("Question");
             } else {
-                btnFlip.setText("Hint");
-                btnFlip.setEnabled(hints[position] != null);
-//                btnLeft.setEnabled(true);
-//                btnRight.setEnabled(true);
-//                btnCamera.setEnabled(!nothingToCapture(questions));
-//                btnUpload.setEnabled(!nothingToUpload(questions));
+                btnAction.setText("Hint");
+                btnAction.setEnabled(hints[position] != null);
             }
             
             if (q.getState() == GRADED) {
                 renderFeedback(position, fdbkPosn);
-                tvMarks.setText(String.format("%2.1f/%1d", q.getMarks(), q.getOutOf()));
+                tvMarks.setText(String.format("%2.1f/%1d", 
+                    q.getMarks(), q.getOutOf()));
             } else {
                 unrenderFeedback(position);
                 tvMarks.setText("");
@@ -397,7 +422,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         if (hintShown) unrenderHint();
         
         btnLeft.refreshDrawableState();
-        btnFlip.refreshDrawableState();
+        btnAction.refreshDrawableState();
         btnUpload.refreshDrawableState();
         btnCamera.refreshDrawableState();
         btnRight.refreshDrawableState();
@@ -655,10 +680,11 @@ class LatexAdapter extends PagerAdapter {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
                     webView.loadUrl("javascript:MathJax.Hub.Queue(['Typeset', MathJax.Hub]);");
-                else
+                } else {
                     webView.evaluateJavascript("MathJax.Hub.Queue(['Typeset', MathJax.Hub]);", null);
+                }
             }
         });
         webView.setBackgroundColor(Color.TRANSPARENT);
@@ -667,7 +693,7 @@ class LatexAdapter extends PagerAdapter {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
             webView.getSettings().setDisplayZoomControls(false);
         webView.loadDataWithBaseURL("file:///android_asset/mathjax-svg",
-                String.format(HTML, scale, latexString), "text/html", "utf-8", "");
+            String.format(HTML, scale, latexString), "text/html", "utf-8", null);
             
         container.addView(webView);
         return webView;
@@ -696,6 +722,9 @@ class LatexAdapter extends PagerAdapter {
         + "<script type='text/x-mathjax-config'>"
         +   "MathJax.Hub.Config({ "
         +     "showMathMenu: false,"
+        +     "jax: [\"input/TeX\", \"output/SVG\"],"
+        +     "extensions: [\"tex2jax.js\",\"mml2jax.js\",\"MathMenu.js\",\"MathZoom.js\"],"
+        +     "TeX: { extensions: [\"AMSmath.js\", \"AMSsymbols.js\", \"noErrors.js\", \"noUndefined.js\"] }," 
         +     "SVG: { "
         +       "scale: %d,"
         +       "font: \"TeX\", "
@@ -713,8 +742,46 @@ class LatexAdapter extends PagerAdapter {
         +   "VARIANT[\"normal\"].fonts.unshift(\"MathJax_SansSerif\");"
         + "});"
         + "</script>"
-        + "<script type='text/javascript' src='file:///android_asset/mathjax-svg/MathJax.js?config=TeX-AMS-MML_SVG'></script>"
+        + "<script type='text/javascript' src='file:///android_asset/mathjax-svg/MathJax.js'></script>"
         + "</head><body><span id='math' style='position: absolute; color:white;'>\\[%s\\]</span></body></html>";
        
 }
+
+class ActionButton extends Button {
+    
+    public ActionButton(Context context) {
+        super(context);
+    }
+    
+    public ActionButton(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+    
+    @Override
+    protected int[] onCreateDrawableState(int extraSpace) {
+        final int[] drawableState = super.onCreateDrawableState(extraSpace + 2);
+        if (captured) {
+            mergeDrawableStates(drawableState, STATE_CAPTURED);
+        }
+        if (sent) {
+            mergeDrawableStates(drawableState, STATE_SENT);
+        }
+        return drawableState;
+    }
+    
+    public void setIsCaptured(boolean b) { captured = b; }
+    public void setIsSent(boolean b) { sent = b; }
+    
+    public boolean isCaptured() { return captured; }
+    public boolean isSent() { return sent; }
+    
+    private boolean captured = false;
+    private boolean sent = false;    
+    
+    private static final int[] STATE_CAPTURED = {R.attr.state_captured};
+    private static final int[] STATE_SENT = {R.attr.state_sent};
+    
+}
+
+
 

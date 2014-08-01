@@ -11,7 +11,6 @@
             res/values-vXX/styles.xml, while customizations related to
             backward-compatibility can go here.
         -->
-        <item name="titleTextStyle">@style/RobotoTitleTextStyle</item>    
     </style>
 
     <!-- Application theme. -->
@@ -20,22 +19,40 @@
         <item name="android:textViewStyle">@style/RobotoTextViewStyle</item>
         <item name="android:buttonStyle">@style/RobotoButtonStyle</item>
         <item name="android:editTextStyle">@style/RobotoEditTextStyle</item>
+        <item name="android:actionBarStyle">@style/RobotoActionBar</item>
+                
+        <!-- Support library compatibility -->
+        <item name="actionBarStyle">@style/RobotoActionBar</item>
+    </style>
+    
+    <style name="RobotoActionBar" parent="@style/Widget.AppCompat.ActionBar">
+        <item name="android:titleTextStyle">@style/RobotoTitleTextStyle</item>
+        
+        <!-- Support library compatibility -->
+        <item name="titleTextStyle">@style/RobotoTitleTextStyle</item>
     </style>
     
 	<style name="RobotoTextViewStyle" parent="android:Widget.TextView">
-	    <item name="android:fontFamily">sans-serif-condensed</item>
+	    <item name="android:fontFamily">@string/default_font</item>
 	</style>
 	<style name="RobotoButtonStyle" parent="android:Widget.Holo.Button">
-	    <item name="android:fontFamily">sans-serif-condensed</item>
+	    <item name="android:fontFamily">@string/default_font</item>
 	</style>
 	<style name="RobotoEditTextStyle" parent="android:Widget.EditText">
-        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:fontFamily">@string/default_font</item>
 	</style>
     <style name="RobotoTitleTextStyle" 
            parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">
-        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:fontFamily">@string/default_font</item>
     </style>
-			
+    <style name="RobotoDialogTitleStyle" parent="@android:style/Theme.Holo.Dialog">
+        <item name="android:fontFamily">@string/default_font</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>   
+    </style>    
+    <string name="default_font">sans-serif-condensed</string>
+    			
     <style name="LoginFormContainer">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
