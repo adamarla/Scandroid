@@ -19,7 +19,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -347,27 +346,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         return paths;
     }
     
-    private void displayInstruction() {
-        ImageView iv = new ImageView(this);
-        AssetManager assetManager = getAssets();
-        Bitmap bitmap = null;
-        try {
-            bitmap = BitmapFactory.decodeStream(assetManager.open("hwi.jpg"));
-        } catch (Exception e) { }
-        iv.setImageBitmap(bitmap);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-            R.style.RobotoDialogTitleStyle);
-        builder.setTitle("Instruction").setView(iv).setCancelable(true);
-        builder.setPositiveButton("OK", null);
-        builder.show().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-//        Dialog dialog = new Dialog(this, 
-//            R.style.RobotoDialogTitleStyle);
-//        dialog.setTitle("Instruction");
-//        dialog.setContentView(iv);
-//        dialog.setCancelable(true);
-//        dialog.show();        
-    }
-
     private void adjustView(int position, int fdbkPosn) {
         ActionButton btnAction = (ActionButton)this.findViewById(R.id.btnAction);
         Button btnLeft = (Button)this.findViewById(R.id.btnLeft);
@@ -418,7 +396,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 unrenderFeedback(position);
                 tvMarks.setText("");
             }
-        }        
+        }
+        if (q.getState() == DOWNLOADED) findViewById(R.id.tvInstruction).setVisibility(View.VISIBLE);
         if (hintShown) unrenderHint();
         
         btnLeft.refreshDrawableState();
@@ -486,6 +465,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpHints.setOffscreenPageLimit(3);
         vpHints.setAdapter(hintsAdapter);
         vpHints.setVisibility(View.VISIBLE);
+        findViewById(R.id.tvInstruction).setVisibility(View.INVISIBLE);
         hintShown = true;
         
         //Bind the circle indicator to the adapter
@@ -500,6 +480,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         hintShown = false;
         vpHints.setVisibility(View.INVISIBLE);
         hintsIndicator.setVisibility(View.INVISIBLE);
+        findViewById(R.id.tvInstruction).setVisibility(View.VISIBLE);
     }
     
     private void loadHints(File quizDir) {
@@ -573,6 +554,21 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             BILL_WORKSHEET_TASK_RESULT_CODE).execute(new Download[] { download });
     }
     
+    private void displayInstruction() {
+        ImageView iv = new ImageView(this);
+        AssetManager assetManager = getAssets();
+        Bitmap bitmap = null;
+        try {
+            bitmap = BitmapFactory.decodeStream(assetManager.open("hwi.jpg"));
+        } catch (Exception e) { }
+        iv.setImageBitmap(bitmap);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
+            R.style.RobotoDialogTitleStyle);
+        builder.setTitle("Instruction").setView(iv).setCancelable(true);
+        builder.setPositiveButton("OK", null);
+        builder.show().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+    }
+
     private String[] getQuestion(Question question) {
         File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
         String[] paths = new String[] 

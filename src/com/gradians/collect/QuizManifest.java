@@ -43,12 +43,12 @@ public class QuizManifest implements IConstants {
             question = questionByIdMap.get(q.getId());
             question.setPgMap(q.getPgMap());
             question.setSentState(q.getSentState());
-            question.setState(q.getState());            
+            question.setState(q.getState());
             stateMap.setProperty(q.getId(), q.toString());
         }
         
         for (Quij quiz : quizzes)
-            quiz.determineState();        
+            quiz.determineState();
     }
         
     public Quij[] getInboxItems() {

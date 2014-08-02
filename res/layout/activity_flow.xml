@@ -25,7 +25,7 @@
             android:layout_height="match_parent"
             android:layout_width="0dp"
             android:typeface="sans"
-            android:background="@drawable/gray_background"
+            android:background="@color/gray"
             android:textColor="@color/white"
             android:gravity="center"/>
         
@@ -36,7 +36,7 @@
             android:layout_width="0dp"
             android:layout_marginLeft="2dp"
             android:layout_marginRight="2dp"
-            android:background="@drawable/gray_background"
+            android:background="@color/gray"
             android:textColor="@color/white"
             android:gravity="center" />
             
@@ -47,7 +47,7 @@
             android:layout_width="0dp"
             android:contentDescription="@string/button"
             android:onClick="showHide"
-            android:background="@drawable/blue_background"
+            android:background="@color/blue"
             android:gravity="center"
             android:src="@android:drawable/ic_menu_more"/>
         
@@ -59,7 +59,7 @@
         android:layout_height="60dp"
         android:layout_marginTop="2dp"
         android:layout_below="@id/llTopBar"
-        android:background="@drawable/gray_background"
+        android:background="@color/gray"
         android:gravity="center"/>
     
     <com.viewpagerindicator.CirclePageIndicator
@@ -78,7 +78,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="64dp"
         android:visibility="invisible"
-        android:background="@drawable/gray_background"
+        android:background="@color/gray"
         android:gravity="center"/>
             
     <com.viewpagerindicator.CirclePageIndicator
@@ -89,7 +89,20 @@
         android:layout_marginTop="4dp"
         app:fillColor="@color/orange"
         android:background="@null"/>
-        
+    
+    <TextView
+        android:id="@+id/tvInstruction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="64dp"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        android:text="@string/instruction"
+        android:background="@drawable/gray_background"/>
+    
     <LinearLayout
         android:id="@+id/llBtnBar"
         android:orientation="horizontal"

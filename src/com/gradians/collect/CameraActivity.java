@@ -424,10 +424,10 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
         if (params.getColorEffect() != null)
-            params.setColorEffect(Camera.Parameters.EFFECT_WHITEBOARD);
+            params.setColorEffect(Camera.Parameters.EFFECT_MONO);
         if (params.getFlashMode() != null)
             params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-        params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_SHADE);
+        params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_TWILIGHT);
         params.setSceneMode(Camera.Parameters.SCENE_MODE_STEADYPHOTO);
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
