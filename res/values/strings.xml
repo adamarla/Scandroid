@@ -20,6 +20,6 @@
     <string name="action_sign_refresh">Refresh</string>
     <string name="action_sign_help">Help</string>
     <string name="action_sign_sign_out">Sign Out</string>
-    <string name="instruction">Specify Question number in your answer. E.g. Q.1, Q.3(b) etc.\n Do not write the Question text.</string>
+    <string name="instruction">Specify question number in your answer. E.g. Q.1, Q.3(b) etc.\n No need to re-write question text.</string>
     
 </resources>

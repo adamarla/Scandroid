@@ -22,10 +22,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.AssetManager;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -41,7 +38,6 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -83,8 +79,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
             quizDir = new File(getIntent().getStringExtra(TAG));
             vpPreview.setCurrentItem(0);
-            if (getIntent().getBooleanExtra(STATE_KEY, false)) 
-                displayInstruction();
         } else {
             title = savedInstanceState.getString(NAME_KEY);
             price = savedInstanceState.getInt(QUIZ_PRICE_KEY, 0);
@@ -260,9 +254,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 btnBar.getChildAt(i).getVisibility() == View.INVISIBLE ?
                         View.VISIBLE : View.INVISIBLE);
         }
-        View tvInstruction = findViewById(R.id.tvInstruction);
-        tvInstruction.setVisibility(tvInstruction.getVisibility() == View.INVISIBLE ?
-            View.VISIBLE : View.INVISIBLE);
+        Question q = adapter.getQuestions()[vpPreview.getCurrentItem()];
         if (fdbkShown) {
             vpFdbk.setVisibility(vpFdbk.getVisibility() == View.INVISIBLE ?
                 View.VISIBLE : View.INVISIBLE);
@@ -272,6 +264,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             vpHints.setVisibility(vpHints.getVisibility() == View.INVISIBLE ?
                 View.VISIBLE : View.INVISIBLE);
             hintsIndicator.setVisibility(hintsIndicator.getVisibility() == View.INVISIBLE ?
+                View.VISIBLE : View.INVISIBLE);
+        } else if (q.getState() == DOWNLOADED) {
+            View tvInstruction = findViewById(R.id.tvInstruction);
+            tvInstruction.setVisibility(tvInstruction.getVisibility() == View.INVISIBLE ?
                 View.VISIBLE : View.INVISIBLE);
         }
     }
@@ -561,21 +557,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             BILL_WORKSHEET_TASK_RESULT_CODE).execute(new Download[] { download });
     }
     
-    private void displayInstruction() {
-        ImageView iv = new ImageView(this);
-        AssetManager assetManager = getAssets();
-        Bitmap bitmap = null;
-        try {
-            bitmap = BitmapFactory.decodeStream(assetManager.open("hwi.jpg"));
-        } catch (Exception e) { }
-        iv.setImageBitmap(bitmap);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-            R.style.RobotoDialogTitleStyle);
-        builder.setTitle("Instruction").setView(iv).setCancelable(true);
-        builder.setPositiveButton("OK", null);
-        builder.show().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-    }
-
     private String[] getQuestion(Question question) {
         File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
         String[] paths = new String[] 
