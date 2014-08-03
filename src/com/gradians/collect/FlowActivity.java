@@ -358,9 +358,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             questions[position-1].getName());
         btnRight.setText(position == questions.length-1 ? questions[0].getName():
             questions[position+1].getName());
+        
+        boolean somethingToCapture = !nothingToCapture(questions);
+        boolean somethingToUpload = !nothingToUpload(questions);
 
-        btnCamera.setEnabled(!nothingToCapture(questions));
-        btnUpload.setEnabled(!nothingToUpload(questions));
+        btnCamera.setEnabled(somethingToCapture || somethingToUpload);
+        btnUpload.setEnabled(somethingToUpload);
         btnAction.setEnabled(true);
         
         Question q = questions[position];
