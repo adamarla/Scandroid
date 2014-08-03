@@ -89,19 +89,74 @@
         android:layout_marginTop="4dp"
         app:fillColor="@color/orange"
         android:background="@null"/>
-    
-    <TextView
-        android:id="@+id/tvInstruction"
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:id="@+id/llInstruction"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="64dp"
         android:layout_centerHorizontal="true"
-        android:gravity="center"
-        android:textSize="12sp"
-        android:textColor="@color/white"
-        android:text="@string/instruction"
-        android:background="@drawable/gray_background"/>
+        android:layout_marginBottom="64dp"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="2dp"
+        android:baselineAligned="false"
+        android:background="@drawable/gray_background">
+        
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            
+            <TextView
+                android:id="@+id/tvInstruction11"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="11sp"         
+                android:textColor="@color/white"
+                android:text="@string/instruction11"/>
+            
+            <TextView
+                android:id="@+id/tvInstruction12"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="11sp"
+                android:textColor="@color/white"
+                android:text="@string/instruction12"/>
+        
+        
+        </LinearLayout>
+        
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            
+            <TextView
+                android:id="@+id/tvInstruction21"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="11sp"         
+                android:textColor="@color/white"
+                android:text="@string/instruction21"/>
+            
+            <TextView
+                android:id="@+id/tvInstruction22"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="11sp"
+                android:textColor="@color/orange"
+                android:text="@string/instruction22"/>
+        
+        </LinearLayout>
+        
+	</LinearLayout>
     
     <LinearLayout
         android:id="@+id/llBtnBar"

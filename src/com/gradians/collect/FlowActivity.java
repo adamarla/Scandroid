@@ -266,9 +266,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             hintsIndicator.setVisibility(hintsIndicator.getVisibility() == View.INVISIBLE ?
                 View.VISIBLE : View.INVISIBLE);
         } else if (q.getState() == DOWNLOADED) {
-            View tvInstruction = findViewById(R.id.tvInstruction);
-            tvInstruction.setVisibility(tvInstruction.getVisibility() == View.INVISIBLE ?
-                View.VISIBLE : View.INVISIBLE);
+            ViewGroup instructionBar = (ViewGroup)findViewById(R.id.llInstruction);
+            instructionBar.setVisibility(instructionBar.getVisibility() == View.INVISIBLE ?
+                    View.VISIBLE : View.INVISIBLE);
+//            for (int i = 0; i < instructionBar.getChildCount(); i++) {
+//                instructionBar.getChildAt(i).setVisibility(
+//                    instructionBar.getChildAt(i).getVisibility() == View.INVISIBLE ?
+//                            View.VISIBLE : View.INVISIBLE);
+//            }
         }
     }
     
@@ -326,13 +331,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     public String[] getPaths(Question question, boolean flipped) {
-        String[] paths;
+        String[] paths = null;
         if (flipped) {
             if (question.getState() > SENT) {
                 paths = getSolution(question);
             } else if (question.getState() == DOWNLOADED) {
-                paths = new String[] { "Instruction" };
-            } else {
                 paths = getQuestion(question);
             }
         } else {
@@ -399,10 +402,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 tvMarks.setText("");
             }
         }
-        if (q.getState() == DOWNLOADED)
-            findViewById(R.id.tvInstruction).setVisibility(View.VISIBLE);
-        else
-            findViewById(R.id.tvInstruction).setVisibility(View.INVISIBLE);
+        int visibility = (q.getState() == DOWNLOADED ? View.VISIBLE : View.INVISIBLE);
+        findViewById(R.id.llInstruction).setVisibility(visibility);
         
         if (hintShown) unrenderHint();
         
@@ -471,7 +472,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpHints.setOffscreenPageLimit(3);
         vpHints.setAdapter(hintsAdapter);
         vpHints.setVisibility(View.VISIBLE);
-        findViewById(R.id.tvInstruction).setVisibility(View.INVISIBLE);
+        findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
         hintShown = true;
         
         //Bind the circle indicator to the adapter
@@ -486,7 +487,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         hintShown = false;
         vpHints.setVisibility(View.INVISIBLE);
         hintsIndicator.setVisibility(View.INVISIBLE);
-        findViewById(R.id.tvInstruction).setVisibility(View.VISIBLE);
+        findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
     }
     
     private void loadHints(File quizDir) {

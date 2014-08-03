@@ -20,6 +20,9 @@
     <string name="action_sign_refresh">Refresh</string>
     <string name="action_sign_help">Help</string>
     <string name="action_sign_sign_out">Sign Out</string>
-    <string name="instruction">Specify question number in your answer. E.g. Q.1, Q.3(b) etc.\n No need to re-write question text.</string>
+    <string name="instruction11">Restrict answer to single page</string>
+    <string name="instruction12">Specify the question number</string>
+    <string name="instruction21">Write using dark ink</string>
+    <string name="instruction22">Do not copy the question text</string>
     
 </resources>
