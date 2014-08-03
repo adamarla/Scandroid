@@ -259,7 +259,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             btnBar.getChildAt(i).setVisibility(
                 btnBar.getChildAt(i).getVisibility() == View.INVISIBLE ?
                         View.VISIBLE : View.INVISIBLE);
-        }        
+        }
+        View tvInstruction = findViewById(R.id.tvInstruction);
+        tvInstruction.setVisibility(tvInstruction.getVisibility() == View.INVISIBLE ?
+            View.VISIBLE : View.INVISIBLE);
         if (fdbkShown) {
             vpFdbk.setVisibility(vpFdbk.getVisibility() == View.INVISIBLE ?
                 View.VISIBLE : View.INVISIBLE);
@@ -397,7 +400,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 tvMarks.setText("");
             }
         }
-        if (q.getState() == DOWNLOADED) findViewById(R.id.tvInstruction).setVisibility(View.VISIBLE);
+        if (q.getState() == DOWNLOADED)
+            findViewById(R.id.tvInstruction).setVisibility(View.VISIBLE);
+        else
+            findViewById(R.id.tvInstruction).setVisibility(View.INVISIBLE);
+        
         if (hintShown) unrenderHint();
         
         btnLeft.refreshDrawableState();
