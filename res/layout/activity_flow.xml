@@ -98,8 +98,8 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="64dp"
-        android:layout_marginLeft="2dp"
-        android:layout_marginRight="2dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginRight="4dp"
         android:baselineAligned="false"
         android:background="@drawable/gray_background">
         
@@ -168,32 +168,34 @@
         android:layout_marginLeft="2dp"
         android:layout_marginRight="2dp">
         
-        <Button android:id="@+id/btnLeft" 
-            android:layout_weight="1"
-            android:layout_width="0dp" 
-            android:layout_height="match_parent" 
-            android:contentDescription="@string/button" 
-            android:onClick="page"
-            android:gravity="center"
-            android:textColor="@color/white"
-            android:textSize="@dimen/small_font_size"
-            android:background="@drawable/btn_left_selector" 
-            android:drawableTop="@drawable/ic_action_back" />
-        
-        <com.gradians.collect.ActionButton
-            android:id="@+id/btnAction"
+        <Button
+            android:id="@+id/btnFlip"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginLeft="2dp" 
             android:contentDescription="@string/button"
-            android:onClick="action"
+            android:onClick="flip"
             android:textColor="@color/white"
             android:textSize="@dimen/small_font_size" 
             android:background="@drawable/btn_generic_selector"
             android:gravity="center"
-            android:drawableTop="@drawable/btn_action_selector"/>
+            android:drawableTop="@drawable/ic_action_chat"/>
     	        
+        <Button
+            android:id="@+id/btnHint"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="2dp" 
+            android:contentDescription="@string/button"
+            android:onClick="toggleHint"
+            android:textColor="@color/white"
+            android:textSize="@dimen/small_font_size" 
+            android:background="@drawable/btn_generic_selector"
+            android:gravity="center"
+            android:drawableTop="@drawable/help"/>
+                
         <Button
             android:id="@+id/btnUpload"
             android:layout_weight="1"
@@ -225,19 +227,6 @@
             android:onClick="launchCameraActivity"
             android:drawableTop="@drawable/ic_action_camera"/>
 
-        <Button 
-            android:id="@+id/btnRight" 
-            android:layout_weight="1" 
-            android:layout_width="0dp" 
-            android:layout_height="match_parent" 
-            android:contentDescription="@string/button" 
-            android:onClick="page" 
-            android:textColor="@color/white"
-            android:textSize="@dimen/small_font_size"
-            android:gravity="center" 
-            android:background="@drawable/btn_right_selector" 
-            android:drawableTop="@drawable/ic_action_forward" />
-        
 	</LinearLayout>
 	
 </RelativeLayout>

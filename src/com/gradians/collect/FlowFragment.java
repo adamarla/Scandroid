@@ -16,11 +16,13 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 import android.widget.ScrollView;
 
 public class FlowFragment extends Fragment implements IConstants {
@@ -55,11 +57,18 @@ public class FlowFragment extends Fragment implements IConstants {
         
         FdbkView fdbkView = null;
         LinearLayout llPreview = (LinearLayout)rootView.findViewById(R.id.llPreview);
+        llPreview.setBackgroundColor(getResources().
+            getColor(flipped ? R.color.white : R.color.gray));
         Bitmap b = null;
         for (int i = 0; i < paths.length; i++) {
             fdbkView = new FdbkView(getActivity().getApplicationContext());
+            fdbkView.setPadding(0, 0, 0, 0);
             if (i == page) fdbkView.setPosn(xPosn, yPosn);
             b = setImage(fdbkView, paths[i]);
+            LayoutParams lp = new LayoutParams(
+                LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+            lp.gravity = Gravity.TOP; lp.topMargin = -70; lp.bottomMargin = -70;
+            fdbkView.setLayoutParams(lp);
             llPreview.addView(fdbkView);
         }
         
