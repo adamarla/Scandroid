@@ -8,21 +8,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
 import android.graphics.ImageFormat;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MenuItem;
@@ -41,7 +35,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-public class CameraActivity extends Activity implements ITaskResult, IConstants, OnClickListener {
+public class CameraActivity extends Activity implements IConstants, OnClickListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,31 +162,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
         releaseCamera();
         releaseButtons();
         super.onPause();
-    }
-
-    @Override
-    public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (requestCode == BILL_WORKSHEET_TASK_RESULT_CODE) {
-            if (peedee != null) peedee.dismiss();
-            if (resultCode == RESULT_OK) {  
-                try {
-                    JSONParser jsonParser = new JSONParser();
-                    JSONObject respObject = (JSONObject)jsonParser.parse(resultData);
-                    JSONArray gr_ids = (JSONArray)respObject.get("gr_ids");
-                    String[] grIds = new String[gr_ids.size()];
-                    for (int i = 0; i < grIds.length; i++) {
-                        grIds[i] = (String)gr_ids.get(i);
-                    }
-                    Intent intent = new Intent();
-                    intent.setData(Uri.fromFile(picture));
-                    intent.putExtra(TAG_ID, grIds);
-                    setResult(Activity.RESULT_OK, intent);
-                    finish();
-                } catch (Exception e) { 
-                    Log.e(TAG, "Bill Worksheet failed: " + e.getMessage());
-                }
-            }
-        }
     }
 
     public void action(View view) {
@@ -363,6 +332,7 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
                 camera.setDisplayOrientation(PORTRAIT);
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
+                setResult(RESULT_FIRST_USER);
                 finish();
                 return;
             }
@@ -424,24 +394,69 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
         if (params.getColorEffect() != null)
-            params.setColorEffect(Camera.Parameters.EFFECT_MONO);
+            params.setColorEffect(getOptimalColorEffect());
         if (params.getFlashMode() != null)
-            params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-        params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_TWILIGHT);
-        params.setSceneMode(Camera.Parameters.SCENE_MODE_STEADYPHOTO);
+            params.setFlashMode(getOptimalFlashMode());
+        if (params.getWhiteBalance() != null)
+            params.setWhiteBalance(getOptimalWhiteBalance());
+        if (params.getSceneMode() != null)
+            params.setSceneMode(getOptimalSceneMode());
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
         Size s = getOptimalSize(params);
         params.setPictureSize(s.width, s.height);
         return params;
-    }    
+    }
+    
+    private String getOptimalWhiteBalance() {
+        List<String> options = camera.getParameters().getSupportedWhiteBalance();
+        for (String option : options) {
+            if (option.equals(Camera.Parameters.WHITE_BALANCE_TWILIGHT))
+                return Camera.Parameters.WHITE_BALANCE_TWILIGHT;
+            else if (option.equals(Camera.Parameters.WHITE_BALANCE_SHADE))
+                return Camera.Parameters.WHITE_BALANCE_SHADE;
+        }
+        return Camera.Parameters.WHITE_BALANCE_AUTO;
+    }
+    
+    private String getOptimalFlashMode() {
+        List<String> options = camera.getParameters().getSupportedFlashModes();
+        for (String option : options) {
+            if (option.equals(Camera.Parameters.FLASH_MODE_AUTO))
+                return Camera.Parameters.FLASH_MODE_AUTO;
+        }
+        return Camera.Parameters.FLASH_MODE_OFF;
+    }
+    
+    private String getOptimalColorEffect() {
+        List<String> options = camera.getParameters().getSupportedColorEffects();
+        for (String option : options) {
+            if (option.equals(Camera.Parameters.EFFECT_MONO))
+                return Camera.Parameters.EFFECT_MONO;
+            else if (option.equals(Camera.Parameters.EFFECT_WHITEBOARD))
+                return Camera.Parameters.EFFECT_WHITEBOARD;
+            else if (option.equals(Camera.Parameters.EFFECT_POSTERIZE))
+                return Camera.Parameters.EFFECT_POSTERIZE;
+        }
+        return Camera.Parameters.EFFECT_NONE;
+    }
+    
+    private String getOptimalSceneMode() {
+        List<String> options = camera.getParameters().getSupportedSceneModes();
+        for (String option : options) {
+            if (option.equals(Camera.Parameters.SCENE_MODE_STEADYPHOTO))
+                return Camera.Parameters.SCENE_MODE_STEADYPHOTO;
+        }
+        return Camera.Parameters.SCENE_MODE_AUTO;
+    }
 
     private Size getOptimalSize(Parameters params) {
         Size s = null;
         int delta = Integer.MAX_VALUE, index = 0;
         List<Size> availableSizes = camera.getParameters().getSupportedPictureSizes();
-        for (int i = 0; i < availableSizes.size(); i++) {
+        for (int i = 0; i < availableSizes.size(); i++) {            
             s = availableSizes.get(i);
+            Log.d(TAG, s.width + "x" + s.height);
             if (s.width < PREFERRED_SIZE[0]) continue;
             
             if ((s.width - PREFERRED_SIZE[0]) <= delta &&
@@ -464,7 +479,6 @@ public class CameraActivity extends Activity implements ITaskResult, IConstants,
     private Camera camera;
     private CameraPreview cameraPreview;
     private ImageButton btnAction;
-    private ProgressDialog peedee;
     
     private final int PORTRAIT = 90;
     private final int[] PREFERRED_SIZE = {1600, 1200};

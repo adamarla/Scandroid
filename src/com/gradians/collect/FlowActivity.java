@@ -277,16 +277,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
     }
     
-    public void launchCameraActivity(View view) {
-        boolean nothingToCapture = true;
-        Question[] questions = adapter.getQuestions();
-        for (Question q  : questions) {
-            if (q.getState() < SENT) {
-                nothingToCapture = false;
-            }
-        }
-        if (nothingToCapture) return;
-        
+    public void launchCameraActivity(View view) {        
         File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
         Intent takePictureIntent = new Intent(this.getApplicationContext(), 
             com.gradians.collect.CameraActivity.class);
