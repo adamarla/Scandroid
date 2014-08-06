@@ -92,7 +92,7 @@
 
     <LinearLayout
         android:id="@+id/llInstruction"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -103,59 +103,32 @@
         android:baselineAligned="false"
         android:background="@drawable/gray_background">
         
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvInstruction1"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
-            
-            <TextView
-                android:id="@+id/tvInstruction11"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="11sp"         
-                android:textColor="@color/white"
-                android:text="@string/instruction11"/>
-            
-            <TextView
-                android:id="@+id/tvInstruction12"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="11sp"
-                android:textColor="@color/white"
-                android:text="@string/instruction12"/>
+            android:gravity="center"
+            android:textSize="12sp"         
+            android:textColor="@color/white"
+            android:text="@string/instruction1"/>
         
-        
-        </LinearLayout>
-        
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tvInstruction2"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
-            
-            <TextView
-                android:id="@+id/tvInstruction21"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="11sp"         
-                android:textColor="@color/white"
-                android:text="@string/instruction21"/>
-            
-            <TextView
-                android:id="@+id/tvInstruction22"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="11sp"
-                android:textColor="@color/orange"
-                android:text="@string/instruction22"/>
-        
-        </LinearLayout>
-        
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="@color/white"
+            android:text="@string/instruction2"/>
+    
+        <TextView
+            android:id="@+id/tvInstruction3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="@color/white"
+            android:text="@string/instruction3"/>
 	</LinearLayout>
     
     <LinearLayout

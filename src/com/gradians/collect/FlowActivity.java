@@ -388,7 +388,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         btnUpload.setEnabled(somethingToUpload);
         
         Question q = questions[position];
-        tvName.setText(q.getName());
+        tvName.setText(String.format("%s of %s", q.getName(), 
+            questions.length));
         
         boolean hasScan = q.getPgMap("").matches(".*[1-9].*");
         btnFlip.setEnabled(hasScan);
