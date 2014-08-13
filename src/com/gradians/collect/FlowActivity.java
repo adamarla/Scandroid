@@ -46,7 +46,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     @Override 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_flow); 
+        setContentView(R.layout.activity_flow);
         
         Parcelable[] parcels = savedInstanceState == null ? 
             getIntent().getParcelableArrayExtra(TAG_ID) :
@@ -86,7 +86,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             price = savedInstanceState.getInt(QUIZ_PRICE_KEY, 0);
             quizDir = new File(savedInstanceState.getString(TAG));
             adapter.setFlipped(savedInstanceState.getBoolean("flipped"));
-            fdbkPg = savedInstanceState.getInt("fdbkIdx", FdbkView.NO_FEEDBACK);
+            fdbkPg = savedInstanceState.getInt("fdbkIdx", NO_FEEDBACK);
             fdbkShown = savedInstanceState.getBoolean("fdbkShown");
             hintShown = savedInstanceState.getBoolean("hintShown");
             page = savedInstanceState.getInt("page");
@@ -198,7 +198,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } else {
             fdbkIdx = position;
             Feedback fdbk = feedback[vpPreview.getCurrentItem()];
-            adapter.shift(fdbk.page[position], fdbk.x[position], fdbk.y[position],
+            adapter.shift(fdbk.page[position],
+                fdbk.x[position], fdbk.y[position],
                 vpPreview.getCurrentItem());
         }
     }
@@ -412,7 +413,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             if (q.getState() == DOWNLOADED) {
                 instructionShown = true;
                 findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-                btnHint.setEnabled(hints[position] != null);
+                btnHint.setEnabled(hints[position] != null && price == 0);
             }
         } else {
             if (q.getState() > SENT) {
@@ -428,7 +429,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             } else if (q.getState() == DOWNLOADED && !hasScan) {
                 instructionShown = true;
                 findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-                btnHint.setEnabled(hints[position] != null);
+                btnHint.setEnabled(hints[position] != null && price == 0);
             }
         }
                 
@@ -462,7 +463,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         fdbkShown = false;
         vpFdbk.setVisibility(View.INVISIBLE);
         fdbkIndicator.setVisibility(View.INVISIBLE);
-        adapter.shift(0, FdbkView.NO_FEEDBACK, FdbkView.NO_FEEDBACK, position);
+        adapter.shift(0, NO_FEEDBACK, NO_FEEDBACK, position);
     }
     
     private void renderHint(int qsnPosn, int part) {
@@ -631,7 +632,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             getActionBar().setDisplayHomeAsUpEnabled(true);
         }
     }
-    
+        
     protected boolean pageSwipe = true;
 
     private int price;
@@ -649,7 +650,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private CirclePageIndicator fdbkIndicator, hintsIndicator;
     
     private final String BILL_URL = "http://%s/tokens/bill_ws?id=%s";
-    
+    public static final int NO_FEEDBACK = -1;    
 }
 
 class FlowViewPager extends ViewPager {
@@ -668,7 +669,6 @@ class FlowViewPager extends ViewPager {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        // Never allow swiping to switch between pages
         activity.pageSwipe = true;
         return super.onInterceptTouchEvent(event);
     }
@@ -676,7 +676,6 @@ class FlowViewPager extends ViewPager {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         activity.pageSwipe = true;
-        // Never allow swiping to switch between pages
         return super.onTouchEvent(event);
     }
 
@@ -696,7 +695,7 @@ class LatexAdapter extends PagerAdapter {
         final String latexString = latex[position];
         final WebView webView = new WebView(activity);
         final int scale = activity.getResources().getConfiguration().
-            orientation == Configuration.ORIENTATION_LANDSCAPE ? 100 : 80;
+            orientation == Configuration.ORIENTATION_LANDSCAPE ? 100 : 120;
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -708,8 +707,8 @@ class LatexAdapter extends PagerAdapter {
             }
         });
         webView.setBackgroundColor(Color.TRANSPARENT);
-        webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setLoadWithOverviewMode(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
             webView.getSettings().setDisplayZoomControls(false);
         webView.loadDataWithBaseURL("file:///android_asset/mathjax-svg",
