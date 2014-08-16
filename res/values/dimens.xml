@@ -7,5 +7,7 @@
     <dimen name="tiny_font_size">10sp</dimen>
     <dimen name="small_font_size">12sp</dimen>
     <dimen name="font_size">16sp</dimen>
-
+    
+    <bool name="isTablet">false</bool>
+    
 </resources>

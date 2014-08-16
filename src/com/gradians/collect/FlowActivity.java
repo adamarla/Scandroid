@@ -21,7 +21,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -693,9 +692,8 @@ class LatexAdapter extends PagerAdapter {
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
         final String latexString = latex[position];
-        final WebView webView = new WebView(activity);
-        final int scale = activity.getResources().getConfiguration().
-            orientation == Configuration.ORIENTATION_LANDSCAPE ? 100 : 120;
+        final WebView webView = new WebView(activity);        
+        final int scale = activity.getResources().getBoolean(R.bool.isTablet) ? 120 : 80;
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
