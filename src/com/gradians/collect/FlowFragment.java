@@ -59,7 +59,8 @@ public class FlowFragment extends Fragment implements IConstants {
         sbHtml.append("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>");
         for (int i = 0; i < paths.length; i++) {
             sbHtml.append(String.format("<div id='pg%s' style='position: relative;'>", i));
-            sbHtml.append(String.format(IMG_DIV, Uri.fromFile(new File(paths[i])).toString()));
+            sbHtml.append(String.format(IMG_DIV, Uri.fromFile(new File(paths[i])).toString(),
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? "width: 100%" : ""));
             if (i == page && yPosn != FlowActivity.NO_FEEDBACK) {
                 sbHtml.append(String.format(BAND_DIV, yPosn));
             }
@@ -82,12 +83,12 @@ public class FlowFragment extends Fragment implements IConstants {
                         solnView.evaluateJavascript(s, null);
                     }                    
                 }
-            });            
+            });
         }
         return rootView;
     }
          
-    private final String IMG_DIV = "<img src='%s' style='width: 100%%'/>";
+    private final String IMG_DIV = "<img src='%s' style='%s'/>";
     private final String BAND_DIV = "<span id='band' style='position:absolute; top:%s%%; left: 0; opacity: 0.3; background:#676767; width:100%%; height:4%%;'></span>";
     
 }
