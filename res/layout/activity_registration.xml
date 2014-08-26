@@ -1,0 +1,50 @@
+<FrameLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/flRegistration"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RegistrationActivity" >
+    
+<!--     <EditText -->
+<!--         android:id="@+id/etName" -->
+<!--         android:hint="@string/prompt_name" -->
+<!--         android:layout_width="match_parent" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:layout_alignParentTop="true" -->
+<!--         android:layout_centerHorizontal="true" -->
+<!--         android:ems="10" -->
+<!--         android:inputType="textPersonName" /> -->
+
+<!--     <EditText -->
+<!--         android:id="@+id/etEmail" -->
+<!--         android:hint="@string/prompt_email" -->
+<!--         android:layout_width="match_parent" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:layout_below="@+id/etName" -->
+<!--         android:layout_centerHorizontal="true" -->
+<!--         android:ems="10" -->
+<!--         android:inputType="textEmailAddress" > -->
+<!--     </EditText> -->
+
+<!--     <EditText -->
+<!--         android:id="@+id/etPwd" -->
+<!--         android:hint="@string/prompt_password" -->
+<!--         android:layout_width="match_parent" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:layout_below="@+id/etEmail" -->
+<!--         android:layout_centerHorizontal="true" -->
+<!--         android:ems="10" -->
+<!--         android:inputType="textPassword" /> -->
+
+<!--     <EditText -->
+<!--         android:id="@+id/etPwdConf" -->
+<!--         android:hint="@string/prompt_password_conf" -->
+<!--         android:layout_width="match_parent" -->
+<!--         android:layout_height="wrap_content" -->
+<!--         android:layout_below="@+id/etPwd" -->
+<!--         android:layout_centerHorizontal="true" -->
+<!--         android:ems="10" -->
+<!--         android:inputType="textPassword" /> -->
+
+</FrameLayout>

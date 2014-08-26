@@ -1,0 +1,74 @@
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"    
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    style="@style/LoginFormContainer" >
+
+    <EditText
+        android:id="@+id/etName"
+        android:hint="@string/prompt_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:ems="10"
+        android:inputType="textPersonName" />
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:hint="@string/prompt_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:ems="10"        
+        android:inputType="textEmailAddress" >
+    </EditText>
+
+    <EditText
+        android:id="@+id/etPwd"
+        android:hint="@string/prompt_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:ems="10"
+        android:inputType="textPassword" />
+
+    <EditText
+        android:id="@+id/etPwdConf"
+        android:hint="@string/prompt_password_conf"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:ems="10"
+        android:inputType="textPassword" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center">
+        
+	    <EditText
+	        android:id="@+id/etGroupCode"
+	        android:hint="Group Code"
+            android:layout_weight="3"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:visibility="invisible"
+	        android:ems="10"
+	        android:inputType="textNoSuggestions"/>
+	        
+	    <Button
+	        android:id="@+id/btnRegister"
+            android:layout_weight="2"
+	        android:layout_width="0dp"
+	        android:layout_height="wrap_content"
+	        android:paddingLeft="32dp"
+	        android:paddingRight="32dp"
+	        android:onClick="action"
+	        android:text="@string/action_submit" />
+        
+    </LinearLayout>
+
+</LinearLayout>

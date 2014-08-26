@@ -12,6 +12,8 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -98,6 +100,14 @@ public class LoginActivity extends Activity implements IConstants {
     }
     
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO Auto-generated method stub
+        if (resultCode == RESULT_FIRST_USER) {
+            finish();
+        }
+    }
+
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event)  {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.ECLAIR
                 && keyCode == KeyEvent.KEYCODE_BACK
@@ -118,8 +128,7 @@ public class LoginActivity extends Activity implements IConstants {
         this.setResult(RESULT_CANCELED);
         super.onBackPressed();
         return;
-    }    
-    
+    }
 
     /**
      * Attempts to sign in or register the account specified by the login form.
@@ -147,7 +156,7 @@ public class LoginActivity extends Activity implements IConstants {
             mPasswordView.setError(getString(R.string.error_field_required));
             focusView = mPasswordView;
             cancel = true;
-        } else if (mPassword.length() < 4) {
+        } else if (mPassword.length() < 6) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -176,6 +185,31 @@ public class LoginActivity extends Activity implements IConstants {
             mAuthTask = new UserLoginTask();
             mAuthTask.execute(WEB_APP_HOST_PORT);
         }
+    }
+    
+    public void launchRegistrationActivity(View view) {
+
+        String[] items = { "My teacher (requires code)", "Not my teacher" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
+            R.style.RobotoDialogTitleStyle);
+        builder.setTitle(this.getResources().getString(R.string.label_new_login1));
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+            // The 'which' argument contains the index position
+            // of the selected item
+               launchActivity(which == 0); 
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
+    private void launchActivity(boolean hasCode) {        
+        Intent registration = new Intent(getApplicationContext(),
+                com.gradians.collect.RegistrationActivity.class);
+        registration.putExtra("hasCode", hasCode);
+        startActivityForResult(registration, 
+            ITaskResult.REGISTRATION_ACTIVITY_REQUEST_CODE);
     }
 
     /**
@@ -225,35 +259,32 @@ public class LoginActivity extends Activity implements IConstants {
      * the user.
      */
     public class UserLoginTask extends AsyncTask<String, Void, String> {
+        
+        protected int httpResponseCode = 0;
+        
         @Override
         protected String doInBackground(String... params) {
             String result = null;
-            for (String hostport : params) {
-                try {
-                    String charset = Charset.defaultCharset().name();
-                    URL createToken = new URL(String.format("http://%s/tokens", 
-                            hostport));
-                    String authParams = String.format("%s=%s&%s=%s", 
-                            PARAM_EMAIL, URLEncoder.encode(mEmail, charset),
-                            PARAM_PASSWORD, URLEncoder.encode(mPassword, charset));
-                    HttpURLConnection conn = (HttpURLConnection)createToken.openConnection();
-                    conn.setDoOutput(true); // Triggers HTTP POST
-                    conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
-                    conn.setRequestProperty("Cache-Control", "no-cache");
-                    conn.getOutputStream().write(authParams.getBytes(charset));
-                    conn.getOutputStream().close();
+            String hostport = params[0];
+            try {
+                String charset = Charset.defaultCharset().name();
+                URL createToken = new URL(String.format("http://%s/tokens", 
+                        hostport));
+                String authParams = String.format("%s=%s&%s=%s", 
+                        PARAM_EMAIL, URLEncoder.encode(mEmail, charset),
+                        PARAM_PASSWORD, URLEncoder.encode(mPassword, charset));
+                HttpURLConnection conn = (HttpURLConnection)createToken.openConnection();
+                conn.setDoOutput(true); // Triggers HTTP POST
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
+                conn.setRequestProperty("Cache-Control", "no-cache");
+                conn.getOutputStream().write(authParams.getBytes(charset));
+                conn.getOutputStream().close();
 
-                    int code = conn.getResponseCode();
-                    if (code == HttpURLConnection.HTTP_OK) {
-                        InputStream istream = conn.getInputStream();
-                        BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
-                        result = ireader.readLine();
-                        break;
-                    } else if (code == HttpURLConnection.HTTP_NO_CONTENT) {
-                        continue;
-                    }
-                } catch (Exception e){ }
-            }            
+                httpResponseCode = conn.getResponseCode();
+                InputStream istream = conn.getInputStream();
+                BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
+                result = ireader.readLine();
+            } catch (Exception e){ }
             return result;
         }
 
@@ -261,14 +292,22 @@ public class LoginActivity extends Activity implements IConstants {
         protected void onPostExecute(final String result) {
             mAuthTask = null;
             showProgress(false);
-
-            if (result != null) {
+            if (httpResponseCode == 0) {
+                mPasswordView.setError(getString(R.string.error_network_down));
+            } else if (httpResponseCode == HttpURLConnection.HTTP_OK) {
                 final Intent intent = new Intent();
                 intent.putExtra(TAG, result);
                 setResult(RESULT_OK, intent);
                 finish();
             } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
+                int errorId;
+                switch (httpResponseCode) {
+                case 550:
+                    errorId = R.string.error_invalid_email;
+                default:
+                    errorId = R.string.error_incorrect_password;
+                }
+                mPasswordView.setError(getString(errorId));
                 mPasswordView.requestFocus();
             }
         }

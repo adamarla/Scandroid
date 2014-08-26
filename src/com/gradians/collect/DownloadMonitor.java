@@ -95,7 +95,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     public void onDismiss(DialogInterface dialog) {
         activity.unregisterReceiver(this);
         if (resultHandler != null)
-            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, 
+            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_REQUEST_CODE, 
                 Activity.RESULT_FIRST_USER, null);       
     }
     
@@ -121,7 +121,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             }
         }
         if (requestIds.size() == 0 && resultHandler != null) 
-            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_RESULT_CODE, 
+            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_REQUEST_CODE, 
                 Activity.RESULT_OK, null);        
     }
     

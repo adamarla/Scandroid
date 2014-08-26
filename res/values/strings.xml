@@ -23,5 +23,7 @@
     <string name="instruction1">Finish an answer on the page you start it</string>
     <string name="instruction2">Do not copy the question text</string>
     <string name="instruction3">Label your answers. Write using dark ink</string>
+    <string name="title_activity_registration">Gradians.com - Registration</string>
+    <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
     
 </resources>

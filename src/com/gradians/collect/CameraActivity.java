@@ -409,45 +409,53 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
     
     private String getOptimalWhiteBalance() {
+        String[] preferences = { Camera.Parameters.WHITE_BALANCE_TWILIGHT,
+            Camera.Parameters.WHITE_BALANCE_SHADE };
         List<String> options = camera.getParameters().getSupportedWhiteBalance();
-        for (String option : options) {
-            if (option.equals(Camera.Parameters.WHITE_BALANCE_TWILIGHT))
-                return Camera.Parameters.WHITE_BALANCE_TWILIGHT;
-            else if (option.equals(Camera.Parameters.WHITE_BALANCE_SHADE))
-                return Camera.Parameters.WHITE_BALANCE_SHADE;
+        for (String pref : preferences) {
+            for (String option : options) {
+                if (option.equals(pref))
+                    return pref;
+            }
         }
-        return Camera.Parameters.WHITE_BALANCE_AUTO;
+        return null;
     }
     
     private String getOptimalFlashMode() {
+        String[] preferences = { Camera.Parameters.FLASH_MODE_AUTO };
         List<String> options = camera.getParameters().getSupportedFlashModes();
-        for (String option : options) {
-            if (option.equals(Camera.Parameters.FLASH_MODE_AUTO))
-                return Camera.Parameters.FLASH_MODE_AUTO;
+        for (String pref : preferences) {
+            for (String option : options) {
+                if (option.equals(pref))
+                    return pref;
+            }
         }
-        return Camera.Parameters.FLASH_MODE_OFF;
+        return null;
     }
     
     private String getOptimalColorEffect() {
+        String[] preferences = { Camera.Parameters.EFFECT_MONO,
+            Camera.Parameters.EFFECT_WHITEBOARD, Camera.Parameters.EFFECT_POSTERIZE};
         List<String> options = camera.getParameters().getSupportedColorEffects();
-        for (String option : options) {
-            if (option.equals(Camera.Parameters.EFFECT_MONO))
-                return Camera.Parameters.EFFECT_MONO;
-            else if (option.equals(Camera.Parameters.EFFECT_WHITEBOARD))
-                return Camera.Parameters.EFFECT_WHITEBOARD;
-            else if (option.equals(Camera.Parameters.EFFECT_POSTERIZE))
-                return Camera.Parameters.EFFECT_POSTERIZE;
+        for (String pref : preferences) {
+            for (String option : options) {
+                if (option.equals(pref))
+                    return pref;
+            }
         }
-        return Camera.Parameters.EFFECT_NONE;
+        return null;
     }
     
     private String getOptimalSceneMode() {
+        String[] preferences = { Camera.Parameters.SCENE_MODE_STEADYPHOTO };
         List<String> options = camera.getParameters().getSupportedSceneModes();
-        for (String option : options) {
-            if (option.equals(Camera.Parameters.SCENE_MODE_STEADYPHOTO))
-                return Camera.Parameters.SCENE_MODE_STEADYPHOTO;
+        for (String pref : preferences) {
+            for (String option : options) {
+                if (option.equals(pref))
+                    return pref;
+            }
         }
-        return Camera.Parameters.SCENE_MODE_AUTO;
+        return null;
     }
 
     private Size getOptimalSize(Parameters params) {

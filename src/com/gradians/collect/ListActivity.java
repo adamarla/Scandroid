@@ -93,7 +93,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
 
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (requestCode == DOWNLOAD_MONITOR_TASK_RESULT_CODE) {
+        if (requestCode == DOWNLOAD_MONITOR_TASK_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Quij quiz = (Quij)adapter.getItem(selectedQuizPosition);
                 launchFlowActivity(quiz, true);
@@ -176,14 +176,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     jsonReqs.add(new Download(null, src, dest));
                 }
             case RECEIVED:
-                for (short i = 0; i < question.getImgSpan(); i++) {
-                    image = new File(solutionsDir, question.getId() + "." + (i+1));
-                    if (!image.exists()) {
-                        src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, imgLocn, (i+1)));
-                        dest = Uri.fromFile(image);
-                        dlm.add(question.getId(), src, dest);
-                    }
-                }                
                 for (int i = 0; i < pageNos.length; i++) {
                     if (pageNos[i] != 0) {
                         image = new File(answersDir, wsId + "." + pageNos[i]);
@@ -217,6 +209,14 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 question.setPgMap(pageNos);
             case DOWNLOADED:
             case WAITING:
+                for (short i = 0; i < question.getImgSpan(); i++) {
+                    image = new File(solutionsDir, question.getId() + "." + (i+1));
+                    if (!image.exists()) {
+                        src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, imgLocn, (i+1)));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
+                    }
+                }                
                 image = new File(questionsDir, question.getId());
                 if (!image.exists()) {
                     src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, imgLocn));

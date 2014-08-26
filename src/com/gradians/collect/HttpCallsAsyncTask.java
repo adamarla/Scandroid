@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -20,15 +21,20 @@ public class HttpCallsAsyncTask extends AsyncTask<Download, Void, String> implem
         this.caller = caller;
     }
     
+    String[] params;
+    public void setUpdateParams(String...params) {
+        this.params = params;
+    }
+    
     @Override
-    protected String doInBackground(Download... params) {
+    protected String doInBackground(Download... downloads) {
         String result = "";
         String src, target; 
-        for (int i = 0; i < params.length; i++) {
+        for (int i = 0; i < downloads.length; i++) {
             try {
                 String charset = Charset.defaultCharset().name();
-                src = params[i].srcUri.toString();
-                target = params[i].destUri != null ? params[i].destUri.getPath() : null;
+                src = downloads[i].srcUri.toString();
+                target = downloads[i].destUri != null ? downloads[i].destUri.getPath() : null;
                 if (target != null) {
                     if ((new File(target)).exists()) continue;
                 }
@@ -37,8 +43,14 @@ public class HttpCallsAsyncTask extends AsyncTask<Download, Void, String> implem
                 conn.setRequestProperty("Content-Type", 
                         "application/x-www-form-urlencoded;charset=" + charset);
                 conn.setRequestProperty("Cache-Control", "no-cache");
-
-                int responseCode = conn.getResponseCode();                        
+                
+                if (this.params != null) {
+                    conn.setDoOutput(true); // Triggers HTTP POST
+                    conn.getOutputStream().write(this.params[i].getBytes(charset));
+                    conn.getOutputStream().close();
+                }
+                    
+                int responseCode = conn.getResponseCode();
                 InputStream istream = conn.getInputStream();
                 BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
                 if (responseCode == HttpURLConnection.HTTP_OK) {

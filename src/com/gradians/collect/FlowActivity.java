@@ -150,7 +150,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (requestCode == BILL_WORKSHEET_TASK_RESULT_CODE) {
+        if (requestCode == BILL_WORKSHEET_TASK_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
                     JSONParser jsonParser = new JSONParser();
@@ -559,8 +559,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         String ws_id = id.substring(0, id.indexOf('.'));
         Uri src = Uri.parse(String.format(BILL_URL, WEB_APP_HOST_PORT, ws_id));
         Download download = new Download(null, src, null);
-        new HttpCallsAsyncTask(this,
-            BILL_WORKSHEET_TASK_RESULT_CODE).execute(new Download[] { download });
+        new HttpCallsAsyncTask(this, 
+            BILL_WORKSHEET_TASK_REQUEST_CODE).execute(download);
     }
     
     private boolean nothingToUpload(Question[] questions) {

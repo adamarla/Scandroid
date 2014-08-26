@@ -4,12 +4,13 @@ import java.io.File;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -32,7 +33,22 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        checkAuth();
+        
+        if (getIntent().getBooleanExtra(TAG, true)) {
+            checkAuth();
+        } else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, 
+                R.style.RobotoDialogTitleStyle);
+            builder.setTitle("Attention");
+            builder.setMessage(R.string.message_could_not_enroll);
+            builder.setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        checkAuth();
+                    }
+                });
+            builder.show();
+        }
     }
 
     @Override
@@ -97,7 +113,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (requestCode == VERIFY_AUTH_TASK_RESULT_CODE) {
+        if (requestCode == VERIFY_AUTH_TASK_REQUEST_CODE) {
             if (peedee != null) peedee.dismiss();
             if (resultCode == RESULT_OK) {
                 try {
@@ -156,7 +172,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         try {
             ((TextView)findViewById(R.id.tvVers)).setText(getPackageManager()
                 .getPackageInfo(getPackageName(), 0).versionName);
-        } catch (NameNotFoundException e) { }
+        } catch (Exception e) { }
         setCounts(manifest);
         (studentDir = new File(getExternalFilesDir(null), 
             manifest.getEmail().replace('@', '.'))).mkdir();
@@ -170,7 +186,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
             initiateAuthActivity();
         } else {
             peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
-            peedee.setTitle("Initializing");
+            peedee.setTitle("Synchronizing");
             peedee.setMessage("Please wait...");
             peedee.setIndeterminate(true);
             peedee.setIcon(ProgressDialog.STYLE_SPINNER);
@@ -179,7 +195,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
             Uri src = Uri.parse(String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token));
             Download download = new Download(null, src, null);
             new HttpCallsAsyncTask(this,
-                VERIFY_AUTH_TASK_RESULT_CODE).execute(new Download[] { download });
+                VERIFY_AUTH_TASK_REQUEST_CODE).execute(new Download[] { download });
         }
     }
 
