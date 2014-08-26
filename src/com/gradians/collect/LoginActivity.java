@@ -189,7 +189,7 @@ public class LoginActivity extends Activity implements IConstants {
     
     public void launchRegistrationActivity(View view) {
 
-        String[] items = { "My teacher (requires code)", "Not my teacher" };
+        String[] items = { "Nope, not at all", "Yes (requires code)" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this, 
             R.style.RobotoDialogTitleStyle);
         builder.setTitle(this.getResources().getString(R.string.label_new_login1));
@@ -197,7 +197,7 @@ public class LoginActivity extends Activity implements IConstants {
             public void onClick(DialogInterface dialog, int which) {
             // The 'which' argument contains the index position
             // of the selected item
-               launchActivity(which == 0); 
+               launchActivity(which == 1); 
             }
         });
         AlertDialog dialog = builder.create();

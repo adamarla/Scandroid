@@ -20,6 +20,6 @@
     <string name="error_incorrect_password">Could not authenticate</string>
     <string name="error_network_down">Could not connect</string>
     <string name="error_field_required">This field is required</string>
-    <string name="label_new_login1">Before we begin, who put you up to this?</string>
+    <string name="label_new_login1">Before we begin, did your teacher ask you to sign up?</string>
     
 </resources>

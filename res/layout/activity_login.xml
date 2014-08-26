@@ -70,11 +70,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentLeft="true"
-                    android:layout_alignParentTop="true"
-                    android:background="@color/blue"
                     android:onClick="launchRegistrationActivity"
                     android:paddingLeft="32dp"
                     android:paddingRight="32dp"
+                    android:background="@color/blue"
                     android:text="@string/action_register" />
                 
                 <Button
