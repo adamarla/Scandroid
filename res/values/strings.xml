@@ -6,12 +6,15 @@
     <string name="action_sign_out">Sign Out</string>
     <string name="label_font">Helvetica</string>
     <string name="label_text">www.gradians.com © 2013</string>
-    <string name="title_activity_camera">Capture</string>
     <string name="button">Button</string>
     <string name="capture_button">Capture</string>
-    <string name="hello_world">Hello world!</string>
     <string name="title_activity_help">Help</string>
-    <string name="title_activity_main">Inbox</string>
+    <string name="title_activity_main">School Stuff</string>
+    <string name="title_activity_home">Scanbot</string>
+    <string name="title_activity_camera">Capture</string>
+    <string name="title_activity_list">Items</string>
+    <string name="title_activity_flow">Question</string>    
+    <string name="title_activity_registration">Gradians.com - Registration</string>
     <string name="inbox_desc">Inbox</string>
     <string name="outbox_desc">Outbox</string>
     <string name="graded_desc">Graded</string>
@@ -23,7 +26,6 @@
     <string name="instruction1">Finish an answer on the page you start it</string>
     <string name="instruction2">Do not copy the question text</string>
     <string name="instruction3">Label your answers. Write using dark ink</string>
-    <string name="title_activity_registration">Gradians.com - Registration</string>
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
-    
+
 </resources>

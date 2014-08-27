@@ -1,0 +1,53 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.gradians.collect.HomeActivity" >
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical">
+        
+        <com.gradians.collect.MainButton
+            android:id="@+id/btnQotd"
+            android:layout_width="240dp"
+            android:layout_height="80dp"            
+            android:background="@drawable/btn_huge_selector"
+            android:onClick="onClick"/>
+    
+        <com.gradians.collect.MainButton
+            android:id="@+id/btnSchool"
+            android:layout_width="240dp"
+            android:layout_height="80dp"
+            android:layout_marginTop="30dp"
+            android:background="@drawable/btn_huge_selector"
+            android:onClick="onClick"/>
+        
+        <com.gradians.collect.MainButton
+            android:id="@+id/btnAsk"
+            android:layout_width="240dp"
+            android:layout_height="80dp"
+            android:layout_marginTop="30dp"
+            android:background="@drawable/btn_huge_selector"
+            android:onClick="onClick"/>    
+        
+        <com.gradians.collect.MainButton
+            android:id="@+id/btnBrowse"
+            android:layout_width="240dp"
+            android:layout_height="80dp"            
+            android:layout_marginTop="30dp"
+            android:background="@drawable/btn_huge_selector"
+            android:onClick="onClick"/>    
+        
+        </LinearLayout>
+        
+    <TextView 
+        android:id="@+id/tvVers"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    
+</RelativeLayout>

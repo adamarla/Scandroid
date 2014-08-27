@@ -33,7 +33,7 @@
         android:scaleType="center"        
         android:contentDescription="@string/capture_button"
         android:onClick="action"
-        android:background="@drawable/btn_background_selector"
+        android:background="@drawable/btn_big_selector"
         android:src="@android:drawable/ic_menu_camera"/>
     
     <LinearLayout

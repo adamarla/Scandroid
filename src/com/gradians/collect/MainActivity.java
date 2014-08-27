@@ -3,28 +3,22 @@ package com.gradians.collect;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements ITaskResult, IConstants {
@@ -34,21 +28,10 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        if (getIntent().getBooleanExtra(TAG, true)) {
-            checkAuth();
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-                R.style.RobotoDialogTitleStyle);
-            builder.setTitle("Attention");
-            builder.setMessage(R.string.message_could_not_enroll);
-            builder.setPositiveButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        checkAuth();
-                    }
-                });
-            builder.show();
-        }
+        email = getIntent().getStringExtra(EMAIL_KEY);
+        token = getIntent().getStringExtra(TOKEN_KEY);
+        
+        refresh();
     }
 
     @Override
@@ -60,35 +43,15 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_sign_out)
-            initiateAuthActivity();
-        else if (item.getItemId() == R.id.action_refresh)
-            checkAuth();
+        if (item.getItemId() == R.id.action_refresh)
+            refresh();
         else if (item.getItemId() == R.id.action_help)
             launchHelpActivity();
         return super.onOptionsItemSelected(item);
     }
     
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                try {
-                    File dir = new File(getFilesDir(), "manifests"); dir.mkdir();
-                    manifest = new QuizManifest(dir, data.getStringExtra(TAG));
-                    setPreferences(manifest);
-                    initialize(manifest);
-                } catch (Exception e) {
-                    handleError("Oops, Auth activity request failed",
-                            e.getMessage());
-                }
-            } else if (resultCode != Activity.RESULT_CANCELED) {
-                Toast.makeText(getApplicationContext(),
-                        "Oops.. auth check failed. Please try again",
-                        Toast.LENGTH_SHORT).show();
-            } else {
-                this.finish();
-            }
-        } else if (requestCode == LIST_ACTIVITY_REQUEST_CODE) {
+        if (requestCode == LIST_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
                     Parcelable[] parcels = data.getParcelableArrayExtra(TAG_ID);
@@ -100,28 +63,37 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
                     manifest.commit();
                     setCounts(manifest);
                 } catch (Exception e) {
-                    handleError("Oops, Flow activity request failed",
-                            e.getMessage());
+                    handleError("List activity failed", e.getMessage());
                 }
             } else if (resultCode != Activity.RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(),
-                        "Oops we had an error, you may have lost work :/",
-                        Toast.LENGTH_SHORT).show();
+                    "Oops, an error, you may have lost work :/",
+                    Toast.LENGTH_SHORT).show();
             }
         }
     }
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (requestCode == VERIFY_AUTH_TASK_REQUEST_CODE) {
+        if (requestCode == REFRESH_WS_TASK_REQUEST_CODE) {
             if (peedee != null) peedee.dismiss();
             if (resultCode == RESULT_OK) {
                 try {
-                    File dir = new File(getFilesDir(), "manifests"); dir.mkdir(); 
-                    manifest = new QuizManifest(dir, resultData);
-                    initialize(manifest);
+                    JSONParser jsonParser = new JSONParser();
+                    JSONObject respObject = (JSONObject)jsonParser.parse(resultData);                    
+                    JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
+                    
+                    File dir = new File(getFilesDir(), "manifests"); dir.mkdir();
+                    File stateFile = new File(dir, email.replace('@', '.'));
+                    stateFile.createNewFile();                    
+                    
+                    manifest = new QuizManifest(stateFile, items);
+                    setCounts(manifest);
+                    
+                    studentDir = new File(getExternalFilesDir(null), email.replace('@', '.'));
+                    studentDir.mkdir();
                 } catch (Exception e) {
-                    handleError("Oops, Verify auth task failed", e.getMessage());
+                    handleError("Refresh task failed ", e.getMessage());
                 }
             } else {
                 Toast.makeText(getApplicationContext(), 
@@ -132,6 +104,7 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
     }
     
     public void onClick(View v) {
+        if (manifest == null) return;
         Quij[] items = null;
         switch (v.getId()) {
         case R.id.btnInbox:
@@ -167,64 +140,6 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
         startActivity(helpIntent);
     }
 
-    private void initialize(QuizManifest manifest) {
-        setTitle(String.format("Hi %s", manifest.getName()));        
-        try {
-            ((TextView)findViewById(R.id.tvVers)).setText(getPackageManager()
-                .getPackageInfo(getPackageName(), 0).versionName);
-        } catch (Exception e) { }
-        setCounts(manifest);
-        (studentDir = new File(getExternalFilesDir(null), 
-            manifest.getEmail().replace('@', '.'))).mkdir();
-    }
-    
-    private void checkAuth() {
-        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-        String email = prefs.getString(EMAIL_KEY, null);
-        String token = prefs.getString(TOKEN_KEY, null);
-        if (token == null) {
-            initiateAuthActivity();
-        } else {
-            peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
-            peedee.setTitle("Synchronizing");
-            peedee.setMessage("Please wait...");
-            peedee.setIndeterminate(true);
-            peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-            peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            peedee.show();
-            Uri src = Uri.parse(String.format(VERIFY_URL, WEB_APP_HOST_PORT, email, token));
-            Download download = new Download(null, src, null);
-            new HttpCallsAsyncTask(this,
-                VERIFY_AUTH_TASK_REQUEST_CODE).execute(new Download[] { download });
-        }
-    }
-
-    private void initiateAuthActivity() {
-        resetPreferences();
-        Intent checkAuthIntent = new Intent(this, 
-            com.gradians.collect.LoginActivity.class);
-        checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivityForResult(checkAuthIntent, AUTH_ACTIVITY_REQUEST_CODE);
-    }
-
-    private void setPreferences(QuizManifest manifest) {
-        SharedPreferences prefs =
-                this.getSharedPreferences(TAG, Context.MODE_PRIVATE);
-        Editor edit = prefs.edit();
-        edit.putString(TOKEN_KEY, manifest.getAuthToken());
-        edit.putString(NAME_KEY, manifest.getName());
-        edit.putString(EMAIL_KEY, manifest.getEmail());
-        edit.commit();
-    }
-
-    private void resetPreferences() {
-        SharedPreferences prefs =
-                getSharedPreferences(TAG, Context.MODE_PRIVATE);
-        Editor edit = prefs.edit();
-        edit.clear();
-        edit.commit();
-    }
-
     private void setCounts(QuizManifest manifest) {
         ((MainButton)findViewById(R.id.btnInbox)).setCount(manifest.getInboxItems().length, 
             "Inbox", R.drawable.ic_action_unread);
@@ -234,33 +149,30 @@ public class MainActivity extends Activity implements ITaskResult, IConstants {
             "Graded", R.drawable.ic_action_chat);
     }
     
+    private void refresh() {
+        peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
+        peedee.setTitle("Synchronizing");
+        peedee.setMessage("Please wait...");
+        peedee.setIndeterminate(true);
+        peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+        peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        peedee.show();
+        Uri src = Uri.parse(String.format(REFRESH_WS_URL, WEB_APP_HOST_PORT, email, token));
+        Download download = new Download(null, src, null);
+        new HttpCallsAsyncTask(this,
+            REFRESH_WS_TASK_REQUEST_CODE).execute(new Download[] { download });
+    }
+
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
     }
-
+    
+    private String email, token;
     private QuizManifest manifest;
     private File studentDir;
     ProgressDialog peedee;
-
-    private final String 
-        VERIFY_URL = "http://%s/tokens/verify?email=%s&token=%s";
+    
+    private final String REFRESH_WS_URL = "http://%s/tokens/verify?email=%s&token=%s";
 
 }
 
-class MainButton extends RelativeLayout {
-
-    public MainButton (Context context, AttributeSet attrs) {
-        super(context, attrs);
-        LayoutInflater inflater = (LayoutInflater)context.
-            getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            inflater.inflate(R.layout.layout_big_btn, this, true);
-    }
-    
-    public void setCount(int count, String text, int drawable) {
-        ((TextView)findViewById(R.id.tvLabel)).setText(text);
-        ((TextView)findViewById(R.id.tvCount)).setText(String.valueOf(count));
-        ((TextView)findViewById(R.id.tvCount)).setVisibility(View.VISIBLE);
-        ((ImageView)findViewById(R.id.ivIcon)).setImageResource(drawable);
-    }
-    
-}

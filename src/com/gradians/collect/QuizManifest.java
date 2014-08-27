@@ -9,7 +9,6 @@ import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -17,24 +16,8 @@ import android.text.TextUtils;
 
 public class QuizManifest implements IConstants {
     
-    public QuizManifest(File manifests, String json) throws Exception {
-        parse(manifests, json);
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public String getEmail() {
-        return email;
-    }
-    
-    public String getAuthToken() {
-        return token;
-    }
-    
-    public Quij[] get() {
-        return quizzes;
+    public QuizManifest(File manifests, JSONArray items) throws Exception {
+        parse(manifests, items);
     }
     
     public void update(Question[] questions) {
@@ -82,21 +65,11 @@ public class QuizManifest implements IConstants {
         stateMap.store(new FileOutputStream(stateFile), null);
     }
     
-    private void parse(File manifests, String json) throws Exception {
-        JSONParser jsonParser = new JSONParser();
-        JSONObject respObject = (JSONObject)jsonParser.parse(json);
+    private void parse(File stateFile, JSONArray items) throws Exception {
+        this.stateFile = stateFile;
         
-        token = (String)respObject.get(TOKEN_KEY);
-        name = (String)respObject.get(NAME_KEY);
-        email = (String)respObject.get(EMAIL_KEY);
-        JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
-        quizzes = new Quij[items.size()];
-        
+        quizzes = new Quij[items.size()];        
         questionByIdMap = new HashMap<String, Question>();
-        
-        manifests.mkdir();
-        stateFile = new File(manifests, email.replace('@', '.'));
-        stateFile.createNewFile();
         
         Properties lastState = new Properties();
         lastState.load(new FileInputStream(stateFile));
@@ -167,7 +140,6 @@ public class QuizManifest implements IConstants {
         }
     }
         
-    private String name, email, token;
     private File stateFile;
     private Properties stateMap;
     

@@ -25,7 +25,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_gravity="center"
 	        android:gravity="center"
-	        android:visibility="invisible"
+	        android:visibility="gone"
 	        android:textSize="10sp"
 	        android:background="@drawable/lbl_quiz_count"
 	        android:textColor="@color/white"/>
