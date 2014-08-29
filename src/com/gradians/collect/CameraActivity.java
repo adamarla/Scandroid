@@ -331,7 +331,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 camera.setParameters(configureParams(camera.getParameters()));
                 camera.setDisplayOrientation(PORTRAIT);
             } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
+                Log.e(TAG, e.getClass().getName());
                 setResult(RESULT_FIRST_USER);
                 finish();
                 return;
@@ -393,14 +393,23 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
-        if (params.getColorEffect() != null)
-            params.setColorEffect(getOptimalColorEffect());
-        if (params.getFlashMode() != null)
-            params.setFlashMode(getOptimalFlashMode());
-        if (params.getWhiteBalance() != null)
-            params.setWhiteBalance(getOptimalWhiteBalance());
-        if (params.getSceneMode() != null)
-            params.setSceneMode(getOptimalSceneMode());
+        String pref = null;
+        if (params.getColorEffect() != null) {
+            pref = getOptimalColorEffect();
+            if (pref != null) params.setColorEffect(pref);            
+        }
+        if (params.getFlashMode() != null) {
+            pref = getOptimalFlashMode();
+            if (pref != null) params.setFlashMode(pref);
+        }
+        if (params.getWhiteBalance() != null) {
+            pref = getOptimalWhiteBalance();
+            if (pref != null) params.setWhiteBalance(pref);
+        }
+        if (params.getSceneMode() != null) {
+            pref = getOptimalSceneMode();
+            if (pref != null) params.setSceneMode(pref);
+        }
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
         Size s = getOptimalSize(params);
@@ -464,7 +473,6 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         List<Size> availableSizes = camera.getParameters().getSupportedPictureSizes();
         for (int i = 0; i < availableSizes.size(); i++) {            
             s = availableSizes.get(i);
-            Log.d(TAG, s.width + "x" + s.height);
             if (s.width < PREFERRED_SIZE[0]) continue;
             
             if ((s.width - PREFERRED_SIZE[0]) <= delta &&
