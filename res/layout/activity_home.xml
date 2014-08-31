@@ -10,14 +10,14 @@
         android:layout_centerInParent="true"
         android:orientation="vertical">
         
-        <com.gradians.collect.MainButton
+        <com.gradians.collect.HugeButton
             android:id="@+id/btnQotd"
             android:layout_width="240dp"
             android:layout_height="80dp"            
             android:background="@drawable/btn_huge_selector"
             android:onClick="onClick"/>
     
-        <com.gradians.collect.MainButton
+        <com.gradians.collect.HugeButton
             android:id="@+id/btnSchool"
             android:layout_width="240dp"
             android:layout_height="80dp"
@@ -25,7 +25,7 @@
             android:background="@drawable/btn_huge_selector"
             android:onClick="onClick"/>
         
-        <com.gradians.collect.MainButton
+        <com.gradians.collect.HugeButton
             android:id="@+id/btnAsk"
             android:layout_width="240dp"
             android:layout_height="80dp"
@@ -33,7 +33,7 @@
             android:background="@drawable/btn_huge_selector"
             android:onClick="onClick"/>    
         
-        <com.gradians.collect.MainButton
+        <com.gradians.collect.HugeButton
             android:id="@+id/btnBrowse"
             android:layout_width="240dp"
             android:layout_height="80dp"            

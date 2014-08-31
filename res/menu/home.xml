@@ -8,14 +8,13 @@
         android:orderInCategory="98"
         android:icon="@drawable/ic_sign_out"
         android:showAsAction="always"
-        app:showAsAction="always"
         android:title="@string/action_sign_out" />
 
     <item
         android:id="@+id/action_refresh"
         android:orderInCategory="99"
         android:icon="@drawable/ic_action_refresh"        
-        app:showAsAction="ifRoom"
+        android:showAsAction="ifRoom"
         android:title="@string/action_sign_refresh" />
         
     <item

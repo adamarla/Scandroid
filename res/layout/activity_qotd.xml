@@ -1,0 +1,26 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".QotdActivity" >
+    
+    <com.gradians.collect.HugeButton
+        android:id="@+id/btnToday"
+        android:layout_width="240dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="60dp"
+        android:background="@drawable/btn_huge_selector"
+        android:onClick="onClick"/>
+
+    <com.gradians.collect.HugeButton
+        android:id="@+id/btnPast"
+        android:layout_width="240dp"
+        android:layout_height="80dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="60dp"
+        android:background="@drawable/btn_huge_selector"
+        android:onClick="onClick"/>
+    
+</LinearLayout>

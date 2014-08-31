@@ -126,7 +126,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     }
     
     private Activity activity;
-    private ArrayList<Download> downloads;
+    public ArrayList<Download> downloads;
     private ProgressDialog peedee;
     private ITaskResult resultHandler;
     private HashSet<Long> requestIds = new HashSet<Long>();

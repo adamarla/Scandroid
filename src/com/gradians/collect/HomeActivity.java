@@ -1,6 +1,5 @@
 package com.gradians.collect;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -44,9 +43,8 @@ public class HomeActivity extends Activity implements ITaskResult, IConstants {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
         if (item.getItemId() == R.id.action_sign_out)
-            resetPreferences();
+            initiateAuthActivity();
         return super.onOptionsItemSelected(item);
     }
     
@@ -92,12 +90,9 @@ public class HomeActivity extends Activity implements ITaskResult, IConstants {
                     
                     String name;
                     name = (String)respObject.get(NAME_KEY);
-                    JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);
-                    long puzzleId = (Long)respObject.get("pzl_id");
-                    int count = ((Long)respObject.get("count")).intValue();
-                    
+                    respObject.get(QOTD_KEY);
+                    int count = ((Long)respObject.get(COUNT_KEY)).intValue();                    
                     initialize(name, count > 0);
-                    // TODO - launch QOTD Activity
                 } catch (Exception e) {
                     handleError("Oops, Verify auth task failed", e.getMessage());
                 }
@@ -110,34 +105,27 @@ public class HomeActivity extends Activity implements ITaskResult, IConstants {
     }
     
     public void onClick(View v) {
+        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        String email = prefs.getString(EMAIL_KEY, null);
+        String token = prefs.getString(TOKEN_KEY, null);
+        Class<?> cls = null; 
         switch (v.getId()) {
         case R.id.btnQotd:
+            cls = com.gradians.collect.QotdActivity.class;
             break;
         case R.id.btnSchool:
-            launchSchoolStuff();
+            cls = com.gradians.collect.TeacherActivity.class;            
             break;
         case R.id.btnAsk:
             break;
         case R.id.btnBrowse:
         }
-    }
-    
-    private void launchQOTD() {
-        
-    }
-    
-    private void launchSchoolStuff() {
-        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-        String email = prefs.getString(EMAIL_KEY, null);
-        String token = prefs.getString(TOKEN_KEY, null);
-        
-        Intent intent = new Intent(getApplicationContext(),
-            com.gradians.collect.MainActivity.class);
+        Intent intent = new Intent(getApplicationContext(), cls);
         intent.putExtra(EMAIL_KEY, email);
         intent.putExtra(TOKEN_KEY, token);
         startActivity(intent);
     }
-
+    
     private void checkAuth() {
         SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
         String email = prefs.getString(EMAIL_KEY, null);
@@ -170,13 +158,13 @@ public class HomeActivity extends Activity implements ITaskResult, IConstants {
     private void initialize(String name, boolean gotSchool) {
         setTitle(String.format("Hi %s", name));
         
-        MainButton qotd, school, ask, browse;
-        qotd = (MainButton)findViewById(R.id.btnQotd);
-        school = (MainButton)findViewById(R.id.btnSchool);
-        ask = (MainButton)findViewById(R.id.btnAsk);
-        browse = (MainButton)findViewById(R.id.btnBrowse);
+        HugeButton qotd, school, ask, browse;
+        qotd = (HugeButton)findViewById(R.id.btnQotd);
+        school = (HugeButton)findViewById(R.id.btnSchool);
+        ask = (HugeButton)findViewById(R.id.btnAsk);
+        browse = (HugeButton)findViewById(R.id.btnBrowse);
         
-        qotd.setText("QOTD", R.drawable.ic_action_unread);
+        qotd.setText("Question\nof the\nDay", R.drawable.ic_action_unread);
         school.setText("School Stuff", R.drawable.ic_action_sent);
         school.setEnabled(gotSchool);
         ask.setText("Ask a Ques", R.drawable.ic_action_chat);
@@ -211,17 +199,17 @@ public class HomeActivity extends Activity implements ITaskResult, IConstants {
 
     private ProgressDialog peedee;
 
-    private final String REFRESH_URL = "http://%s/tokens/refresh?email=%s&token=%s";
+    private final String REFRESH_URL = "http://%s/tokens/refresh/home?email=%s&token=%s";
     
 }
 
-class MainButton extends RelativeLayout {
+class HugeButton extends RelativeLayout {
 
-    public MainButton (Context context, AttributeSet attrs) {
+    public HugeButton (Context context, AttributeSet attrs) {
         super(context, attrs);
         LayoutInflater inflater = (LayoutInflater)context.
             getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            inflater.inflate(R.layout.layout_big_btn, this, true);
+            inflater.inflate(R.layout.layout_btn_huge, this, true);
     }
     
     public void setText(String text, int drawable) {
@@ -235,22 +223,5 @@ class MainButton extends RelativeLayout {
         ((TextView)findViewById(R.id.tvCount)).setVisibility(View.VISIBLE);
         ((ImageView)findViewById(R.id.ivIcon)).setImageResource(drawable);
     }
-//    
-//    @Override
-//    protected int[] onCreateDrawableState(int extraSpace) {
-//        final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
-//        if (!active) {
-//            mergeDrawableStates(drawableState, STATE_ACTIVE);
-//        }
-//        return drawableState;
-//    }
-//    
-//    public void setIsActive(boolean b) { active = b; }
-//    
-//    public boolean isActive() { return active; }
-//    
-//    private boolean active = true;
-//    
-//    private static final int[] STATE_ACTIVE = {R.attr.state_active};
     
 }

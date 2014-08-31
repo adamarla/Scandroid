@@ -3,7 +3,7 @@ package com.gradians.collect;
 public interface IConstants {
     
 //    String WEB_APP_HOST_PORT = "www.gradians.com";
-    String WEB_APP_HOST_PORT = "192.168.1.9:3000";
+    String WEB_APP_HOST_PORT = "10.0.0.2:3000";
     String BANK_HOST_PORT = "109.74.201.62:8080";
     
     String TAG = "com.gradians.collect";
@@ -11,15 +11,17 @@ public interface IConstants {
     String TOKEN_KEY = "token";
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
+    String QOTD_KEY = "qotd";
+    String COUNT_KEY = "count";
     
-    String ITEMS_KEY = "ws";
+    String ITEMS_KEY = "ws";    
     String QUIZ_ID_KEY = "quizId";
     String QUIZ_NAME_KEY = "quiz";
     String QUIZ_PATH_KEY = "locn";
     String QUIZ_PRICE_KEY = "price";
     String QUIZ_LAYOUT_KEY = "layout";
     String QUIZ_FDBK_KEY = "fdbkMrkr";
-    String QUESTIONS_KEY = "questions";    
+    String QUESTIONS_KEY = "questions";
     
     String COMMENTS_KEY = "comments";
     String COMMENT_KEY = "comment";
@@ -30,6 +32,8 @@ public interface IConstants {
     String ID_KEY = "id";
     String QUESN_ID_KEY = "qid";
     String SBPRTS_ID_KEY = "sid";
+    String PZL_ID_KEY = "pzlId";
+    String TPC_ID_KEY = "tpcId";
     String GR_ID_KEY = "grId";
     String IMG_PATH_KEY = "img";
     String SCAN_KEY = "scan";

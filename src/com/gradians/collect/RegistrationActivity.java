@@ -193,9 +193,9 @@ public class RegistrationActivity extends FragmentActivity implements
     }
 
     private void launchMainActivity(boolean enrolled) {
-        // Launch Main Activity
+        // Launch Home Activity
         Intent mainIntent = new Intent(getApplicationContext(),
-            com.gradians.collect.MainActivity.class);
+            com.gradians.collect.HomeActivity.class);
         mainIntent.putExtra(TAG, enrolled);
         startActivity(mainIntent);
 

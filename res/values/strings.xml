@@ -9,11 +9,12 @@
     <string name="button">Button</string>
     <string name="capture_button">Capture</string>
     <string name="title_activity_help">Help</string>
-    <string name="title_activity_main">School Stuff</string>
+    <string name="title_activity_quotd">Question of the Day</string>
+    <string name="title_activity_teacher">School Stuff</string>
     <string name="title_activity_home">Scanbot</string>
     <string name="title_activity_camera">Capture</string>
     <string name="title_activity_list">Items</string>
-    <string name="title_activity_flow">Question</string>    
+    <string name="title_activity_flow">Question</string>
     <string name="title_activity_registration">Gradians.com - Registration</string>
     <string name="inbox_desc">Inbox</string>
     <string name="outbox_desc">Outbox</string>
@@ -27,5 +28,7 @@
     <string name="instruction2">Do not copy the question text</string>
     <string name="instruction3">Label your answers. Write using dark ink</string>
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
+    <string name="title_activity_qotd">QotdActivity</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>

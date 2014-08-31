@@ -29,19 +29,20 @@ public class ListActivity extends Activity implements OnItemClickListener,
         setContentView(R.layout.activity_list);
         
         Parcelable[] quizItems;
-        Parcelable[] qstnItems;
+//        Parcelable[] qstnItems;
         String path;
         if (savedInstanceState != null) {
             quizItems = savedInstanceState.getParcelableArray(TAG);
-            qstnItems = savedInstanceState.getParcelableArray(TAG_ID);
+//            qstnItems = savedInstanceState.getParcelableArray(TAG_ID);
             path = savedInstanceState.getString(NAME_KEY);
         } else {
             quizItems = getIntent().getParcelableArrayExtra(TAG);
-            qstnItems = getIntent().getParcelableArrayExtra(TAG_ID);
+//            qstnItems = getIntent().getParcelableArrayExtra(TAG_ID);
             path = getIntent().getStringExtra(NAME_KEY);
         }
 
-        initialize(quizItems, qstnItems, path);
+//        initialize(quizItems, qstnItems, path);
+        initialize(quizItems, path);
     }
 
     @Override
@@ -111,6 +112,10 @@ public class ListActivity extends Activity implements OnItemClickListener,
         setUpDownloads(dlm, hcat, quiz);
         if (dlm.getCount() > 0) {
             if (dlm.isNetworkAvailable()) {
+                for (int i = 0; i < dlm.getCount(); i++) {
+                    Log.d(TAG, dlm.downloads.get(i).destUri.toString());
+                    Log.d(TAG, dlm.downloads.get(i).srcUri.toString());
+                }
                 dlm.start("Synchronizing Files", "Please wait...", this);
             } else {
                 Toast.makeText(getApplicationContext(), 
@@ -122,21 +127,29 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }        
     }
     
+    private File[] createDirs(File studentDir, Quij quiz) {
+        File quizDir = new File(studentDir, String.valueOf(quiz.getId())); 
+        quizDir.mkdir();
+        String[] names = new String[] {
+            QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
+            FEEDBACK_DIR_NAME, HINTS_DIR_NAME, UPLOAD_DIR_NAME};
+        File[] dirs = new File[names.length];
+        for (int i = 0; i < names.length; i++) {
+            dirs[i] = new File(quizDir, names[i]);
+            dirs[i].mkdir();
+        }        
+        return dirs;
+    }
+    
     private void setUpDownloads(DownloadMonitor dlm, HttpCallsAsyncTask hcat, Quij quiz) {
         String wsId = String.valueOf(quiz.getId());
         
-        File quizDir = new File(studentDir, wsId); quizDir.mkdir();
-        String[] dirs = new String[] {
-            QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
-            FEEDBACK_DIR_NAME, UPLOAD_DIR_NAME, HINTS_DIR_NAME};
-        for (String dir : dirs)
-            (new File(quizDir, dir)).mkdir();
-        
-        File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
-        File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
-        File solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME);
-        File feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME);
-        File hintsDir = new File(quizDir, HINTS_DIR_NAME);
+        File[] dirs = createDirs(studentDir, quiz);
+        File questionsDir = dirs[0];
+        File answersDir = dirs[1];
+        File solutionsDir = dirs[2];
+        File feedbackDir = dirs[3];
+        File hintsDir = dirs[4];
         
         Properties markers = new Properties();
         File markerFile = new File(studentDir, "markers");
@@ -161,7 +174,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             String marker = (String)markers.get(question.getId());
             hintMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[0]);
             fdbkMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[1]);
-            
+            Log.d(TAG, question.getGRId("") + " " + question.getState() + " " + question.getImgSpan());
             switch (question.getState()) {
             case GRADED:
                 File fdbk = new File(feedbackDir, question.getId());
@@ -265,24 +278,12 @@ public class ListActivity extends Activity implements OnItemClickListener,
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
 
-    private void initialize(Parcelable[] quizItems, Parcelable[] qstnItems, String path) {
+    private void initialize(Parcelable[] quizItems, String path) {
         studentDir = new File(path);
         
         quizzes = new Quij[quizItems.length];
         for (int i = 0; i < quizItems.length; i++)
             quizzes[i] = (Quij)quizItems[i];
-        
-        String quizId = ((Question)qstnItems[0]).getId().split("\\.")[0];
-        int quizIdx = 0;
-        Question q;
-        for (int i = 0; i < qstnItems.length; i++) {
-            q = (Question)qstnItems[i];
-            if (!quizId.equals(q.getId().split("\\.")[0])) {
-                quizId = q.getId().split("\\.")[0];
-                quizIdx++;
-            }
-            quizzes[quizIdx].add(q);
-        }
         
         String title;
         switch (quizzes[0].getState()) {

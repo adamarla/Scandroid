@@ -61,9 +61,9 @@ public class QuizListAdapter extends BaseAdapter implements IConstants {
         tv.setText(quiz.toString());
 
         TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
-        if (quiz.getState() == NOT_YET_GRADED)
+        if (quiz.getState() == NOT_YET_GRADED) {
             tvTotal.setText(String.format("%2d%%", (int)(graded*100/quiz.size())));
-        else if (quiz.getState() == GRADED) {
+        } else if (quiz.getState() == GRADED) {
             tvTotal.setText(String.format("%2d%%", (int)(quiz.getScore()*100/quiz.getMax())));
         } else {
             tvTotal.setText(String.format("%2d%%", (int)(completed*100/total)));
