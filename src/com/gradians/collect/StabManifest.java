@@ -1,19 +1,23 @@
 package com.gradians.collect;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import android.util.Log;
 
-public class StabManifest implements IConstants {
+public class StabManifest extends BaseManifest {
     
-    public StabManifest(JSONArray items) throws Exception {
-        parse(items);
+    public StabManifest(File dir, JSONArray items, Topic[] topics) throws Exception {
+        super(dir, items, topics);
     }
     
     public Quij[] getStabs() {
@@ -21,22 +25,22 @@ public class StabManifest implements IConstants {
         for (Quij quiz : quizzes) {
             if (quiz != null) {
                 quiz.determineState();
-                quiz.updatePgMaps();
                 toReturn.add(quiz);
             }
         }
-        return toReturn.toArray(new Quij[toReturn.size()]);
+        return toReturn.size() > 0 ? 
+            toReturn.toArray(new Quij[toReturn.size()]):
+            new Quij[0];
     }
     
-    private void parse(JSONArray items) throws Exception {
-        
+    @Override
+    public void parse(JSONArray items) throws Exception {        
         if (items == null) return;
         
         Date today = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.UK);
         int monthsSinceEpoch = getMonthsSinceEpoch(sdf.format(today));
         quizzes = new Quij[monthsSinceEpoch];
-        Log.d(TAG, "Months since epoch " + monthsSinceEpoch);
         
         JSONObject item;
         for (int i = items.size()-1; i > -1; i--) {
@@ -48,22 +52,24 @@ public class StabManifest implements IConstants {
                 (String)item.get(SBPRTS_ID_KEY),
                 (String)item.get(IMG_PATH_KEY),
                 ((Long)item.get(IMG_SPAN_KEY)).shortValue());
-            question.setGRId((String)item.get(GR_ID_KEY));
+            question.setPuzzle((Boolean)item.get(PZL_KEY));
             question.setScanLocn((String)item.get(SCANS_KEY));
             question.setOutOf(((Long)item.get(OUT_OF_KEY)).shortValue());
             question.setExaminer(((Long)item.get(EXAMINER_KEY)).intValue());
+            question.setMarks(((Double)item.get(MARKS_KEY)).floatValue());            
             question.setFdbkMarker((Long)item.get(FDBK_MRKR_KEY));
-            question.setHintMarker(item.get(HINT_MRKR_KEY) == null ? 
-                0:(Long)item.get(HINT_MRKR_KEY));
-            question.setMarks(((Double)item.get(MARKS_KEY)).floatValue());
-            question.setState(GRADED);
+            
+            question.setState(question.getMarks() < 0 ? RECEIVED : GRADED);
+            state.remove(question.getId());
             
             monthsSinceEpoch = getMonthsSinceEpoch((String)item.get(NAME_KEY));
             if (quizzes[monthsSinceEpoch] == null)
                 quizzes[monthsSinceEpoch] = new Quij(
                     getQuizName((String)item.get(NAME_KEY)), 
-                    null, monthsSinceEpoch, 0, null);            
+                    null, monthsSinceEpoch, 0, "QSN", null);
+            question.setName(String.format("Q.%d", (quizzes[monthsSinceEpoch].size()+1)));
             quizzes[monthsSinceEpoch].add(question);
+            questionByIdMap.put(question.getId(), question);
         }
     }
     

@@ -26,14 +26,14 @@
     
     <ImageButton
         android:id="@+id/btnAction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:layout_centerInParent="true"        
         android:gravity="center"
         android:scaleType="center"        
         android:contentDescription="@string/capture_button"
         android:onClick="action"
-        android:background="@drawable/btn_big_selector"
+        android:background="@drawable/btn_selector"
         android:src="@android:drawable/ic_menu_camera"/>
     
     <LinearLayout
@@ -50,7 +50,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:gravity="right"
-	        android:background="@drawable/btn_quiz"
+	        android:background="@drawable/label_quiz_counts"
 	        android:paddingRight="2dp"
 	        android:layout_marginBottom="2dp"
 	        android:textColor="@color/white"
@@ -63,7 +63,7 @@
 	        android:layout_marginBottom="2dp"
             android:gravity="right"
             android:paddingRight="2dp"
-	        android:background="@drawable/btn_quiz"
+	        android:background="@drawable/label_quiz_counts"
 	        android:textColor="@color/white"
 	        android:textSize="@dimen/tiny_font_size"/>
     
@@ -73,7 +73,7 @@
 	        android:layout_height="wrap_content"
             android:gravity="right"
             android:paddingRight="2dp"
-	        android:background="@drawable/btn_quiz"
+	        android:background="@drawable/label_quiz_counts"
 	        android:textColor="@color/white"
 	        android:textSize="@dimen/tiny_font_size"/>
         

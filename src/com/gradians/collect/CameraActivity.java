@@ -3,7 +3,6 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -18,6 +17,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.app.Activity;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -48,62 +48,19 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         final int position = params.getIntExtra(TAG_ID, 0);
         imagesDir = new File(getIntent().getStringExtra(SCANS_KEY));
         Parcelable[] parcels = params.getParcelableArrayExtra(TAG);
-        quizId = ((Question)parcels[0]).getId().split("\\.")[0];
         
-        partPgMap = new HashMap<String, Integer>();
         selectedParts = new HashSet<Integer>();
         
         questions = new Question[parcels.length];
-        int partsToPosn = 0;
-        PartButton btn = null;
-        final LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
-        for (int i = 0; i < questions.length; i++) {
-            
+        for (int i = 0; i < questions.length; i++)
             questions[i] = (Question)parcels[i];
-            int[] pgMap = questions[i].getPgMap();
-            boolean[] sent = questions[i].getSentState();
-            if (position > i) partsToPosn += pgMap.length;
-            for (int j = 0; j < pgMap.length; j++) {
-                
-                btn = new PartButton(this);
-                btn.setTag(i + "." + j);
-                btn.setText(pgMap.length == 1 ? questions[i].getName() :
-                    questions[i].getName() + (char)((int)'a'+j));
-                btn.setTextColor(getResources().getColorStateList(R.drawable.qsn_text_color));
-                btn.setBackgroundResource(R.drawable.qsn_background_selector);
-//                btn.setTextSize(getResources().getDimension(R.dimen.small_font_size));
-                btn.setTextSize(12f);
-                LayoutParams lp = new LayoutParams(
-                    LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-                lp.setMargins(2, 0, 2, 0);
-                btn.setLayoutParams(lp);
-                btn.setOnClickListener(this);
-
-                if (questions[i].getState() > CAPTURED) {
-                    btn.setIsSent(true);
-                } else {
-                    if (pgMap[j] != 0) {
-                        if (sent[j]) {
-                            btn.setIsSent(true);
-                        } else {
-                            btn.setIsCaptured(true);
-                            partPgMap.put((String)btn.getTag(), pgMap[j]);
-                        }
-                    }
-                }
-                btn.refreshDrawableState();
-                llButtons.addView(btn);
-            }
-        }
         
-        btnAction = (ImageButton)findViewById(R.id.btnAction);
-        btnAction.setEnabled(false);
-        
-        updateCounts();
-        
+        final LinearLayout llButtons = 
+            (LinearLayout)this.findViewById(R.id.llSelectorBtns);
+        int partsToPosn = layoutPartButtons(questions, llButtons, position);
         final int offset = partsToPosn;
         final HorizontalScrollView hsvSelectors = 
-                (HorizontalScrollView)this.findViewById(R.id.hsvSelectorBtns);
+            (HorizontalScrollView)this.findViewById(R.id.hsvSelectorBtns);
         hsvSelectors.post(new Runnable() {
             @Override
             public void run() {
@@ -111,22 +68,14 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 hsvSelectors.smoothScrollTo(scrollTo, 0);
             }
         });
-
+        
+        btnAction = (ImageButton)findViewById(R.id.btnAction);
+        btnAction.setEnabled(false);
+        updateCounts();
     }
     
     @Override
     public void onBackPressed() {
-        String tag = null;
-        for (int i = 0; i < questions.length; i++) {
-            int[] pgMap = questions[i].getPgMap();
-            for (int j = 0; j < pgMap.length; j++) {
-                tag = i+"."+j;
-                if (partPgMap.containsKey(tag)) {
-                    pgMap[j] = partPgMap.get(tag);
-                }
-            }
-            questions[i].setPgMap(pgMap);
-        }        
         Intent intent = new Intent();
         intent.putExtra(TAG, questions);
         this.setResult(RESULT_OK, intent);
@@ -174,22 +123,26 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         }
         if (selectedParts.size() == 0) return;
         
+        String tag;
+        int[] map;
+        int qsnIdx,partIdx;
+        PartButton pb;
+        Iterator<Integer> iter = selectedParts.iterator();
         if (cameraOn) {
             // capture action
+            pb = (PartButton)llButtons.getChildAt(iter.next());
+            tag = (String)pb.getTag();
+            qsnIdx = Integer.parseInt(tag.split("\\.")[0]);
+            
             int openPgNo = 1;            
-            String nextName = quizId + "." + openPgNo;
+            String nextName = questions[qsnIdx].getId() + "." + String.valueOf(openPgNo);
             while ((picture = new File(imagesDir, nextName)).exists()) {
                 openPgNo++;
-                nextName = quizId + "." + openPgNo;
+                nextName = questions[qsnIdx].getId() + "." + String.valueOf(openPgNo);
             }
-            camera.takePicture(null, null, new PictureWriter(this, picture));            
+            camera.takePicture(null, null, new PictureWriter(this, picture));
         } else {
             // discard action
-            String tag;
-            int[] map;
-            int i,j;
-            PartButton pb;
-            Iterator<Integer> iter = selectedParts.iterator();
             while (iter.hasNext()) {
                 pb = (PartButton)llButtons.getChildAt(iter.next());
                 pb.setSelected(false);
@@ -197,14 +150,12 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 pb.refreshDrawableState();
                 
                 tag = (String)pb.getTag();
-                int pg = partPgMap.get(tag);
-                (new File(imagesDir, quizId + "." + pg)).delete();
-                partPgMap.remove(pb.getTag());
-                i = Integer.parseInt(tag.split("\\.")[0]);
-                j = Integer.parseInt(tag.split("\\.")[1]);
-                map = questions[i].getPgMap();
-                map[j] = 0;
-                questions[i].setPgMap(map);
+                qsnIdx = Integer.parseInt(tag.split("\\.")[0]);
+                partIdx = Integer.parseInt(tag.split("\\.")[1]);
+                map = questions[qsnIdx].getPgMap();
+                (new File(imagesDir, questions[qsnIdx].getId() + "." + map[partIdx])).delete();
+                map[partIdx] = 0;
+                questions[qsnIdx].setPgMap(map);
             }
             selectedParts.clear();
             comandeerCamera();
@@ -218,54 +169,73 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         PartButton pb = (PartButton)v;
         if (pb.isSent()) return;
         
-        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
+        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);
+        
         pb.setSelected(!pb.isSelected());
+        int pbQsnIdx = Integer.parseInt(((String)pb.getTag()).split("\\.")[0]);
+        int pbPartIdx = Integer.parseInt(((String)pb.getTag()).split("\\.")[1]);
         if (pb.isCaptured()) {
             btnAction.setImageResource(R.drawable.ic_action_rotate_right);
-            
-            int pg = this.partPgMap.get(pb.getTag());            
-            // unselect other buttons
-            PartButton other;
-            for (int i = 0; i < llButtons.getChildCount(); i++) {
-                other = (PartButton)llButtons.getChildAt(i);
-                if (!other.isCaptured()) 
-                    other.setSelected(false);
-                else if (partPgMap.get(other.getTag()) != pg)
-                    other.setSelected(false);
-                else
-                    other.setSelected(pb.isSelected());
-                other.refreshDrawableState();
-            }
-            
             if (pb.isSelected()) {
                 btnAction.setEnabled(true);
                 cameraOn = false;
-                File file = new File(imagesDir, quizId + "." + pg);
+                
+                // unselect other buttons
+                Question q = questions[pbQsnIdx];
+                int[] map = q.getPgMap();
+                PartButton other;
+                int otherQsnIdx, otherPartIdx;
+                for (int i = 0; i < llButtons.getChildCount(); i++) {
+                    other = (PartButton)llButtons.getChildAt(i);                
+                    otherQsnIdx = Integer.parseInt(((String)other.getTag()).split("\\.")[0]);
+                    otherPartIdx = Integer.parseInt(((String)other.getTag()).split("\\.")[1]);
+                    
+                    if (otherQsnIdx != pbQsnIdx) 
+                        other.setSelected(false);
+                    else if (otherPartIdx != pbPartIdx &&
+                            map[otherPartIdx] != map[pbPartIdx])
+                        other.setSelected(false);
+                    else
+                        other.setSelected(pb.isSelected());
+                    
+                    other.refreshDrawableState();
+                }
+                File file = new File(imagesDir, q.getId() + "." + map[pbPartIdx]);
+                Log.d(TAG, file.getName() + " selected ");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                     cameraPreview.setBackground(Drawable.createFromPath(file.getPath()));
                 } else {
                     cameraPreview.setBackgroundDrawable(Drawable.createFromPath(file.getPath()));
-                }
+                }                
             } else {
                 btnAction.setEnabled(false);
                 comandeerCamera();
             }
         } else {
             btnAction.setImageResource(android.R.drawable.ic_menu_camera);
-            
+
             boolean anySelected = false;
             PartButton other;
+            int otherQsnIdx, otherPartIdx;
             for (int i = 0; i < llButtons.getChildCount(); i++) {
-                other = (PartButton)llButtons.getChildAt(i);
-                if (other.isSelected()) {
-                    if (other.isCaptured()) {
+                other = (PartButton)llButtons.getChildAt(i);                
+                otherQsnIdx = Integer.parseInt(((String)other.getTag()).split("\\.")[0]);
+                otherPartIdx = Integer.parseInt(((String)other.getTag()).split("\\.")[1]);
+                
+                Question otherQ = questions[otherQsnIdx];
+                int[] otherMap = otherQ.getPgMap();
+                if (pb.isSelected()) {
+                    if (otherQsnIdx != pbQsnIdx) { 
                         other.setSelected(false);
-                    } else {
-                        anySelected = true;
+                    } else if (otherMap[otherPartIdx] != 0) {
+                        other.setSelected(false);
                     }
-                }                
-                other.refreshDrawableState();
-            }            
+                    other.refreshDrawableState();
+                }
+                
+                if (other.isSelected())
+                    anySelected = true;
+            }
             if (anySelected) {
                 if (!cameraOn) {
                     cameraOn = true;
@@ -280,10 +250,11 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         cameraOn = false;
         if (success) {
             // update selector buttons
-            int pg = Integer.parseInt(picture.getName().split("\\.")[1]);
+            int posn = picture.getName().lastIndexOf('.')+1;
+            int pg = Integer.parseInt(picture.getName().substring(posn));
             PartButton pb;
             String tag;
-            int i, j;
+            int qsnIdx, partIdx;
             int[] map;
             LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
             for (int spIdx : selectedParts) {
@@ -292,12 +263,11 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 pb.refreshDrawableState();
                 
                 tag = (String)pb.getTag();
-                partPgMap.put(tag, pg);
-                i = Integer.parseInt(tag.split("\\.")[0]);
-                j = Integer.parseInt(tag.split("\\.")[1]);
-                map = questions[i].getPgMap();
-                map[j] = pg;
-                questions[i].setPgMap(map);
+                qsnIdx = Integer.parseInt(tag.split("\\.")[0]);
+                partIdx = Integer.parseInt(tag.split("\\.")[1]);
+                map = questions[qsnIdx].getPgMap();
+                map[partIdx] = pg;
+                questions[qsnIdx].setPgMap(map);
             }
             selectedParts.clear();
             btnAction.setImageResource(R.drawable.ic_action_rotate_right);
@@ -381,6 +351,45 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         TextView tvTotal = (TextView)findViewById(R.id.tvTotalCount);
         tvTotal.setText(String.format("Total %3d", llButtons.getChildCount()));
     }    
+
+    private int layoutPartButtons(Question[] questions, LinearLayout llButtons, 
+            int position) {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int pixels = (int)(metrics.density*50f + 0.5f);
+        
+        int partsToPosn = 0;
+        PartButton btn = null;        
+        for (int i = 0; i < questions.length; i++) {
+            
+            int[] pgMap = questions[i].getPgMap();
+            if (position > i) partsToPosn += pgMap.length;
+            for (int j = 0; j < pgMap.length; j++) {
+                
+                btn = new PartButton(this);
+                btn.setTag(i + "." + j);
+                btn.setText(pgMap.length == 1 ? 
+                    questions[i].getName() :
+                    questions[i].getName() + (char)((int)'a'+j));
+                btn.setTextColor(getResources().getColorStateList(
+                    R.drawable.part_btn_text_selector));
+                btn.setBackgroundResource(R.drawable.part_btn_selector);
+//                btn.setTextSize(getResources().getDimension(R.dimen.small_font_size));
+                btn.setTextSize(12f);
+                LayoutParams lp = new LayoutParams(pixels, pixels);
+                lp.setMargins(2, 0, 2, 0);
+                btn.setLayoutParams(lp);
+                btn.setIsSent(questions[i].getState() > CAPTURED);
+                btn.setIsCaptured(questions[i].getState() > DOWNLOADED);
+                if (questions[i].getState() == DOWNLOADED) {
+                    btn.setIsCaptured(pgMap[j] != 0);
+                }
+                btn.refreshDrawableState();
+                btn.setOnClickListener(this);
+                llButtons.addView(btn);
+            }
+        }
+        return partsToPosn;
+    }
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -486,11 +495,9 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
 
     private Question[] questions;
     private boolean cameraOn;
-    private String quizId;
     private File picture, imagesDir;
     
     private HashSet<Integer> selectedParts;
-    private HashMap<String, Integer> partPgMap;
     
     private Camera camera;
     private CameraPreview cameraPreview;

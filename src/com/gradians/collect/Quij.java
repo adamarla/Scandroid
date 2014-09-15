@@ -1,10 +1,10 @@
 package com.gradians.collect;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 /**
  * Using it as a collection of questions based on any creiterea. 
@@ -14,42 +14,41 @@ import android.os.Parcelable;
  */
 class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     
-    public Quij(String name, String path, long id, int price, String layout) {
+    public Quij(String name, String path, long id, int price, String type, String layout) {
         this.name = name;
         this.id = id;
         this.path = path;
         this.price = price;
+        this.type = type;
         this.layout = layout;
     }
     
-    public void updatePgMaps() {
-        if (this.state == NOT_YET_BILLED) return;
-        
-        Question q = null;
-        int[] map = null;
-        int page = 1;
-        HashMap<String, Integer> scanPgMap = new HashMap<String, Integer>();
-        for (int i = 0; i < this.size(); i++) {
-            q = this.get(i);
-            map = q.getPgMap();
-            for (int k = 0; k < map.length; k++) {
-                if (page == map[k]) {
-                    page++;
-                }
-            }
-            
-            String[] scans = q.getScanLocn();
-            for (int j = 0; j < scans.length; j++) {
-                if (!scans[j].equals("")) {
-                    if (!scanPgMap.containsKey(scans[j])) {
-                        scanPgMap.put(scans[j], page);
-                        page++;
-                    }
-                    map[j] = scanPgMap.get(scans[j]);
-                }
-            }
-            q.setPgMap(map);
+    public void setType(String type) {
+        this.type = type;
+    }
+    
+    public String getDisplayTotal() {        
+        int completed = 0, graded = 0, total = 0;
+        Question[] questions = this.getQuestions();
+        for (Question q : questions ) {
+            for (int pg : q.getPgMap()) if (pg != 0) completed++;
+            total += q.getPgMap().length;
+            if (q.getState() == GRADED) graded++;
         }
+        
+        String display;        
+        if (getState() == NOT_YET_BILLED) {
+            display = String.format("%s", size());
+        } else if (getState() == NOT_YET_GRADED) {
+            display = String.format("%2d%%", (int)(graded*100/this.size()));
+        } else if (getState() == GRADED) {
+            display = path == null ?
+                String.format("%d", this.size()) :
+                String.format("%2d%%", (int)(this.getScore()*100/this.getMax()));
+        } else {
+            display = String.format("%2d%%", (int)(completed*100/total));
+        }        
+        return display;
     }
     
     public void determineState() {
@@ -65,7 +64,7 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         }
         
         switch (leastFarAlong) {
-        case WAITING:
+        case LOCKED:
         case DOWNLOADED:
             state = NOT_YET_COMPLETED;
             break;
@@ -99,6 +98,10 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     
     public int getPrice() {
         return price;
+    }
+    
+    public String getType() {
+        return type;
     }
     
     public double getScore() {
@@ -155,17 +158,23 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
+        dest.writeString(path);
+        dest.writeString(layout);
         dest.writeLong(id);
         dest.writeInt(state);
         dest.writeInt(price);
+        dest.writeString(type);
         dest.writeTypedList(this);
     }
     
     private Quij(Parcel in) {
         name = in.readString();
+        path = in.readString();
+        layout = in.readString();
         id = in.readLong();
         state = (short)in.readInt();
         price = in.readInt();
+        type = in.readString();
         this.addAll(in.createTypedArrayList(Question.CREATOR));
     }
     
@@ -175,6 +184,7 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     }
     
     private int price;
+    private String type;
     private String name, path, layout;
     private long id;
     private short state;

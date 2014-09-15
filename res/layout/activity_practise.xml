@@ -6,7 +6,7 @@
     tools:context=".TeacherActivity" >
     
     <com.gradians.collect.HugeButton
-        android:id="@+id/btnInbox"
+        android:id="@+id/btnOffered"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_selector"
@@ -15,7 +15,7 @@
         android:onClick="onClick"/>
 
     <com.gradians.collect.HugeButton
-        android:id="@+id/btnOutbox"
+        android:id="@+id/btnSelected"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_selector"
@@ -24,7 +24,7 @@
         android:onClick="onClick"/>
     
     <com.gradians.collect.HugeButton
-        android:id="@+id/btnGraded"
+        android:id="@+id/btnSent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/btn_selector"

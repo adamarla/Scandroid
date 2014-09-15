@@ -2,7 +2,6 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Properties;
@@ -10,26 +9,21 @@ import java.util.Properties;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-public class QuizManifest implements IConstants {
+import android.util.Log;
+
+public class QuizManifest extends BaseManifest {
     
-    public QuizManifest(File manifests, JSONArray items) throws Exception {
-        parse(manifests, items);
+    public QuizManifest(File dir, JSONArray items, Topic[] topics) throws Exception {
+        super(dir, items, topics);
     }
-    
+
+    @Override
     public void update(Question[] questions) {
-        Question question;
-        for (Question q : questions) {
-            question = questionByIdMap.get(q.getId());
-            question.setPgMap(q.getPgMap());
-            question.setSentState(q.getSentState());
-            question.setState(q.getState());
-            stateMap.setProperty(q.getId(), q.toString());
-        }
-        
+        super.update(questions);
         for (Quij quiz : quizzes)
             quiz.determineState();
     }
-        
+
     public Quij[] getInboxItems() {
         ArrayList<Quij> items = new ArrayList<Quij>();
         for (Quij quiz : quizzes) {
@@ -57,20 +51,11 @@ public class QuizManifest implements IConstants {
         return items.toArray(new Quij[items.size()]);
     }
     
-    public void commit() throws Exception {
-        stateMap.store(new FileOutputStream(stateFile), null);
-    }
-    
-    private void parse(File stateFile, JSONArray items) throws Exception {
-        this.stateFile = stateFile;
+    @Override
+    public void parse(JSONArray items) throws Exception {
         
-        quizzes = new Quij[items.size()];        
-        questionByIdMap = new HashMap<String, Question>();
+        quizzes = new Quij[items.size()];
         
-        Properties lastState = new Properties();
-        lastState.load(new FileInputStream(stateFile));
-        
-        stateMap = new Properties();
         for (int i = 0; i < items.size(); i++) {
             JSONObject quizItem = (JSONObject) items.get(i);
             quizzes[i] = new Quij((
@@ -78,11 +63,12 @@ public class QuizManifest implements IConstants {
                 (String)quizItem.get(QUIZ_PATH_KEY), 
                 (Long)quizItem.get(QUIZ_ID_KEY),
                 ((Long)quizItem.get(QUIZ_PRICE_KEY)).intValue(),
-                (String)quizItem.get(QUIZ_LAYOUT_KEY));
+                GR_TYPE, (String)quizItem.get(QUIZ_LAYOUT_KEY));
             
             JSONArray questions = (JSONArray)quizItem.get(QUESTIONS_KEY);
             for (int j = 0; j < questions.size(); j++) {
                 JSONObject item = (JSONObject)questions.get(j);
+                
                 Question question = new Question((
                     (String)item.get(NAME_KEY)).replace("-", ""),
                     (String)item.get(ID_KEY),
@@ -90,7 +76,7 @@ public class QuizManifest implements IConstants {
                     (String)item.get(SBPRTS_ID_KEY),
                     (String)item.get(IMG_PATH_KEY),
                     ((Long)item.get(IMG_SPAN_KEY)).shortValue());
-
+                
                 if (item.get(GR_ID_KEY) != null) {
                     question.setGRId((String)item.get(GR_ID_KEY));
                     question.setScanLocn((String)item.get(SCANS_KEY));
@@ -102,28 +88,19 @@ public class QuizManifest implements IConstants {
                     question.setHintMarker(item.get(HINT_MRKR_KEY) == null ? 
                         0 : (Long)item.get(HINT_MRKR_KEY));
                     
-                    boolean allPartsReceived = true;
-                    for (String s : question.getScanLocn()) {
-                        if (s.equals("")) {
-                            allPartsReceived = false;
-                            break;
-                        }
-                    }
-                    
-                    if (!allPartsReceived) {
-                        // check local state
-                        String qsnState = lastState.getProperty(question.getId());
+                    boolean notYetReceived = question.getScanLocn()[0].equals("");
+                    if (notYetReceived) {
+                        String qsnState = state.getProperty(question.getId());
                         if (qsnState != null) {
-                            String[] tokens = qsnState.split(",");
-                            
-                            if (!tokens[0].contains("0")) question.setState(CAPTURED);
-                            if (!tokens[1].contains("0")) question.setState(SENT);                            
-                            question.setPgMap(tokens[0]);
-                            question.setSentState(tokens[1]);
-                        }                        
+                            question.setPgMap(qsnState.split(",")[0]);
+                            question.setState(qsnState.split(",")[1].equals("0")?
+                                CAPTURED : SENT);
+                        } else {
+                            question.setState(DOWNLOADED);
+                        }
                     } else {
-                        float marks = item.get(MARKS_KEY) == null ? -1f : 
-                            ((Double)item.get(MARKS_KEY)).floatValue();
+                        state.remove(question.getId());
+                        float marks = ((Double)item.get(MARKS_KEY)).floatValue();
                         question.setState(marks < 0 ? RECEIVED : GRADED);
                         question.setMarks(marks);
                     }
@@ -132,14 +109,10 @@ public class QuizManifest implements IConstants {
                 questionByIdMap.put(question.getId(), question);
             }
             quizzes[i].determineState();
-            quizzes[i].updatePgMaps();
         }
     }
-        
-    private File stateFile;
-    private Properties stateMap;
     
-    private HashMap<String, Question> questionByIdMap;
     private Quij[] quizzes;
+
 
 }

@@ -28,44 +28,24 @@ public class ListActivity extends Activity implements OnItemClickListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
         
-        Parcelable[] quizItems;
-//        Parcelable[] qstnItems;
-        String path;
-        if (savedInstanceState != null) {
-            quizItems = savedInstanceState.getParcelableArray(TAG);
-//            qstnItems = savedInstanceState.getParcelableArray(TAG_ID);
-            path = savedInstanceState.getString(NAME_KEY);
-        } else {
-            quizItems = getIntent().getParcelableArrayExtra(TAG);
-//            qstnItems = getIntent().getParcelableArrayExtra(TAG_ID);
-            path = getIntent().getStringExtra(NAME_KEY);
-        }
+        Parcelable[] quizItems = getIntent().getParcelableArrayExtra(TAG);
+        String path = getIntent().getStringExtra(NAME_KEY);
 
-//        initialize(quizItems, qstnItems, path);
         initialize(quizItems, path);
+        setTitle(getIntent().getStringExtra(ID_KEY));
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArray(TAG, quizzes);
-        ArrayList<Question> questions = new ArrayList<Question>();
-        for (Quij quiz : quizzes) {
-            questions.addAll(quiz);
-        }
-        outState.putParcelableArray(TAG_ID, 
-            questions.toArray(new Question[questions.size()]));
         outState.putString(NAME_KEY, studentDir.getPath());
         super.onSaveInstanceState(outState);
     }
 
     @Override
     public void onBackPressed() {
-        ArrayList<Question> questions = new ArrayList<Question>();
-        for (Quij quiz : quizzes) {
-            questions.addAll(quiz);
-        }
         Intent intent = new Intent();
-        intent.putExtra(TAG_ID, questions.toArray(new Question[questions.size()]));
+        intent.putExtra(TAG_ID, adapter.getDirtys());
         this.setResult(RESULT_OK, intent);
         super.onBackPressed();
     }
@@ -97,7 +77,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         if (requestCode == DOWNLOAD_MONITOR_TASK_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Quij quiz = (Quij)adapter.getItem(selectedQuizPosition);
-                launchFlowActivity(quiz, true);
+                launchFlowActivity(quiz);
             }
         }
     }
@@ -112,10 +92,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         setUpDownloads(dlm, hcat, quiz);
         if (dlm.getCount() > 0) {
             if (dlm.isNetworkAvailable()) {
-                for (int i = 0; i < dlm.getCount(); i++) {
-                    Log.d(TAG, dlm.downloads.get(i).destUri.toString());
-                    Log.d(TAG, dlm.downloads.get(i).srcUri.toString());
-                }
                 dlm.start("Synchronizing Files", "Please wait...", this);
             } else {
                 Toast.makeText(getApplicationContext(), 
@@ -123,12 +99,13 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     Toast.LENGTH_LONG).show();
             }
         } else {
-            launchFlowActivity(quiz, false);
-        }        
+            launchFlowActivity(quiz);
+        }
     }
     
     private File[] createDirs(File studentDir, Quij quiz) {
-        File quizDir = new File(studentDir, String.valueOf(quiz.getId())); 
+        String dirName = String.valueOf(quiz.getId());
+        File quizDir = new File(studentDir, dirName);
         quizDir.mkdir();
         String[] names = new String[] {
             QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
@@ -137,12 +114,11 @@ public class ListActivity extends Activity implements OnItemClickListener,
         for (int i = 0; i < names.length; i++) {
             dirs[i] = new File(quizDir, names[i]);
             dirs[i].mkdir();
-        }        
+        }
         return dirs;
     }
     
     private void setUpDownloads(DownloadMonitor dlm, HttpCallsAsyncTask hcat, Quij quiz) {
-        String wsId = String.valueOf(quiz.getId());
         
         File[] dirs = createDirs(studentDir, quiz);
         File questionsDir = dirs[0];
@@ -163,18 +139,18 @@ public class ListActivity extends Activity implements OnItemClickListener,
         ArrayList<Download> jsonReqs = new ArrayList<Download>();
         Question[] questions = quiz.getQuestions();
         for (Question question : questions) {
+            
             Uri src, dest;
             File image = null;
             String imgLocn = question.getImgLocn();
             String[] scans = question.getScanLocn();
             int[] pageNos = question.getPgMap();
-            boolean[] sentState = question.getSentState();
             
             long hintMarker, fdbkMarker;
             String marker = (String)markers.get(question.getId());
             hintMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[0]);
             fdbkMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[1]);
-            Log.d(TAG, question.getGRId("") + " " + question.getState() + " " + question.getImgSpan());
+            
             switch (question.getState()) {
             case GRADED:
                 File fdbk = new File(feedbackDir, question.getId());
@@ -189,14 +165,20 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     jsonReqs.add(new Download(null, src, dest));
                 }
             case RECEIVED:
+                for (short i = 0; i < question.getImgSpan(); i++) {
+                    image = new File(solutionsDir, question.getId() + "." + (i+1));
+                    if (!image.exists()) {
+                        src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, imgLocn, (i+1)));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
+                    }
+                }
                 for (int i = 0; i < pageNos.length; i++) {
-                    if (pageNos[i] != 0) {
-                        image = new File(answersDir, wsId + "." + pageNos[i]);
-                        if (!image.exists()) {
-                            src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, scans[i]));
-                            dest = Uri.fromFile(image);
-                            dlm.add(question.getId(), src, dest);
-                        }
+                    image = new File(answersDir, question.getId() + "." + pageNos[i]);
+                    if (!image.exists()) {
+                        src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, scans[i]));
+                        dest = Uri.fromFile(image);
+                        dlm.add(question.getId(), src, dest);
                     }
                 }
                 break;
@@ -204,15 +186,13 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 for (int i = 0; i < scans.length; i++) {
                     if (scans[i].equals("") && question.getExaminer() != 0) {
                         pageNos[i] = 0; // re-send
-                        sentState[i] = false;
                         question.setState(DOWNLOADED);
                     }
                 }
-                question.setSentState(sentState);
             case CAPTURED:
                 for (int i = 0; i < pageNos.length; i++) {
                     if (pageNos[i] != 0) {
-                        image = new File(answersDir, wsId + "." + pageNos[i]);
+                        image = new File(answersDir, question.getId() + "." + pageNos[i]);
                         if (!image.exists()) { // recapture
                             pageNos[i] = 0;
                             question.setState(DOWNLOADED);
@@ -221,23 +201,14 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
                 question.setPgMap(pageNos);
             case DOWNLOADED:
-            case WAITING:
-                for (short i = 0; i < question.getImgSpan(); i++) {
-                    image = new File(solutionsDir, question.getId() + "." + (i+1));
-                    if (!image.exists()) {
-                        src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT, imgLocn, (i+1)));
-                        dest = Uri.fromFile(image);
-                        dlm.add(question.getId(), src, dest);
-                    }
-                }                
+            case LOCKED:
                 image = new File(questionsDir, question.getId());
                 if (!image.exists()) {
-                    src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, imgLocn));
+                    src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, 
+                        imgLocn));
                     dest = Uri.fromFile(image);
                     dlm.add(question.getId(), src, dest);
                 }
-                if (question.getState() == WAITING)
-                    question.setState(DOWNLOADED);
                 
                 File hint = new File(hintsDir, question.getId());
                 if (hintMarker < question.getHintMarker()) {
@@ -264,17 +235,17 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
     }
 
-    private void launchFlowActivity(Quij quiz, boolean firstTime) {
+    private void launchFlowActivity(Quij quiz) {
         File quizDir = new File(studentDir, String.valueOf(quiz.getId()));
         Question[] questions = quiz.getQuestions();
         Intent flowIntent = new Intent(this.getApplicationContext(), 
             com.gradians.collect.FlowActivity.class);   
         flowIntent.putExtra(TAG_ID, questions);
-        flowIntent.putExtra(TAG, quizDir.getPath());
-        flowIntent.putExtra(NAME_KEY, quiz.getName());
-        flowIntent.putExtra(STATE_KEY, firstTime);
+        flowIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
+        flowIntent.putExtra(NAME_KEY, quiz.getName());        
         if (quiz.getState() == NOT_YET_BILLED)
             flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
+        flowIntent.putExtra(ID_KEY, quiz.getType());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
 
@@ -284,19 +255,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         quizzes = new Quij[quizItems.length];
         for (int i = 0; i < quizItems.length; i++)
             quizzes[i] = (Quij)quizItems[i];
-        
-        String title;
-        switch (quizzes[0].getState()) {
-        case GRADED:
-            title = "Graded";
-            break;
-        case NOT_YET_GRADED:
-            title = "Outbox";
-            break;
-        default:
-            title = "Inbox";
-        }
-        setTitle(title);
         
         adapter = new QuizListAdapter(this, quizzes);
         ListView lv = (ListView) this.findViewById(R.id.lvQuiz);

@@ -1,65 +1,67 @@
 package com.gradians.collect;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import java.io.File;
 
-import android.content.Intent;
+import org.json.simple.JSONArray;
+
+import android.R;
 import android.util.Log;
 import android.view.View;
 
 public class QotdActivity extends BaseActivity {
 
     public QotdActivity() {
-        super(R.layout.activity_qotd, "tokens/refresh/stab");
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO Auto-generated method stub
-        
+        super(R.layout.activity_qotd, "qsns");
     }
 
     @Override
     public void onClick(View v) {
         Quij[] items = null;
+        String title = null;
         switch (v.getId()) {
         case R.id.btnPast:
-            if (stabManifest == null) return;
-            items = stabManifest.getStabs();
+            title = "Past Attempts";
             break;
         case R.id.btnToday:
+            items = ((QuestionManifest)manifest).getFuzzle(potd);
+            title = "Problem of the Day";
             break;
         }
         if (items.length != 0) {
-            launchListActivity(items);
+            launchListActivity(items, title);
         }
     }
     
     @Override
-    protected void initialize(JSONObject respObject) throws Exception {
-        JSONArray items = (JSONArray)respObject.get(ITEMS_KEY);        
-        stabManifest = new StabManifest(items);
-        setCounts(stabManifest);
+    protected BaseManifest getManifest(File studentDir, JSONArray items,
+        Topic[] topics) throws Exception {
+        return new QuestionManifest(studentDir, items, topics);
     }
-    
-    private void setCounts(StabManifest manifest) {
-        Quij quiz = manifest.getStabs()[0];
-        int ansCount = quiz == null ? 0 : quiz.getQuestions().length;
+
+    @Override
+    protected void updateCounts(BaseManifest manifest) {
         
         HugeButton today, past;
         today = (HugeButton)findViewById(R.id.btnToday);
         past = (HugeButton)findViewById(R.id.btnPast);
         
-        today.setText("Today's\nQuestion", R.drawable.ic_action_unread);
-        if (ansCount > 0) {
-            past.setCount(ansCount, "Past Answers", R.drawable.ic_action_sent);
-            past.setEnabled(true);
+        if (manifest instanceof StabManifest) {
+            Quij[] quizzes = ((StabManifest)manifest).getStabs();
+            int ansCount = quizzes.length == 0 ? 0 : 
+                quizzes[0].getQuestions().length;
+            
+            if (ansCount > 0) {
+                past.setCount(ansCount, "Past Attempts", R.drawable.ic_action_sent);
+                past.setEnabled(true);
+            } else {
+                past.setText("Past Attempts", R.drawable.ic_action_sent);
+                past.setEnabled(false);
+            }
         } else {
-            past.setText("Past Answers", R.drawable.ic_action_sent);
-            past.setEnabled(true);
+            today.setText("", R.drawable.ic_action_forward);
+            past.setText("Past Attempts", R.drawable.ic_action_sent);
+            past.setEnabled(false);
         }
     }
-    
-    StabManifest stabManifest;
     
 }

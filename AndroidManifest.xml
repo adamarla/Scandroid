@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="24"
+    android:versionCode="26"
     android:versionName="4.4.0" >
 
     <uses-sdk
@@ -56,6 +56,13 @@
         <activity
             android:name=".QotdActivity"
             android:label="@string/title_activity_qotd"
+            android:launchMode="singleTop"
+            android:parentActivityName=".HomeActivity"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".PractiseActivity"
+            android:label="@string/title_activity_practise"
             android:launchMode="singleTop"
             android:parentActivityName=".HomeActivity"
             android:screenOrientation="portrait" >

@@ -1,37 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_width="240dp"
+    android:layout_height="80dp">
           
-    <LinearLayout
+    <TextView
+        android:id="@+id/tvLabel"
+        android:layout_height="match_parent"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:layout_centerVertical="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="110dp"
-        android:layout_marginTop="50dp">
-        
-	    <TextView
-	        android:id="@+id/tvLabel"
-	        android:layout_height="60dp"
-	        android:layout_width="wrap_content"
-	        android:layout_marginRight="10dp"
-	        android:textSize="18sp"/>
-	   
-	    <TextView
-	        android:id="@+id/tvCount"
-	        android:layout_height="wrap_content"
-	        android:layout_width="wrap_content"
-	        android:layout_gravity="center"
-	        android:gravity="center"
-	        android:visibility="gone"
-	        android:textSize="10sp"
-	        android:background="@drawable/lbl_quiz_count"
-	        android:textColor="@color/white"/>
-        
-    </LinearLayout>
-    
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="20dp"
+        android:textSize="18sp"/>
+   
     <ImageView
         android:id="@+id/ivIcon"
         android:layout_height="wrap_content"
@@ -39,6 +20,20 @@
         android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
         android:layout_marginRight="20dp"
-        android:contentDescription="@string/button"/>
+        android:contentDescription="@string/capture_button"/>
+    
+    <TextView
+        android:id="@+id/tvCount"
+        android:layout_height="25dp"
+        android:layout_width="25dp"
+        android:gravity="center"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@id/ivIcon"
+        android:layout_marginRight="20dp"
+        android:visibility="gone"
+        android:textSize="10sp"
+        android:background="@drawable/btn_disabled"
+        android:textColor="@color/white"/>
+       
     
 </RelativeLayout>

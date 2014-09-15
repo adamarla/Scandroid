@@ -12,33 +12,33 @@
         
         <com.gradians.collect.HugeButton
             android:id="@+id/btnQotd"
-            android:layout_width="240dp"
-            android:layout_height="80dp"            
-            android:background="@drawable/btn_huge_selector"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+            android:background="@drawable/btn_selector"
             android:onClick="onClick"/>
     
         <com.gradians.collect.HugeButton
-            android:id="@+id/btnSchool"
-            android:layout_width="240dp"
-            android:layout_height="80dp"
+            android:id="@+id/btnBrowse"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
-            android:background="@drawable/btn_huge_selector"
+            android:background="@drawable/btn_selector"
+            android:onClick="onClick"/>
+        
+        <com.gradians.collect.HugeButton
+            android:id="@+id/btnSchool"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:background="@drawable/btn_selector"
             android:onClick="onClick"/>
         
         <com.gradians.collect.HugeButton
             android:id="@+id/btnAsk"
-            android:layout_width="240dp"
-            android:layout_height="80dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
-            android:background="@drawable/btn_huge_selector"
-            android:onClick="onClick"/>    
-        
-        <com.gradians.collect.HugeButton
-            android:id="@+id/btnBrowse"
-            android:layout_width="240dp"
-            android:layout_height="80dp"            
-            android:layout_marginTop="30dp"
-            android:background="@drawable/btn_huge_selector"
+            android:background="@drawable/btn_selector"
             android:onClick="onClick"/>    
         
         </LinearLayout>

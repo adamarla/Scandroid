@@ -28,10 +28,11 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     }
     
     public void add(String title, Uri srcUri, Uri destUri) {
+        Download download = new Download(title, srcUri, destUri);
         for (Download d : downloads) {
-            if (d.srcUri.equals(srcUri)) return;
+            if (d.equals(download)) return;
         }
-        downloads.add(new Download(title, srcUri, destUri));
+        downloads.add(download);
     }
     
     public int getCount() {
@@ -144,6 +145,12 @@ class Download {
         this.destUri = dest;
     }
     
+    @Override
+    public boolean equals(Object o) {
+        Download d = (Download)o;
+        return srcUri.equals(d.srcUri) && destUri.equals(d.destUri);
+    }
+
     public String title;
     public Uri srcUri, destUri;
 }
