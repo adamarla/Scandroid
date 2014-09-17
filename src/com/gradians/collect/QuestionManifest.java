@@ -20,7 +20,9 @@ public class QuestionManifest extends BaseManifest {
     public Quij[] getFuzzle(String potd) {
         Question question = questionByIdMap.get(potd);
         question.setName("Q.1");
-        question.setState(DOWNLOADED);
+        String locn = question.getImgLocn();
+        locn = locn.substring(0, locn.length()-1) + "0";
+        question.setImgLocn(locn);
         
         long topicId = Long.parseLong(question.getId().split("\\.")[0]);
         Topic t = null;

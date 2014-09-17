@@ -4,7 +4,6 @@ import java.io.File;
 
 import org.json.simple.JSONArray;
 
-import android.util.Log;
 import android.view.View;
 
 public class QotdActivity extends BaseActivity {
