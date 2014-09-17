@@ -1,27 +1,20 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.gradians.collect.MainActivity" >
-
-    <item
-        android:id="@+id/action_sign_out"
-        android:orderInCategory="98"
-        android:icon="@drawable/ic_sign_out"
-        android:showAsAction="always"
-        android:title="@string/action_sign_out" />        
+    tools:context="com.gradians.collect.TeacherActivity" >
 
     <item
         android:id="@+id/action_refresh"
         android:orderInCategory="99"
-        android:icon="@drawable/ic_action_refresh"
-        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_action_refresh"        
+        app:showAsAction="ifRoom"
         android:title="@string/action_sign_refresh" />
         
     <item
         android:id="@+id/action_help"
         android:orderInCategory="100"
         android:icon="@android:drawable/ic_menu_help"
-        android:showAsAction="ifRoom"
+        app:showAsAction="ifRoom"
         android:title="@string/action_sign_help" />
         
 </menu>

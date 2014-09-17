@@ -6,24 +6,41 @@
     <string name="action_sign_out">Sign Out</string>
     <string name="label_font">Helvetica</string>
     <string name="label_text">www.gradians.com © 2013</string>
-    <string name="title_activity_camera">Capture</string>
-    <string name="button">Button</string>
-    <string name="capture_button">Capture</string>
-    <string name="hello_world">Hello world!</string>
+    
     <string name="title_activity_help">Help</string>
-    <string name="title_activity_main">Inbox</string>
-    <string name="inbox_desc">Inbox</string>
-    <string name="outbox_desc">Outbox</string>
-    <string name="graded_desc">Graded</string>
+    <string name="title_activity_qotd">Puzzle of the Day</string>
+    <string name="title_activity_teacher">School Stuff</string>
+    <string name="title_activity_practise">Practice Corner</string>
+    <string name="title_activity_home">Scanbot</string>
+    <string name="title_activity_camera">Capture</string>
+    <string name="title_activity_list">Items</string>
+    <string name="title_activity_flow">Question</string>
+    <string name="title_activity_registration">Gradians.com - Registration</string>
+    
+    <string name="capture_button">Capture</string>
     <string name="upload_text">Upload</string>
     <string name="activate_text">Capture</string>
+    
     <string name="action_sign_refresh">Refresh</string>
     <string name="action_sign_help">Help</string>
     <string name="action_sign_sign_out">Sign Out</string>
+    
+    <string name="home_button_potd"><b>The Daily Challenge</b>\nhonour board beckons</string>
+    <string name="home_button_teacher"><b>School Stuff</b>\nfrom your teacher</string>
+    <string name="home_button_aaq"><b>Ask a Question</b>\nstrictly on Math!</string>
+    <string name="home_button_browse"><b>Practice Corner</b>\n20 random problems</string>
+    
+    <string name="potd_button_attempt"><b>Problem</b>\nof the Day</string>
+    <string name="potd_button_prior"><b>Prior Attempts</b>\nand feedback</string>
+
+    <string name="practise_button_browse"><b>Browse problems</b>\nand attempt</string>
+    <string name="practise_button_attempts"><b>Attempt</b>\nto view feedback</string>
+    <string name="practise_button_feedback"><b>View feedback</b>\nand learn</string>
+    
     <string name="instruction1">Finish an answer on the page you start it</string>
     <string name="instruction2">Do not copy the question text</string>
     <string name="instruction3">Label your answers. Write using dark ink</string>
-    <string name="title_activity_registration">Gradians.com - Registration</string>
-    <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
     
+    <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
+
 </resources>

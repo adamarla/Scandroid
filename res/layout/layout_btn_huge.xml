@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="240dp"
+    android:layout_height="80dp">
+          
+    <TextView
+        android:id="@+id/tvLabel"
+        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="20dp"
+        android:textSize="18sp"/>
+   
+    <ImageView
+        android:id="@+id/ivIcon"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="20dp"
+        android:contentDescription="@string/capture_button"/>
+    
+    <TextView
+        android:id="@+id/tvCount"
+        android:layout_height="25dp"
+        android:layout_width="25dp"
+        android:gravity="center"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@id/ivIcon"
+        android:layout_marginRight="20dp"
+        android:visibility="gone"
+        android:textSize="10sp"
+        android:background="@drawable/btn_disabled"
+        android:textColor="@color/white"/>
+       
+    
+</RelativeLayout>

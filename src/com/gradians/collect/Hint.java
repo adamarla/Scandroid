@@ -17,7 +17,7 @@ class Hint implements IConstants {
         File latex = new File(hintsDir, question.getId());
         if (!latex.exists()) return null;
         
-        String[] subpartId = question.getSubpartId();
+        int[] subpartId = question.getSubpartId();
         BufferedReader br = null;
         Hint hint = null;
         try {

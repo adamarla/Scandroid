@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res/com.gradians.collect">
-    <item android:drawable="@drawable/qsn_done"
+    <item android:drawable="@drawable/btn_disabled"
           app:state_sent="true" />
-    <item android:drawable="@drawable/qsn_sel_captured"
+    <item android:drawable="@drawable/btn_cool"
           android:state_selected="true"
           app:state_captured="true" />
-    <item android:drawable="@drawable/qsn_captured"
+    <item android:drawable="@drawable/btn"
           app:state_captured="true" />
-    <item android:drawable="@drawable/qsn_selected"
+    <item android:drawable="@drawable/btn_hot"
           android:state_selected="true" />
-    <item android:drawable="@drawable/qsn_blank" />
+    <item android:drawable="@drawable/btn_blank" />
 </selector>

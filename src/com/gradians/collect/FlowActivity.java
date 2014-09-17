@@ -1,8 +1,11 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -13,7 +16,6 @@ import com.viewpagerindicator.CirclePageIndicator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.text.TextUtils;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -29,7 +31,6 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,49 +50,49 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
         Parcelable[] parcels = savedInstanceState == null ? 
             getIntent().getParcelableArrayExtra(TAG_ID) :
-            savedInstanceState.getParcelableArray(TAG_ID);
-            
+            savedInstanceState.getParcelableArray(TAG_ID);            
         Question[] questions = new Question[parcels.length];
         for (int i = 0; i < parcels.length; i++) {
             questions[i] = (Question)parcels[i];
         }
+        quizDir = new File(getIntent().getStringExtra(QUIZ_PATH_KEY));
+        type = getIntent().getStringExtra(ID_KEY);
 
         adapter = new FlowAdapter(questions, this.getSupportFragmentManager());
         
+        File stateFile = getStateFile(quizDir);
+        stateMap = new Properties();
+        try {
+            stateMap.load(new FileInputStream(stateFile));
+        } catch (Exception e) { }
+
         feedback = new Feedback[questions.length];
         hints = new Hint[questions.length];
         
         vpPreview = (FlowViewPager)this.findViewById(R.id.vpPreview);
         vpPreview.setAdapter(adapter);
         vpPreview.setOnPageChangeListener(this);
-        vpPreview.setActivity(this);
-        
+        vpPreview.setActivity(this);        
 
         vpFdbk = (ViewPager)findViewById(R.id.vpFeedback);
         vpHints = (ViewPager)findViewById(R.id.vpHints);
 
         fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
-        hintsIndicator = (CirclePageIndicator)findViewById(R.id.circlesHints);
+        hintsIndicator = (CirclePageIndicator)findViewById(R.id.circlesHints);        
         
-        String title;
         int page = 0, fdbkPg = 0;
         if (savedInstanceState == null) {
-            title = getIntent().getStringExtra(NAME_KEY);
-            price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
-            quizDir = new File(getIntent().getStringExtra(TAG));
             vpPreview.setCurrentItem(0);
         } else {
-            title = savedInstanceState.getString(NAME_KEY);
-            price = savedInstanceState.getInt(QUIZ_PRICE_KEY, 0);
-            quizDir = new File(savedInstanceState.getString(TAG));
-            adapter.setFlipped(savedInstanceState.getBoolean("flipped"));
-            fdbkPg = savedInstanceState.getInt("fdbkIdx", NO_FEEDBACK);
-            fdbkShown = savedInstanceState.getBoolean("fdbkShown");
-            hintShown = savedInstanceState.getBoolean("hintShown");
-            page = savedInstanceState.getInt("page");
+            adapter.setFlipped(savedInstanceState.getBoolean(FLIPPED_KEY));
+            fdbkPg = savedInstanceState.getInt(FDBK_IDX_KEY, NO_FEEDBACK);
+            fdbkShown = savedInstanceState.getBoolean(FDBK_SHOWN_KEY);
+            hintShown = savedInstanceState.getBoolean(HINT_SHOWN_KEY);
+            page = savedInstanceState.getInt(PAGE_KEY);
             vpPreview.setCurrentItem(page);
         }
-        setTitle(title);
+        
+        setTitle(getIntent().getStringExtra(NAME_KEY));
         loadHints(quizDir);
         adjustView(page, fdbkPg);
     }
@@ -99,13 +100,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArray(TAG_ID, adapter.getQuestions());
-        outState.putInt(QUIZ_PRICE_KEY, price);
         outState.putString(TAG, quizDir.getPath());
-        outState.putInt("page", vpPreview.getCurrentItem());
-        outState.putBoolean("flipped", adapter.getFlipped());
-        outState.putInt("fdbkIdx", fdbkIdx);
-        outState.putBoolean("fdbkShown", fdbkShown);
-        outState.putBoolean("hintShown", hintShown);
+        outState.putInt(PAGE_KEY, vpPreview.getCurrentItem());
+        outState.putBoolean(FLIPPED_KEY, adapter.getFlipped());
+        outState.putInt(FDBK_IDX_KEY, fdbkIdx);
+        outState.putBoolean(FDBK_SHOWN_KEY, fdbkShown);
+        outState.putBoolean(FDBK_SHOWN_KEY, hintShown);
         super.onSaveInstanceState(outState);
     }
     
@@ -118,20 +118,21 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {        
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {                
+            if (resultCode == RESULT_OK) {
                 Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
-                Question[] questions = adapter.getQuestions();                
+                Question[] questions = adapter.getQuestions();
                 for (int i = 0; i < parcels.length; i++) {
                     questions[i].setPgMap(((Question)parcels[i]).getPgMap());
                     if (questions[i].getState() < SENT) {
-                        if (!questions[i].getPgMap("-").contains("0"))
+                        if (!questions[i].getPgMap("").contains("0"))
                             questions[i].setState(CAPTURED);
                         else
                             questions[i].setState(DOWNLOADED);
                     }
-                }                
+                    commit(questions[i]);
+                }
                 adapter.update(vpPreview.getCurrentItem());
                 adjustView(vpPreview.getCurrentItem(), 0);
                 
@@ -169,7 +170,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                         }
                         questions[i].setGRId(grId);
                     }
-                    price = 0;
                     triggerUploads(questions);
                 } catch (Exception e) {
                     Log.e(TAG, "Bill Worksheet failed: " + e.getMessage());
@@ -304,14 +304,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
     }
     
-    public void launchCameraActivity(View view) {        
+    public void launchCameraActivity(View view) {
         File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
         Intent takePictureIntent = new Intent(this.getApplicationContext(), 
-            com.gradians.collect.CameraActivity.class);
+            com.gradians.collect.CameraActivity.class);        
         takePictureIntent.putExtra(TAG, adapter.getQuestions());
         takePictureIntent.putExtra(TAG_ID, vpPreview.getCurrentItem());
         takePictureIntent.putExtra(SCANS_KEY, answersDir.getPath());
-        startActivityForResult(takePictureIntent, 
+        startActivityForResult(takePictureIntent,
             ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
     }
     
@@ -321,21 +321,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         if (nothingToUpload(questions)) return;
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        if (price == 0) {
-            builder.setTitle("Upload ungraded answers?");
-        } else {
-            builder.setTitle("Want us to look at your work?").setMessage(
-                    "Buy this Quiz for " + price + " Gredits");
-        }
+        builder.setTitle("Upload ungraded answers?");
         builder.setPositiveButton(android.R.string.ok,
             new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {                    
-                    if (price == 0) {
-                        triggerUploads(questions);                    
-                    } else {
-                        // call to purchase quiz
-                        triggerPurchase(questions);                        
-                    }
+                public void onClick(DialogInterface dialog, int id) {
+                    triggerUploads(questions);                    
                 }
             });
         builder.setNegativeButton(android.R.string.no,
@@ -388,8 +378,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         btnUpload.setEnabled(somethingToUpload);
         
         Question q = questions[position];
-        tvName.setText(String.format("%s of %s", q.getName(), 
-            questions.length));
+        tvName.setText(String.format("%s of %s", position+1, questions.length));
         
         boolean hasScan = q.getPgMap("").matches(".*[1-9].*");
         btnFlip.setEnabled(hasScan);
@@ -400,7 +389,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         btnHint.setEnabled(false);
         instructionShown = false;
         findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
-
         btnHint.setText("Hint");
         if (adapter.getFlipped()) {
             if (hasScan) {
@@ -412,7 +400,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             if (q.getState() == DOWNLOADED) {
                 instructionShown = true;
                 findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-                btnHint.setEnabled(hints[position] != null && price == 0);
+                btnHint.setEnabled(hints[position] != null);
             }
         } else {
             if (q.getState() > SENT) {
@@ -423,12 +411,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             
             if (q.getState() == GRADED) {
                 renderFeedback(position, fdbkPosn);
-                tvMarks.setText(String.format("%2.1f/%1d", 
-                    q.getMarks(), q.getOutOf()));
+                tvMarks.setText(String.format("%2.1f/%1d", q.getMarks(), q.getOutOf()));
             } else if (q.getState() == DOWNLOADED && !hasScan) {
                 instructionShown = true;
                 findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-                btnHint.setEnabled(hints[position] != null && price == 0);
+                btnHint.setEnabled(hints[position] != null);
             }
         }
                 
@@ -501,58 +488,37 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
         
     private void triggerUploads(Question[] questions) {
-        SparseArray<ArrayList<Integer>>
-            toSend = new SparseArray<ArrayList<Integer>>();
-        
-        ArrayList<Integer> grIds;
+        File uploadsDir = new File(quizDir, UPLOAD_DIR_NAME);        
+        ArrayList<Question> toSend = new ArrayList<Question>();
         for (Question q: questions) {
-            boolean[] sentState = q.getSentState();                            
-            if (q.getState() > CAPTURED) continue;
-            
-            int[] pgMap = q.getPgMap();
-            for (int i = 0; i < pgMap.length; i++) {
-                if (pgMap[i] > 0 && !sentState[i]) {
-                    // candidate to send
-                    grIds = toSend.get(pgMap[i]);
-                    if (grIds == null) {
-                        grIds = new ArrayList<Integer>();
-                        toSend.put(pgMap[i], grIds);
+            if (q.getState() == CAPTURED) {
+                toSend.add(q);
+                int[] pages = q.getPgMap();
+                for (int page : pages) {
+                    try {
+                        (new File(uploadsDir, q.getId() + "." + page)).createNewFile();
+                        q.setState(SENT);
+                        commit(q);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Create file in uploadsDir failed: " + e.getMessage());
                     }
-                    grIds.add(q.getGRId()[i]);
-                    sentState[i] = true;
                 }
-            }                            
-            // mark all captured qsns as sent
-            q.setSentState(sentState);
-            if (!q.getSentState("-").contains("0"))
-                q.setState(SENT);
-        }
-    
-        File uploadsDir = new File(quizDir, UPLOAD_DIR_NAME);
-        File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
-        String quizId = questions[0].getId().split("\\.")[0];
-        
-        int pg;
-        String ids = "";
-        String filename;
-        for (int i = 0; i < toSend.size(); i++) {
-            pg = toSend.keyAt(i);
-            ids = TextUtils.join("-", toSend.valueAt(i));
-            filename = quizId  + "." + pg + "." + ids;
-            try {
-                (new File(uploadsDir, filename)).createNewFile();
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
+            } else if (q.getState() == SENT) {
+                // check if really sent
+                File upload = new File(uploadsDir, q.getId() + ".1"); 
+                if (upload.exists()) {
+                    toSend.add(q);
+                }
             }
         }
         
         Intent uploadIntent = new Intent(getApplicationContext(),
                 com.gradians.collect.ImageUploadService.class);
-        uploadIntent.putExtra(TAG_ID, uploadsDir.getPath());
-        uploadIntent.putExtra(TAG, answersDir.getPath());
+        uploadIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
+        uploadIntent.putExtra(TAG_ID, type);
+        uploadIntent.putExtra(TAG, toSend.toArray(new Question[toSend.size()]));
         startService(uploadIntent);
-    }
-    
+    }    
 
     private void triggerPurchase(Question[] questions) {
         String id = questions[0].getId();
@@ -563,27 +529,31 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             BILL_WORKSHEET_TASK_REQUEST_CODE).execute(download);
     }
     
+    private void commit(Question q) {
+        stateMap.put(q.getId(), q.toString());
+        File stateFile = getStateFile(quizDir);
+        try {
+            stateMap.store(new FileOutputStream(stateFile), null);
+        } catch (Exception e) { }
+    }
+    
     private boolean nothingToUpload(Question[] questions) {
         boolean somethingToUpload = false;
         for (Question q : questions) {
-            if (q.getState() < SENT) {
-                int[] pgMap = q.getPgMap();
-                boolean[] sent = q.getSentState();
-                for (int i = 0; i < pgMap.length; i++) {
-                    if (pgMap[i] != 0 && !sent[i]) {
-                        somethingToUpload = true;
-                        break;
-                    }
-                }                
+            if (q.getState() == CAPTURED) {
+                somethingToUpload = true;
+                break;                              
             }            
         }
-        return !somethingToUpload;        
+        return !somethingToUpload;
     }
 
     private boolean nothingToCapture(Question[] questions) {
         boolean somethingToCapture = false;
         for (Question q : questions) {
-            if (q.getState() < CAPTURED && q.getPgMap(",").contains("0")) {
+            if (q.getState() < CAPTURED &&
+                q.getState() > LOCKED &&
+                q.getPgMap(",").contains("0")) {
                 somethingToCapture = true;
                 break;
             }
@@ -597,22 +567,21 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             {new File(questionsDir, question.getId()).getPath()};
         return paths;
     }
-     
+
     private String[] getAnswer(Question question) {
-        String quizId = question.getId().split("\\.")[0];
-        
+        String prefix = question.getId();
         ArrayList<String> paths = new ArrayList<String>();
         File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
         HashSet<Integer> unique = new HashSet<Integer>();
         for (int pg : question.getPgMap()) {
             if (pg != 0 && !unique.contains(pg)) {
-                paths.add((new File(answersDir, quizId + "." + pg)).getPath());
+                paths.add((new File(answersDir, prefix + "." + pg)).getPath());
                 unique.add(pg);
             }
         }
         return paths.toArray(new String[paths.size()]);        
     }
-     
+
     private String[] getSolution(Question question) {
         File solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME);
         String[] paths = new String[question.getImgSpan()];
@@ -620,7 +589,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             paths[i] = (new File(solutionsDir, question.getId() + "." + (i+1))).getPath();
         }
         return paths;
-    }    
+    }
+    
+    private File getStateFile(File quizDir) {
+        File filesDir = new File(quizDir.getParentFile().getParentFile(), "files");
+        return new File(filesDir, STATE_FILE);
+    }
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -634,11 +608,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
     protected boolean pageSwipe = true;
 
-    private int price;
+    private String type;
     private Feedback[] feedback;
     private Hint[] hints;
     private File quizDir;
 
+    private Properties stateMap;
     private FlowViewPager vpPreview;
     private FlowAdapter adapter;
     
@@ -649,6 +624,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private CirclePageIndicator fdbkIndicator, hintsIndicator;
     
     private final String BILL_URL = "http://%s/tokens/bill_ws?id=%s";
+    private final String FLIPPED_KEY = "flipped", FDBK_SHOWN_KEY = "fdbkShown",
+        HINT_SHOWN_KEY = "hintShown", FDBK_IDX_KEY = "fdbkIdx", PAGE_KEY = "page";
+    
     public static final int NO_FEEDBACK = -1;    
 }
 

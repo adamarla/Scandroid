@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="25"
-    android:versionName="4.3.2" >
+    android:versionCode="26"
+    android:versionName="4.4.0" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -36,26 +36,36 @@
         </activity>
         <activity
             android:name=".FlowActivity"
-            android:label="@string/app_name"
+            android:label="@string/title_activity_flow"
             android:launchMode="singleTop"
             android:parentActivityName=".ListActivity" >
         </activity>
         <activity
             android:name=".ListActivity"
-            android:label="@string/app_name"
+            android:label="@string/title_activity_list"
             android:launchMode="singleTop"
-            android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait" >
         </activity>
         <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name"
+            android:name=".TeacherActivity"
+            android:label="@string/title_activity_teacher"
             android:launchMode="singleTop"
+            android:parentActivityName=".HomeActivity"
             android:screenOrientation="portrait" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+        </activity>
+        <activity
+            android:name=".QotdActivity"
+            android:label="@string/title_activity_qotd"
+            android:launchMode="singleTop"
+            android:parentActivityName=".HomeActivity"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".PractiseActivity"
+            android:label="@string/title_activity_practise"
+            android:launchMode="singleTop"
+            android:parentActivityName=".HomeActivity"
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".HelpActivity"
@@ -67,12 +77,19 @@
             android:label="@string/title_activity_registration"
             android:screenOrientation="portrait" >
         </activity>
-        
+        <activity
+            android:name=".HomeActivity"
+            android:label="@string/title_activity_home"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <service
             android:name=".ImageUploadService"
             android:enabled="true" >
         </service>
-
     </application>
-
 </manifest>
