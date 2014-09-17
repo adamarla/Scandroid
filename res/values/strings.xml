@@ -25,21 +25,17 @@
     <string name="action_sign_help">Help</string>
     <string name="action_sign_sign_out">Sign Out</string>
     
-    <string name="home_button_potd"><b>The Challenge</b>\nhonour board beckons</string>
+    <string name="home_button_potd"><b>The Daily Challenge</b>\nhonour board beckons</string>
     <string name="home_button_teacher"><b>School Stuff</b>\nfrom your teacher</string>
-    <string name="home_button_aaq"><b>Ask Us</b>\na question</string>
+    <string name="home_button_aaq"><b>Ask a Question</b>\nstrictly on Math!</string>
     <string name="home_button_browse"><b>Practice Corner</b>\n20 random problems</string>
     
-    <string name="potd_button_attempt"><b>Problem of the Day</b>\nattempt and send</string>
-    <string name="potd_button_prior"><b>View</b>\npast attempts</string>
+    <string name="potd_button_attempt"><b>Problem</b>\nof the Day</string>
+    <string name="potd_button_prior"><b>Prior Attempts</b>\nand feedback</string>
 
-    <string name="practise_button_browse"><b>Problem of the Day</b>\nattempt and send</string>
-    <string name="practise_button_attempts"><b>View</b>\npast attempts</string>
-    <string name="practise_button_feedback"><b>View</b>\npast attempts</string>
-    
-    <string name="teacher_button_inbox"><b>Problem of the Day</b>\nattempt and send</string>
-    <string name="teacher_button_outbox"><b>View</b>\npast attempts</string>
-    <string name="teacher_button_feedback"><b>View</b>\npast attempts</string>
+    <string name="practise_button_browse"><b>Browse problems</b>\nand attempt</string>
+    <string name="practise_button_attempts"><b>Attempt</b>\nto view feedback</string>
+    <string name="practise_button_feedback"><b>View feedback</b>\nand learn</string>
     
     <string name="instruction1">Finish an answer on the page you start it</string>
     <string name="instruction2">Do not copy the question text</string>

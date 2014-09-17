@@ -78,7 +78,8 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
         if (peedee != null)
             peedee.dismiss();
         
-        File cache = new File(studentDir, subpath + ".json");        
+        File filesDir = new File(studentDir, "files");
+        File cache = new File(filesDir, subpath + ".json");
         try {
             JSONObject respObject = null;
             JSONArray delta, items = null;
@@ -95,14 +96,13 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
                 items = new JSONArray();
             }
             
-            manifest = getManifest(studentDir, items, topics);
-            if (resultCode == RESULT_OK) {                
+            manifest = getManifest(filesDir, items, topics);            
+            if (resultCode == RESULT_OK) {
                 respObject = (JSONObject)jsonParser.parse(resultData);
                 delta = (JSONArray)respObject.get(ITEMS_KEY);
                 if (delta.size() > 0) {
                     manifest.parse(delta);
                 }
-                
                 SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
                 Editor edit = prefs.edit();
                 edit.putInt(subpath, ((Long)respObject.get(MARKER_KEY)).intValue());
@@ -114,14 +114,15 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
                     Toast.LENGTH_LONG).show();                
             }
             
-            FileWriter fw = new FileWriter(cache);
-            fw.write(manifest.toJSONArray());
-            fw.close();
+            if (cache.exists()) {
+                FileWriter fw = new FileWriter(cache);
+                fw.write(manifest.toJSONArray());
+                fw.close();                
+            }
             
             updateCounts(manifest);
-            
         } catch (Exception e) {
-            handleError("Refresh task failed ", e.getClass().toString());
+            handleError("Refresh task failed ", e.getMessage());
         }
     }
     

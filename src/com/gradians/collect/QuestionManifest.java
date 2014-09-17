@@ -1,20 +1,15 @@
 package com.gradians.collect;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.Set;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import android.annotation.SuppressLint;
-import android.util.Log;
 
 public class QuestionManifest extends BaseManifest {
     
@@ -24,7 +19,9 @@ public class QuestionManifest extends BaseManifest {
     
     public Quij[] getFuzzle(String potd) {
         Question question = questionByIdMap.get(potd);
+        question.setName("Q.1");
         question.setState(DOWNLOADED);
+        
         long topicId = Long.parseLong(question.getId().split("\\.")[0]);
         Topic t = null;
         for (Topic topic : topics) {
@@ -47,22 +44,22 @@ public class QuestionManifest extends BaseManifest {
      * @param beforeState
      * @return
      */
-    public Quij[] getQsns(int fromState, int toState) {
-        HashMap<Long, Quij> quizByTopic = initialize(topics);        
+    public Quij[] getQsns(int fromState, int toState, boolean fuzzle) {
+        HashMap<Long, Quij> quizByTopic = initialize(topics);
         Set<String> questionIds = questionByIdMap.keySet();
         Iterator<String> iterator = questionIds.iterator();
         
         long topicId; Quij quiz; Question question;
         while (iterator.hasNext()) {
             question = questionByIdMap.get(iterator.next());
-            Log.d(TAG, question.getId() + " "  + question.getState());
+            if (question.isPuzzle() != fuzzle) continue;
             if (question.getState() > fromState ||
                 question.getState() < toState) continue;
             
             topicId = Long.parseLong(question.getId().split("\\.")[0]);
-            quiz = quizByTopic.get(topicId);            
+            quiz = quizByTopic.get(topicId);
             question.setName(String.format("Q.%s", quiz.size()+1));
-            quiz.add(question);            
+            quiz.add(question);
         }
         
         ArrayList<Quij> toReturn = new ArrayList<Quij>();
@@ -96,8 +93,8 @@ public class QuestionManifest extends BaseManifest {
             question.setOutOf(((Long)item.get(OUT_OF_KEY)).shortValue());
             question.setExaminer(((Long)item.get(EXAMINER_KEY)).intValue());
             
-            boolean notYetAttempted = item.get(PZL_KEY) == null;            
-            if (notYetAttempted) {
+            boolean notYetReceived = item.get(PZL_KEY) == null;            
+            if (notYetReceived) {
                 String qsnState = state.getProperty(question.getId());
                 if (qsnState != null) {
                     question.setPgMap(qsnState.split(",")[0]);
@@ -108,16 +105,16 @@ public class QuestionManifest extends BaseManifest {
                             CAPTURED : SENT);
                     }                
                 } else {
-                    question.setState(LOCKED);
+                    question.setState(DOWNLOADED);
                 }
             } else {
                 state.remove(question.getId());
                 question.setPuzzle((Boolean)item.get(PZL_KEY));
                 question.setScanLocn((String)item.get(SCANS_KEY));
-                float marks = ((Double)item.get(MARKS_KEY)).floatValue();
+                float marks = ((Long)item.get(MARKS_KEY)).floatValue();
                 question.setState(marks < 0 ? RECEIVED : GRADED);
                 question.setMarks(marks);
-            }            
+            }
             questionByIdMap.put(question.getId(), question);
         }
     }

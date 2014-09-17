@@ -4,9 +4,6 @@ import java.io.File;
 
 import org.json.simple.JSONArray;
 
-import com.gradians.collect.QuestionManifest.Op;
-
-import android.util.Log;
 import android.view.View;
 
 public class PractiseActivity extends BaseActivity {
@@ -24,16 +21,12 @@ public class PractiseActivity extends BaseActivity {
         switch (v.getId()) {
         case R.id.btnOffered:
             items = offered;
-            title = "Fresh Problems";
-            break;
-        case R.id.btnSelected:
-            items = selected;
-            title = "My Selections";
+            title = "Solve problems";
             break;
         default: //case R.id.btnSent:
             items = submitted;
-            title = "My Submissions";
-        }
+            title = "Review feedback";
+        }        
         if (items.length != 0) {
             launchListActivity(items, title);
         }
@@ -47,27 +40,22 @@ public class PractiseActivity extends BaseActivity {
 
     @Override
     protected void updateCounts(BaseManifest manifest) {
-        HugeButton btnOffered, btnSelected, btnSubmitted;
+        HugeButton btnOffered, btnSubmitted;
         btnOffered = (HugeButton)findViewById(R.id.btnOffered);
-        btnSelected = (HugeButton)findViewById(R.id.btnSelected);
         btnSubmitted = (HugeButton)findViewById(R.id.btnSent);
         
-        offered = ((QuestionManifest)manifest).getQsns(LOCKED, LOCKED);
-        selected = ((QuestionManifest)manifest).getQsns(CAPTURED, DOWNLOADED);
-        submitted = ((QuestionManifest)manifest).getQsns(GRADED, SENT);
+        offered = ((QuestionManifest)manifest).getQsns(SENT, LOCKED, false);
+        submitted = ((QuestionManifest)manifest).getQsns(GRADED, RECEIVED, false);
         
-        btnOffered.setText("<b>Browse</b>\nproblems and select", 
-            R.drawable.ic_action_forward);
-        btnOffered.setEnabled(offered.length > 0);
-        btnSelected.setText("<b>Attempt</b>\nselections and send", 
+        btnOffered.setText(R.string.practise_button_browse,
             R.drawable.ic_action_unread);
-        btnSelected.setEnabled(selected.length > 0);
-        btnSubmitted.setText("<b>View</b>\nsubmissions and feedback", 
+        btnOffered.setEnabled(offered.length > 0);
+        btnSubmitted.setText(R.string.practise_button_feedback, 
             R.drawable.ic_action_chat);
-        btnSubmitted.setEnabled(submitted.length > 0);        
+        btnSubmitted.setEnabled(submitted.length > 0);
     }
     
-    private Quij[] offered, selected, submitted;
+    private Quij[] offered, submitted;
     
 }
 

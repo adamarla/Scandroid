@@ -39,7 +39,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);        
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
         
         setupActionBar();
@@ -134,7 +134,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             tag = (String)pb.getTag();
             qsnIdx = Integer.parseInt(tag.split("\\.")[0]);
             
-            int openPgNo = 1;            
+            int openPgNo = 1;
             String nextName = questions[qsnIdx].getId() + "." + String.valueOf(openPgNo);
             while ((picture = new File(imagesDir, nextName)).exists()) {
                 openPgNo++;

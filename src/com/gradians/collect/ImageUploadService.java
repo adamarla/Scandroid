@@ -1,7 +1,5 @@
 package com.gradians.collect;
 
-import static com.gradians.collect.IConstants.TAG;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -15,7 +13,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Parcelable;
-import android.text.TextUtils;
 import android.util.Log;
 
 public class ImageUploadService extends IntentService implements IConstants {

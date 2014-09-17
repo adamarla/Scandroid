@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 
 /**
  * Using it as a collection of questions based on any creiterea. 
@@ -31,12 +30,12 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         int completed = 0, graded = 0, total = 0;
         Question[] questions = this.getQuestions();
         for (Question q : questions ) {
-            for (int pg : q.getPgMap()) if (pg != 0) completed++;
+            if (q.getState() == CAPTURED) completed++;
             total += q.getPgMap().length;
             if (q.getState() == GRADED) graded++;
         }
         
-        String display;        
+        String display;
         if (getState() == NOT_YET_BILLED) {
             display = String.format("%s", size());
         } else if (getState() == NOT_YET_GRADED) {

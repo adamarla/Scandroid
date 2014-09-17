@@ -1,15 +1,10 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-
-import android.util.Log;
 
 public class QuizManifest extends BaseManifest {
     
@@ -52,8 +47,7 @@ public class QuizManifest extends BaseManifest {
     }
     
     @Override
-    public void parse(JSONArray items) throws Exception {
-        
+    public void parse(JSONArray items) throws Exception {        
         quizzes = new Quij[items.size()];
         
         for (int i = 0; i < items.size(); i++) {
@@ -88,7 +82,7 @@ public class QuizManifest extends BaseManifest {
                     question.setHintMarker(item.get(HINT_MRKR_KEY) == null ? 
                         0 : (Long)item.get(HINT_MRKR_KEY));
                     
-                    boolean notYetReceived = question.getScanLocn()[0].equals("");
+                    boolean notYetReceived = question.getScanLocn()[0] == null;
                     if (notYetReceived) {
                         String qsnState = state.getProperty(question.getId());
                         if (qsnState != null) {

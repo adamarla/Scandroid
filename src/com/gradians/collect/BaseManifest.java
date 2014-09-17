@@ -3,13 +3,9 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Set;
 
 import org.json.simple.JSONArray;
-
-import com.gradians.collect.QuestionManifest.Op;
 
 public abstract class BaseManifest implements IConstants {
 

@@ -1,18 +1,14 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import android.util.Log;
 
 public class StabManifest extends BaseManifest {
     

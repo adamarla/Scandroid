@@ -83,7 +83,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {        
         Quij quiz = (Quij)adapter.getItem(position);
         selectedQuizPosition = position;
 
@@ -103,24 +103,15 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
     }
     
-    private File[] createDirs(File studentDir, Quij quiz) {
-        String dirName = String.valueOf(quiz.getId());
-        File quizDir = new File(studentDir, dirName);
-        quizDir.mkdir();
-        String[] names = new String[] {
-            QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
-            FEEDBACK_DIR_NAME, HINTS_DIR_NAME, UPLOAD_DIR_NAME};
-        File[] dirs = new File[names.length];
-        for (int i = 0; i < names.length; i++) {
-            dirs[i] = new File(quizDir, names[i]);
-            dirs[i].mkdir();
-        }
-        return dirs;
-    }
-    
     private void setUpDownloads(DownloadMonitor dlm, HttpCallsAsyncTask hcat, Quij quiz) {
+        File problemsDir = new File(studentDir, "problems");
+        File filesDir = new File(studentDir, "files");
         
-        File[] dirs = createDirs(studentDir, quiz);
+        String dirName = String.valueOf(quiz.getId());
+        quizDir = new File(problemsDir, dirName);
+        quizDir.mkdir();
+        
+        File[] dirs = createDirs(quizDir, quiz);
         File questionsDir = dirs[0];
         File answersDir = dirs[1];
         File solutionsDir = dirs[2];
@@ -128,7 +119,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         File hintsDir = dirs[4];
         
         Properties markers = new Properties();
-        File markerFile = new File(studentDir, "markers");
+        File markerFile = new File(filesDir, "markers");
         try {
             markerFile.createNewFile();
             markers.load(new FileInputStream(markerFile));
@@ -183,12 +174,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
                 break;
             case SENT:
-                for (int i = 0; i < scans.length; i++) {
-                    if (scans[i].equals("") && question.getExaminer() != 0) {
-                        pageNos[i] = 0; // re-send
-                        question.setState(DOWNLOADED);
-                    }
-                }
             case CAPTURED:
                 for (int i = 0; i < pageNos.length; i++) {
                     if (pageNos[i] != 0) {
@@ -236,15 +221,12 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     private void launchFlowActivity(Quij quiz) {
-        File quizDir = new File(studentDir, String.valueOf(quiz.getId()));
         Question[] questions = quiz.getQuestions();
         Intent flowIntent = new Intent(this.getApplicationContext(), 
             com.gradians.collect.FlowActivity.class);   
         flowIntent.putExtra(TAG_ID, questions);
         flowIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
-        flowIntent.putExtra(NAME_KEY, quiz.getName());        
-        if (quiz.getState() == NOT_YET_BILLED)
-            flowIntent.putExtra(QUIZ_PRICE_KEY, quiz.getPrice());
+        flowIntent.putExtra(NAME_KEY, quiz.getName());
         flowIntent.putExtra(ID_KEY, quiz.getType());
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
@@ -263,6 +245,18 @@ public class ListActivity extends Activity implements OnItemClickListener,
         lv.setOnItemClickListener(this);        
     }
     
+    private File[] createDirs(File quizDir, Quij quiz) {
+        String[] names = new String[] {
+            QUESTIONS_DIR_NAME, ANSWERS_DIR_NAME, SOLUTIONS_DIR_NAME,
+            FEEDBACK_DIR_NAME, HINTS_DIR_NAME, UPLOAD_DIR_NAME};
+        File[] dirs = new File[names.length];
+        for (int i = 0; i < names.length; i++) {
+            dirs[i] = new File(quizDir, names[i]);
+            dirs[i].mkdir();
+        }
+        return dirs;
+    }
+
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
     }
@@ -271,7 +265,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private QuizListAdapter adapter;
     
     private int selectedQuizPosition;
-    private File studentDir;
+    private File studentDir, quizDir;
     ProgressDialog peedee;
 
     private final String 

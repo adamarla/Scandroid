@@ -4,7 +4,6 @@ import java.io.File;
 
 import org.json.simple.JSONArray;
 
-import android.R;
 import android.util.Log;
 import android.view.View;
 
@@ -20,11 +19,12 @@ public class QotdActivity extends BaseActivity {
         String title = null;
         switch (v.getId()) {
         case R.id.btnPast:
-            title = "Past Attempts";
+            title = "Past Puzzles";
+            items = pastPuzzles;
             break;
         case R.id.btnToday:
-            items = ((QuestionManifest)manifest).getFuzzle(potd);
-            title = "Problem of the Day";
+            title = "Puzzle of the Day";
+            items = potdOffered;
             break;
         }
         if (items.length != 0) {
@@ -45,23 +45,14 @@ public class QotdActivity extends BaseActivity {
         today = (HugeButton)findViewById(R.id.btnToday);
         past = (HugeButton)findViewById(R.id.btnPast);
         
-        if (manifest instanceof StabManifest) {
-            Quij[] quizzes = ((StabManifest)manifest).getStabs();
-            int ansCount = quizzes.length == 0 ? 0 : 
-                quizzes[0].getQuestions().length;
-            
-            if (ansCount > 0) {
-                past.setCount(ansCount, "Past Attempts", R.drawable.ic_action_sent);
-                past.setEnabled(true);
-            } else {
-                past.setText("Past Attempts", R.drawable.ic_action_sent);
-                past.setEnabled(false);
-            }
-        } else {
-            today.setText("", R.drawable.ic_action_forward);
-            past.setText("Past Attempts", R.drawable.ic_action_sent);
-            past.setEnabled(false);
-        }
+        potdOffered = ((QuestionManifest)manifest).getFuzzle(potd);
+        pastPuzzles = ((QuestionManifest)manifest).getQsns(GRADED, RECEIVED, true);
+        
+        today.setText(R.string.potd_button_attempt, R.drawable.ic_action_unread);            
+        past.setText(R.string.potd_button_prior, R.drawable.ic_action_sent);
+        past.setEnabled(pastPuzzles.length > 0);
+        
     }
-    
+        
+    private Quij[] potdOffered, pastPuzzles;
 }

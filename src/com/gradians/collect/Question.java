@@ -135,13 +135,18 @@ class Question implements Parcelable, JSONAware, IConstants {
     
     public void setScanLocn(String scanLocn) {
         String[] tokens = scanLocn.split(",", -1);
+        if (tokens[0].equals("")) return;
+        
         int page = 1;
-        for (int i = 0; i < scans.length; i++) {
-            scans[i] = tokens[i];
-            if (scans[i].equals("")) continue;
-            if (i != 0 && !tokens[i].equals(scans[i-1])) {
-                page++;
-            }
+        for (int i = 0; i < scans.length; i++) {            
+            if (i >= tokens.length) {
+                scans[i] = scans[i-1];                
+            } else {
+                scans[i] = tokens[i];
+                if (i != 0 && !tokens[i].equals(scans[i-1])) {
+                    page++;
+                }
+            }            
             pgMap[i] = page;
         }
     }

@@ -59,7 +59,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         type = getIntent().getStringExtra(ID_KEY);
 
         adapter = new FlowAdapter(questions, this.getSupportFragmentManager());
-        File stateFile = new File(quizDir.getParent(), STATE_FILE);
+        
+        File stateFile = getStateFile(quizDir);
+        stateMap = new Properties();
         try {
             stateMap.load(new FileInputStream(stateFile));
         } catch (Exception e) { }
@@ -80,10 +82,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
         int page = 0, fdbkPg = 0;
         if (savedInstanceState == null) {
-            price = getIntent().getIntExtra(QUIZ_PRICE_KEY, 0);
             vpPreview.setCurrentItem(0);
         } else {
-            price = savedInstanceState.getInt(QUIZ_PRICE_KEY, 0);
             adapter.setFlipped(savedInstanceState.getBoolean(FLIPPED_KEY));
             fdbkPg = savedInstanceState.getInt(FDBK_IDX_KEY, NO_FEEDBACK);
             fdbkShown = savedInstanceState.getBoolean(FDBK_SHOWN_KEY);
@@ -100,7 +100,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putParcelableArray(TAG_ID, adapter.getQuestions());
-        outState.putInt(QUIZ_PRICE_KEY, price);
         outState.putString(TAG, quizDir.getPath());
         outState.putInt(PAGE_KEY, vpPreview.getCurrentItem());
         outState.putBoolean(FLIPPED_KEY, adapter.getFlipped());
@@ -171,7 +170,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                         }
                         questions[i].setGRId(grId);
                     }
-                    price = 0;
                     triggerUploads(questions);
                 } catch (Exception e) {
                     Log.e(TAG, "Bill Worksheet failed: " + e.getMessage());
@@ -323,21 +321,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         if (nothingToUpload(questions)) return;
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        if (price == 0) {
-            builder.setTitle("Upload ungraded answers?");
-        } else {
-            builder.setTitle("Want us to look at your work?").setMessage(
-                    "Buy this Quiz for " + price + " Gredits");
-        }
+        builder.setTitle("Upload ungraded answers?");
         builder.setPositiveButton(android.R.string.ok,
             new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {                    
-                    if (price == 0) {
-                        triggerUploads(questions);                    
-                    } else {
-                        // call to purchase quiz
-                        triggerPurchase(questions);                        
-                    }
+                public void onClick(DialogInterface dialog, int id) {
+                    triggerUploads(questions);                    
                 }
             });
         builder.setNegativeButton(android.R.string.no,
@@ -401,7 +389,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         btnHint.setEnabled(false);
         instructionShown = false;
         findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
-
         btnHint.setText("Hint");
         if (adapter.getFlipped()) {
             if (hasScan) {
@@ -413,7 +400,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             if (q.getState() == DOWNLOADED) {
                 instructionShown = true;
                 findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-                btnHint.setEnabled(hints[position] != null && price == 0);
+                btnHint.setEnabled(hints[position] != null);
             }
         } else {
             if (q.getState() > SENT) {
@@ -424,12 +411,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             
             if (q.getState() == GRADED) {
                 renderFeedback(position, fdbkPosn);
-                tvMarks.setText(String.format("%2.1f/%1d", 
-                    q.getMarks(), q.getOutOf()));
+                tvMarks.setText(String.format("%2.1f/%1d", q.getMarks(), q.getOutOf()));
             } else if (q.getState() == DOWNLOADED && !hasScan) {
                 instructionShown = true;
                 findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-                btnHint.setEnabled(hints[position] != null && price == 0);
+                btnHint.setEnabled(hints[position] != null);
             }
         }
                 
@@ -543,9 +529,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             BILL_WORKSHEET_TASK_REQUEST_CODE).execute(download);
     }
     
-    public void commit(Question q) {
+    private void commit(Question q) {
         stateMap.put(q.getId(), q.toString());
-        File stateFile = new File(quizDir.getParent(), STATE_FILE);
+        File stateFile = getStateFile(quizDir);
         try {
             stateMap.store(new FileOutputStream(stateFile), null);
         } catch (Exception e) { }
@@ -565,7 +551,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private boolean nothingToCapture(Question[] questions) {
         boolean somethingToCapture = false;
         for (Question q : questions) {
-            if (q.getState() < CAPTURED && q.getPgMap(",").contains("0")) {
+            if (q.getState() < CAPTURED &&
+                q.getState() > LOCKED &&
+                q.getPgMap(",").contains("0")) {
                 somethingToCapture = true;
                 break;
             }
@@ -602,6 +590,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
         return paths;
     }
+    
+    private File getStateFile(File quizDir) {
+        File filesDir = new File(quizDir.getParentFile().getParentFile(), "files");
+        return new File(filesDir, STATE_FILE);
+    }
 
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -616,7 +609,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     protected boolean pageSwipe = true;
 
     private String type;
-    private int price;
     private Feedback[] feedback;
     private Hint[] hints;
     private File quizDir;
