@@ -12,8 +12,7 @@ import android.util.Log;
 
 class Feedback implements IConstants {    
     
-    public static Feedback load(File quizDir, Question question) {
-        File feedbackDir = new File(quizDir, FEEDBACK_DIR_NAME);
+    public static Feedback load(File feedbackDir, Question question) {
         File latex = new File(feedbackDir, question.getId());
         if (!latex.exists()) return null;
         

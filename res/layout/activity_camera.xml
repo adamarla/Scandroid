@@ -36,7 +36,7 @@
         android:background="@drawable/btn_selector"
         android:src="@android:drawable/ic_menu_camera"/>
     
-    <LinearLayout
+    <!-- LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -77,6 +77,6 @@
 	        android:textColor="@color/white"
 	        android:textSize="@dimen/tiny_font_size"/>
         
-    </LinearLayout>
+    </LinearLayout-->
     	    
 </RelativeLayout>

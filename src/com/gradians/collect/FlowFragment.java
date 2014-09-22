@@ -56,17 +56,16 @@ public class FlowFragment extends Fragment implements IConstants {
         solnView.getSettings().setJavaScriptEnabled(true);
         
         StringBuilder sbHtml = new StringBuilder();
-        sbHtml.append("<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>");
+        sbHtml.append(HDR);
         for (int i = 0; i < paths.length; i++) {
-            sbHtml.append(String.format("<div id='pg%s' style='position: relative;'>", i));
-            sbHtml.append(String.format(IMG_DIV, Uri.fromFile(new File(paths[i])).toString(),
-                Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? "width: 100%" : ""));
+            sbHtml.append(String.format(PARENT_DIV, i));
+            sbHtml.append(String.format(IMG_DIV, Uri.fromFile(new File(paths[i])).toString(),""));
             if (i == page && yPosn != FlowActivity.NO_FEEDBACK) {
                 sbHtml.append(String.format(BAND_DIV, yPosn));
             }
-            sbHtml.append("</div>");
+            sbHtml.append(PARENT_DIV_CLS);
         }
-        sbHtml.append("</body></html>");
+        sbHtml.append(FTR);
         solnView.loadDataWithBaseURL(null, sbHtml.toString(), "text/html", "utf-8", null);
         LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         solnView.setLayoutParams(lp);
@@ -88,8 +87,12 @@ public class FlowFragment extends Fragment implements IConstants {
         return rootView;
     }
          
+    private final String PARENT_DIV = "<div id='pg%s' style='position: relative;'>";
+    private final String PARENT_DIV_CLS = "</div>";
     private final String IMG_DIV = "<img src='%s' style='%s'/>";
     private final String BAND_DIV = "<span id='band' style='position:absolute; top:%s%%; left: 0; opacity: 0.3; background:#676767; width:100%%; height:4%%;'></span>";
+    private final String HDR = "<html><head></head><body>";
+    private final String FTR = "</body></html>"; 
     
 }
 

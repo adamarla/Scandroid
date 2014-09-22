@@ -10,7 +10,7 @@
         android:gravity="center_vertical"
         android:layout_centerVertical="true"
         android:layout_alignParentLeft="true"
-        android:layout_marginLeft="20dp"
+        android:layout_marginLeft="18dp"
         android:textSize="18sp"/>
    
     <ImageView
@@ -19,7 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
-        android:layout_marginRight="20dp"
+        android:layout_marginRight="18dp"
         android:contentDescription="@string/capture_button"/>
     
     <TextView

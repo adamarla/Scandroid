@@ -10,7 +10,6 @@ import org.json.simple.parser.JSONParser;
 
 import android.util.Log;
 
-
 class Hint implements IConstants {
     
     public static Hint load(File hintsDir, Question question) {
@@ -29,7 +28,7 @@ class Hint implements IConstants {
                 hint = new Hint(subpartId.length);
                 JSONArray items;
                 for (int i = 0; i < subpartId.length; i++) {
-                    items = (JSONArray)respObject.get(subpartId[i]);
+                    items = (JSONArray)respObject.get(String.valueOf(subpartId[i]));
                     String[] text = new String[items.size()];
                     for (int j = 0; j < text.length; j++) {
                         text[j] = (String)items.get(j);

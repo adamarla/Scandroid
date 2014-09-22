@@ -105,7 +105,7 @@ public class QuestionManifest extends BaseManifest {
                     } else {
                         question.setState(qsnState.split(",")[1].equals("0") ?
                             CAPTURED : SENT);
-                    }                
+                    }
                 } else {
                     question.setState(DOWNLOADED);
                 }
@@ -113,9 +113,12 @@ public class QuestionManifest extends BaseManifest {
                 state.remove(question.getId());
                 question.setPuzzle((Boolean)item.get(PZL_KEY));
                 question.setScanLocn((String)item.get(SCANS_KEY));
+                int[] grId = question.getGRId();
+                grId[0] = ((Long)item.get(GR_ID_KEY)).intValue();
+                question.setGRId(grId);
                 float marks = ((Long)item.get(MARKS_KEY)).floatValue();
                 question.setState(marks < 0 ? RECEIVED : GRADED);
-                question.setMarks(marks);
+                question.setMarks(marks*question.getOutOf()/5);
             }
             questionByIdMap.put(question.getId(), question);
         }

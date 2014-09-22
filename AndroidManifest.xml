@@ -32,13 +32,21 @@
             android:name=".CameraActivity"
             android:label="@string/title_activity_camera"
             android:parentActivityName=".FlowActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.gradians.collect.FlowActivity" />
         </activity>
         <activity
             android:name=".FlowActivity"
             android:label="@string/title_activity_flow"
             android:launchMode="singleTop"
-            android:parentActivityName=".ListActivity" >
+            android:parentActivityName=".ListActivity"
+            android:screenOrientation="portrait" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.gradians.collect.ListActivity" />
         </activity>
         <activity
             android:name=".ListActivity"

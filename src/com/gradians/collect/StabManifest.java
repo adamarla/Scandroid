@@ -9,6 +9,13 @@ import java.util.Locale;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+/**
+ * 
+ * Not being used right now but it's a nice class so keeping it
+ * @author Akshay, 
+ * @date Sept 22, 2014.
+ * 
+ */
 
 public class StabManifest extends BaseManifest {
     

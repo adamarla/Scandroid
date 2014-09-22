@@ -151,7 +151,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
                 if (!fdbk.exists()) {
                     String grId = question.getGRId("-");
-                    src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, grId));
+                    src = Uri.parse(String.format(FDBK_URL, WEB_APP_HOST_PORT, grId, quiz.getType()));
                     dest = Uri.fromFile(fdbk);
                     jsonReqs.add(new Download(null, src, dest));
                 }
@@ -272,7 +272,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         SOLN_URL = "http://%s/vault/%s/pg-%d.jpg",
         ANSR_URL = "http://%s/locker/%s",
         QUES_URL = "http://%s/vault/%s/notrim.jpg",
-        FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s",
-        HINT_URL = "http://%s/tokens/view_hints?id=%s";
+        FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s&type=%s",
+        HINT_URL = "http://%s/tokens/view_hints.json?id=%s";
 
 }
