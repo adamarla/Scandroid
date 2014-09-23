@@ -54,10 +54,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             getIntent().getParcelableArrayExtra(TAG_ID) :
             savedInstanceState.getParcelableArray(TAG_ID);            
         Question[] questions = new Question[parcels.length];
-        for (int i = 0; i < parcels.length; i++) {
+        for (int i = 0; i < parcels.length; i++)
             questions[i] = (Question)parcels[i];
-            Log.d(TAG, questions[i].getId() + " " + questions[i].getState());
-        }
+
         quizDir = new File(getIntent().getStringExtra(QUIZ_PATH_KEY));
         type = getIntent().getStringExtra(ID_KEY);
 
@@ -150,10 +149,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 commit();
                 
                 adapter.update(vpPreview.getCurrentItem());
-                adjustView(vpPreview.getCurrentItem(), 0);
-                
-                if (question.getState() == CAPTURED)
-                    upload(null);                
+                adjustView(vpPreview.getCurrentItem(), 0);                
             }
         }
     }
@@ -206,8 +202,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } else {
             fdbkIdx = position;
             Feedback fdbk = feedback[vpPreview.getCurrentItem()];
-            adapter.shift(fdbk.page[position],
-                fdbk.x[position], fdbk.y[position],
+            adapter.shift(fdbk.page[position], position, 
                 vpPreview.getCurrentItem());
         }
     }
@@ -354,7 +349,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         if (nothingToUpload(questions)) return;
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Upload answer now?");
+        builder.setTitle("Upload now?");
         builder.setPositiveButton(android.R.string.ok,
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
@@ -392,6 +387,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             }
         }
         return paths;
+    }
+    
+    public Feedback getFeedback() {
+        return feedback[vpPreview.getCurrentItem()];
     }
     
     private void adjustView(int position, int fdbkPosn) {
@@ -498,7 +497,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         fdbkShown = false;
         vpFdbk.setVisibility(View.INVISIBLE);
         fdbkIndicator.setVisibility(View.INVISIBLE);
-        adapter.shift(0, NO_FEEDBACK, NO_FEEDBACK, position);
+        adapter.shift(0, NO_FEEDBACK, position);
     }
     
     private void renderHint(int qsnPosn, int part) {

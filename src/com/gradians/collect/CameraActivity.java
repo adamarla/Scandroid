@@ -60,7 +60,6 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            Log.d(TAG, "onOptionsItemSelected");
             Intent intent = new Intent();
             intent.putExtra(TAG, question);
             this.setResult(RESULT_OK, intent);
@@ -122,7 +121,6 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             while (iter.hasNext()) {
                 pb = (PartButton)llButtons.getChildAt(iter.next());
                 pb.setIsCaptured(false);
-                pb.refreshDrawableState();
                 
                 partIdx = (Integer)pb.getTag();
                 name = question.getId() + "." + String.valueOf(map[partIdx]);
@@ -130,9 +128,9 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 map[partIdx] = 0;
             }
             question.setPgMap(map);
-//            selectedParts.clear();
+            refreshButtons();
+            selectedParts.clear();
             comandeerCamera();
-//            updateCounts();
         }
     }
     
@@ -142,65 +140,77 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         PartButton pb = (PartButton)v;
         if (pb.isSent()) return;
         
-        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);
-        
         pb.setSelected(!pb.isSelected());
+        pb.refreshDrawableState();
+        int[] map = question.getPgMap();
+        
+        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
         int pbPartIdx = (Integer)pb.getTag();
         if (pb.isCaptured()) {
-            btnAction.setImageResource(R.drawable.ic_action_rotate_right);
+            
+            PartButton anyPart;
+            int partIdx;
+            for (int i = 0; i < llButtons.getChildCount(); i++) {
+                anyPart = (PartButton)llButtons.getChildAt(i);
+                partIdx = (Integer)anyPart.getTag();                    
+                if ((Integer)pb.getTag() == partIdx) continue;
+                
+                if (anyPart.isCaptured()) {
+                    if (map[partIdx] == map[pbPartIdx]) {
+                        anyPart.setSelected(pb.isSelected());
+                    } else {
+                        anyPart.setSelected(false);
+                    }
+                    anyPart.refreshDrawableState();
+                }
+            }
+            
+            btnAction.setImageResource(R.drawable.ic_action_rotate_right);            
             if (pb.isSelected()) {
                 btnAction.setEnabled(true);
-                cameraOn = false;
-                // unselect other buttons
-                int[] map = question.getPgMap();
-                PartButton other;
-                int otherPartIdx;
-                for (int i = 0; i < llButtons.getChildCount(); i++) {
-                    other = (PartButton)llButtons.getChildAt(i);
-                    otherPartIdx = (Integer)other.getTag();                    
-                    if (otherPartIdx != pbPartIdx && map[otherPartIdx] != map[pbPartIdx])
-                        other.setSelected(false);
-                    else
-                        other.setSelected(pb.isSelected());                    
-                    other.refreshDrawableState();
-                }                
+                cameraOn = false;                
                 File file = new File(imagesDir, question.getId() + "." + map[pbPartIdx]);                
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                     cameraPreview.setBackground(Drawable.createFromPath(file.getPath()));
                 } else {
                     cameraPreview.setBackgroundDrawable(Drawable.createFromPath(file.getPath()));
-                }
+                }                
             } else {
                 btnAction.setEnabled(false);
                 comandeerCamera();
             }
+            
         } else {
-            btnAction.setImageResource(android.R.drawable.ic_menu_camera);
+            
             boolean anySelected = false;
-            PartButton other;
-            int otherPartIdx;
+            PartButton anyPart;
+            int partIdx;
             for (int i = 0; i < llButtons.getChildCount(); i++) {
-                other = (PartButton)llButtons.getChildAt(i);
-                otherPartIdx = (Integer)other.getTag();
+                anyPart = (PartButton)llButtons.getChildAt(i);
+                partIdx = (Integer)anyPart.getTag();                    
+                if ((Integer)pb.getTag() == partIdx) continue;
                 
-                if (pb.isSelected()) {
-                    if (question.getPgMap()[otherPartIdx] != 0) {
-                        other.setSelected(false);
+                if (anyPart.isCaptured()) {
+                    anyPart.setSelected(false);
+                    anyPart.refreshDrawableState();
+                } else {
+                    if (anyPart.isSelected()) {
+                        anySelected = true;
                     }
-                    other.refreshDrawableState();
                 }
-                
-                if (other.isSelected())
-                    anySelected = true;
             }
-            if (anySelected) {
+            
+            btnAction.setImageResource(android.R.drawable.ic_menu_camera);            
+            if (pb.isSelected() || anySelected) {
                 if (!cameraOn) {
-                    cameraOn = true;
                     comandeerCamera();
                 }
-            }
-            btnAction.setEnabled(anySelected);
+                btnAction.setEnabled(true);
+            } else {
+                btnAction.setEnabled(false);
+            }            
         }
+        
     }
 
     protected void doneTaking(boolean success) {
@@ -211,27 +221,25 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             int pg = Integer.parseInt(picture.getName().substring(posn));
             PartButton pb;
             int partIdx;
-            int[] map;
+            int[] map = question.getPgMap();
             LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
             for (int spIdx : selectedParts) {
                 pb = (PartButton)llButtons.getChildAt(spIdx);
                 pb.setIsCaptured(true);
-                pb.refreshDrawableState();
                 
                 partIdx = (Integer)pb.getTag();
-                map = question.getPgMap();
                 map[partIdx] = pg;
-                question.setPgMap(map);
-            }
+            }            
+            question.setPgMap(map);
             selectedParts.clear();
+            refreshButtons();
             btnAction.setImageResource(R.drawable.ic_action_rotate_right);
-//            updateCounts();
         } else {
             releaseCamera();
             Intent intent = new Intent();
             setResult(Activity.RESULT_FIRST_USER, intent);
             finish();            
-        }        
+        }
     }
     
     private void releaseCamera() {
@@ -277,6 +285,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             }
         }
         btnAction.setImageResource(android.R.drawable.ic_menu_camera);
+        cameraOn = true;
     }
     
     private void releaseButtons() {
@@ -286,26 +295,13 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         }        
     }
     
-//    private void updateCounts() {
-//        int sentCount = 0, capturedCount = 0;
-//        PartButton btn;
-//        LinearLayout llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);
-//        for (int i = 0; i < llButtons.getChildCount(); i++) {
-//            btn = (PartButton)llButtons.getChildAt(i);
-//            if (btn.isSent()) sentCount++;
-//            if (btn.isCaptured()) capturedCount++;
-//        }
-//        
-//        TextView tvSent = (TextView)findViewById(R.id.tvSentCount);
-//        tvSent.setText(String.format("Sent %3d", (sentCount)));
-//        
-//        TextView tvCaptured = (TextView)findViewById(R.id.tvCapturedCount);
-//        tvCaptured.setText(String.format("Captured %3d", (capturedCount+sentCount)));
-//        
-//        TextView tvTotal = (TextView)findViewById(R.id.tvTotalCount);
-//        tvTotal.setText(String.format("Total %3d", llButtons.getChildCount()));
-//    }
-
+    private void refreshButtons() {
+        LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
+        for (int i = 0; i < llButtons.getChildCount(); i++) {
+            llButtons.getChildAt(i).refreshDrawableState();            
+        }        
+    }
+    
     private boolean layoutPartButtons(LinearLayout llButtons) {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         int pixels = (int)(metrics.density*50f + 0.5f);
@@ -329,16 +325,16 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             lp.setMargins(2, 0, 2, 0);
             btn.setLayoutParams(lp);
             btn.setIsSent(question.getState() > CAPTURED);
-            btn.setIsCaptured(question.getState() > DOWNLOADED);
+            btn.setIsCaptured(question.getState() > DOWNLOADED);            
             if (question.getState() == DOWNLOADED) {
                 btn.setIsCaptured(pgMap[j] != 0);
                 btn.setSelected(pgMap[j] == 0);
                 anySelected = anySelected ? true : pgMap[j] == 0; 
             }
-            btn.refreshDrawableState();
             btn.setOnClickListener(this);
             llButtons.addView(btn);
         }
+        refreshButtons();
         return anySelected;
     }
 

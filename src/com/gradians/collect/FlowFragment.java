@@ -13,6 +13,7 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout.LayoutParams;
@@ -20,11 +21,10 @@ import android.widget.LinearLayout.LayoutParams;
 public class FlowFragment extends Fragment implements IConstants {
     
     public static final FlowFragment newInstance(Question question,
-            boolean flipped, int x, int y, int page) {
+            boolean flipped, int fdbkIdx, int page) {
         Bundle bundle = new Bundle(5);
         bundle.putParcelable(TAG, question);
-        bundle.putInt(X_POSN_KEY, x);
-        bundle.putInt(Y_POSN_KEY, y);
+        bundle.putInt(FDBK_MRKR_KEY, fdbkIdx);
         bundle.putInt("page", page);
         bundle.putBoolean("flipped", flipped);
         FlowFragment pf = new FlowFragment();
@@ -40,13 +40,14 @@ public class FlowFragment extends Fragment implements IConstants {
         
         Bundle bundle = getArguments();
         Question question = bundle.getParcelable(TAG);
-        final int yPosn = bundle.getInt(Y_POSN_KEY);
+        final int fdbkIdx = bundle.getInt(FDBK_MRKR_KEY);
         final int page = bundle.getInt("page");
         boolean flipped = bundle.getBoolean("flipped");
         ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
         String[] paths = activity.getPaths(question, flipped);
         
         final WebView solnView = new WebView(activity);
+        solnView.clearCache(true);
         solnView.setBackgroundColor(Color.WHITE);
         solnView.getSettings().setBuiltInZoomControls(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
@@ -54,14 +55,27 @@ public class FlowFragment extends Fragment implements IConstants {
         solnView.getSettings().setDefaultTextEncodingName("utf-8");
         solnView.getSettings().setUseWideViewPort(true);
         solnView.getSettings().setJavaScriptEnabled(true);
+        solnView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         
         StringBuilder sbHtml = new StringBuilder();
-        sbHtml.append(HDR);
+        if (paths[0].contains(ANSWERS_DIR_NAME)) {
+            sbHtml.append(HDR_ANS);
+        } else {
+            sbHtml.append(HDR);
+        }
+        String styleImgWidth = "";
         for (int i = 0; i < paths.length; i++) {
             sbHtml.append(String.format(PARENT_DIV, i));
-            sbHtml.append(String.format(IMG_DIV, Uri.fromFile(new File(paths[i])).toString(),""));
-            if (i == page && yPosn != FlowActivity.NO_FEEDBACK) {
-                sbHtml.append(String.format(BAND_DIV, yPosn));
+            if (paths[i].contains(ANSWERS_DIR_NAME)) {
+                styleImgWidth = Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? "width: 100%%; " : "";
+            }
+            sbHtml.append(String.format(IMG_DIV, Uri.fromFile(new File(paths[i])).toString(), styleImgWidth));
+            if (i == page && fdbkIdx != FlowActivity.NO_FEEDBACK) {
+                Feedback fdbk = activity.getFeedback();
+                for (int j = 0; j < fdbk.x.length; j++) {
+                    String div = j == fdbkIdx ? MARKER_DIV : NON_MARKER_DIV;
+                    sbHtml.append(String.format(div, fdbk.y[j], fdbk.x[j], j+1));
+                }
             }
             sbHtml.append(PARENT_DIV_CLS);
         }
@@ -71,7 +85,7 @@ public class FlowFragment extends Fragment implements IConstants {
         solnView.setLayoutParams(lp);
         rootView.addView(solnView);
         
-        if (yPosn != FlowActivity.NO_FEEDBACK) {
+        if (fdbkIdx != FlowActivity.NO_FEEDBACK) {
             solnView.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
@@ -87,11 +101,13 @@ public class FlowFragment extends Fragment implements IConstants {
         return rootView;
     }
          
-    private final String PARENT_DIV = "<div id='pg%s' style='position: relative;'>";
+    private final String PARENT_DIV = "<div id='pg%s' style='position: relative; '>";
     private final String PARENT_DIV_CLS = "</div>";
     private final String IMG_DIV = "<img src='%s' style='%s'/>";
-    private final String BAND_DIV = "<span id='band' style='position:absolute; top:%s%%; left: 0; opacity: 0.3; background:#676767; width:100%%; height:4%%;'></span>";
+    private final String MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #F88017;'>%s</div>";
+    private final String NON_MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #676767;'>%s</div>";
     private final String HDR = "<html><head></head><body>";
+    private final String HDR_ANS = "<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>";
     private final String FTR = "</body></html>"; 
     
 }
@@ -100,14 +116,13 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
 
     public FlowAdapter(Question[] questions, FragmentManager fragmentManager) {
         super(fragmentManager);
-        this.questions = questions;        
-        xPosn = yPosn = FlowActivity.NO_FEEDBACK;
+        this.questions = questions;
+        fdbkIdx = FlowActivity.NO_FEEDBACK;
     }
     
-    public void shift(int pg, int x, int y, int position) {
+    public void shift(int pg, int idx, int position) {
         page = pg;
-        xPosn = x;
-        yPosn = y;
+        fdbkIdx = idx;
         update(position);
     }
     
@@ -149,10 +164,10 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     @Override
     public Fragment getItem(int position) {
         return FlowFragment.newInstance(questions[position], 
-                flipped, xPosn, yPosn, page);
+                flipped, fdbkIdx, page);
     }
     
-    private int page, xPosn, yPosn;
+    private int page, fdbkIdx;
     private boolean flipped;
     private String lastChangedId;
     private Question[] questions;

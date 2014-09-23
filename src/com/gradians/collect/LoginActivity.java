@@ -189,7 +189,7 @@ public class LoginActivity extends Activity implements IConstants {
     
     public void launchRegistrationActivity(View view) {
 
-        String[] items = { "Nope, not at all", "Yes (requires code)" };
+        String[] items = { "No (common)", "Yes (less common)" };
         AlertDialog.Builder builder = new AlertDialog.Builder(this, 
             R.style.RobotoDialogTitleStyle);
         builder.setTitle(this.getResources().getString(R.string.label_new_login1));
