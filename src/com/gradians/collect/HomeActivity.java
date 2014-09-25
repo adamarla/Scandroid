@@ -126,10 +126,10 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         Intent intent = null;
         try {
             switch (v.getId()) {
-            case R.id.btnQotd:
-                intent = new Intent(getApplicationContext(),
-                    com.gradians.collect.QotdActivity.class);
-                break;
+//            case R.id.btnQotd:
+//                intent = new Intent(getApplicationContext(),
+//                    com.gradians.collect.QotdActivity.class);
+//                break;
             case R.id.btnSchool:
                 intent = new Intent(getApplicationContext(),
                     com.gradians.collect.TeacherActivity.class);
@@ -188,13 +188,11 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     private void initialize(String name, String email) {
         setTitle(String.format("Hi %s", name));
         
-        HugeButton qotd, school, ask, browse;
-        qotd = (HugeButton)findViewById(R.id.btnQotd);
+        HugeButton school, ask, browse;
         school = (HugeButton)findViewById(R.id.btnSchool);
         ask = (HugeButton)findViewById(R.id.btnAsk);
         browse = (HugeButton)findViewById(R.id.btnBrowse);
         
-        qotd.setText(R.string.home_button_potd, R.drawable.ic_action_unread);
         school.setText(R.string.home_button_teacher, R.drawable.ic_action_sent);
         browse.setText(R.string.home_button_browse, R.drawable.ic_action_rotate_right);
         ask.setText(R.string.home_button_aaq, R.drawable.ic_action_chat);

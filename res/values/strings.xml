@@ -25,17 +25,13 @@
     <string name="action_sign_help">Help</string>
     <string name="action_sign_sign_out">Sign Out</string>
     
-    <string name="home_button_potd"><b>Daily Challenge</b>\nhonour board beckons</string>
     <string name="home_button_teacher"><b>School Stuff</b>\nfrom your teacher</string>
     <string name="home_button_aaq"><b>Ask a Question</b>\nstrictly on Math!</string>
-    <string name="home_button_browse"><b>Practice Corner</b>\n20 random problems</string>
+    <string name="home_button_browse"><b>Practice Corner</b>\nfresh problems daily</string>
     
-    <string name="potd_button_attempt"><b>Problem</b>\nof the Day</string>
-    <string name="potd_button_prior"><b>Prior Attempts</b>\nand feedback</string>
-
-    <string name="practise_button_browse"><b>Browse problems</b>\nand attempt</string>
-    <string name="practise_button_attempts"><b>Attempt</b>\nto view feedback</string>
-    <string name="practise_button_feedback"><b>View feedback</b>\nand learn</string>
+    <string name="potd_button_attempt"><b>Problem of the day</b>\ntake the challenge</string>
+    <string name="practise_button_browse"><b>Open questions</b>\nbrowse and attempt</string>
+    <string name="practise_button_feedback"><b>View feedback</b>\non your work</string>
     
     <string name="instruction1">Finish an answer on the page you start it</string>
     <string name="instruction2">Do not copy the question text</string>

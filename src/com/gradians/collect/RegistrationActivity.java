@@ -41,7 +41,7 @@ public class RegistrationActivity extends FragmentActivity implements
             if (savedInstanceState != null) {
                 return;
             }
-            displayForm(getIntent().getBooleanExtra("hasCode", false));
+            displayForm();
         }
     }
 
@@ -205,12 +205,11 @@ public class RegistrationActivity extends FragmentActivity implements
         finish();
     }
 
-    private void displayForm(boolean hasCode) {
+    private void displayForm() {
         // Create fragment and give it an argument specifying the
         // article it should show
         Fragment newFragment = new RegistrationFormFragment();
         Bundle args = new Bundle();
-        args.putBoolean("hasCode", hasCode);
         newFragment.setArguments(args);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -318,14 +317,9 @@ class RegistrationFormFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
 
-        Bundle bundle = getArguments();
-        boolean hasCode = bundle.getBoolean("hasCode");
-
-        ViewGroup rootView =
-                (ViewGroup) inflater.inflate(R.layout.fragment_registration,
-                        container, false);
-        rootView.findViewById(R.id.etGroupCode).setVisibility(
-                hasCode ? View.VISIBLE : View.INVISIBLE);
+        ViewGroup rootView = (ViewGroup)inflater.inflate(
+            R.layout.fragment_registration, container, false);
+        rootView.findViewById(R.id.etGroupCode).setVisibility(View.INVISIBLE);
 
         // Inflate the layout for this fragment
         return rootView;

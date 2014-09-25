@@ -121,6 +121,8 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
             }
             
             updateCounts(manifest);
+        } catch (NullPointerException npe) {
+            handleError("Refresh task failed ", "Null Pointer Exception");
         } catch (Exception e) {
             handleError("Refresh task failed ", e.getMessage());
         }

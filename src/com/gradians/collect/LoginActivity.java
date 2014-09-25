@@ -188,30 +188,12 @@ public class LoginActivity extends Activity implements IConstants {
     }
     
     public void launchRegistrationActivity(View view) {
-
-        String[] items = { "No (common)", "Yes (less common)" };
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-            R.style.RobotoDialogTitleStyle);
-        builder.setTitle(this.getResources().getString(R.string.label_new_login1));
-        builder.setItems(items, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-            // The 'which' argument contains the index position
-            // of the selected item
-               launchActivity(which == 1); 
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        Intent registration = new Intent(getApplicationContext(),
+            com.gradians.collect.RegistrationActivity.class);
+        startActivityForResult(registration, 
+        ITaskResult.REGISTRATION_ACTIVITY_REQUEST_CODE);
     }
     
-    private void launchActivity(boolean hasCode) {        
-        Intent registration = new Intent(getApplicationContext(),
-                com.gradians.collect.RegistrationActivity.class);
-        registration.putExtra("hasCode", hasCode);
-        startActivityForResult(registration, 
-            ITaskResult.REGISTRATION_ACTIVITY_REQUEST_CODE);
-    }
-
     /**
      * Shows the progress UI and hides the login form.
      */

@@ -39,6 +39,7 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -77,6 +78,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpPreview.setActivity(this);        
 
         vpFdbk = (ViewPager)findViewById(R.id.vpFeedback);
+        if (getResources().getBoolean(R.bool.isTablet)) {
+            LayoutParams lp = (LayoutParams)vpFdbk.getLayoutParams();
+            lp.height = 100;
+            vpFdbk.setLayoutParams(lp);
+        }
         vpHints = (ViewPager)findViewById(R.id.vpHints);
 
         fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
@@ -458,7 +464,32 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             
             if (q.getState() == GRADED) {
                 renderFeedback(position, fdbkPosn);
-                tvMarks.setText(String.format("%2.1f/%1d", q.getMarks(), q.getOutOf()));
+                
+                String quality = "";
+                if (type.equals(GR_TYPE)) {
+                    quality = String.format("%2.1f/%1d", q.getMarks(), q.getOutOf());
+                } else {
+                    switch((int)q.getMarks()) {
+                    case 2:
+                        quality = "Unimpressed";
+                        break;
+                    case 3:
+                        quality = "Mildly impressed";
+                        break;
+                    case 4:
+                        quality = "Reasonably impressed";
+                        break;
+                    case 5:
+                        quality = "Quite impressed";
+                        break;
+                    case 6:
+                        quality = "Very impressed";
+                        break;
+                    default:
+                        quality = " --- ";
+                    }
+                }
+                tvMarks.setText(quality);
             } else if (q.getState() == CAPTURED) {
                 btnCamera.setText("Re-Capture");
             }

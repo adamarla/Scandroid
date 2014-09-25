@@ -44,7 +44,7 @@ public class ImageUploadService extends IntentService implements IConstants {
             question = (Question)parcel;
             
             prefix = question.getId();
-            if (type.equals("GR")) {
+            if (type.equals(GR_TYPE)) {
                 ids = question.getGRId("-");
             } else {
                 ids = question.getSubpartId("-");

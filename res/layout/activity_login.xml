@@ -83,6 +83,7 @@
                     android:layout_alignParentRight="true"
 	                android:paddingLeft="32dp"
 	                android:paddingRight="32dp"
+                    android:background="@color/gray"
 	                android:text="@string/action_sign_in_short" />
 	                        
             </RelativeLayout>

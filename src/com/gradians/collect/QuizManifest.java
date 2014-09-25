@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import android.util.Log;
+
 public class QuizManifest extends BaseManifest {
     
     public QuizManifest(File dir, JSONArray items, Topic[] topics) throws Exception {
@@ -62,7 +64,7 @@ public class QuizManifest extends BaseManifest {
             JSONArray questions = (JSONArray)quizItem.get(QUESTIONS_KEY);
             for (int j = 0; j < questions.size(); j++) {
                 JSONObject item = (JSONObject)questions.get(j);
-                
+                Log.d(TAG, item.toJSONString());
                 Question question = new Question((
                     (String)item.get(NAME_KEY)).replace("-", ""),
                     (String)item.get(ID_KEY),

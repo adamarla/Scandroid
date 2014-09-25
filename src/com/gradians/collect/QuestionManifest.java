@@ -10,6 +10,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 public class QuestionManifest extends BaseManifest {
     
@@ -46,7 +47,7 @@ public class QuestionManifest extends BaseManifest {
      * @param beforeState
      * @return
      */
-    public Quij[] getQsns(int fromState, int toState, boolean fuzzle) {
+    public Quij[] getQsns(int fromState, int toState) {
         HashMap<Long, Quij> quizByTopic = initialize(topics);
         Set<String> questionIds = questionByIdMap.keySet();
         Iterator<String> iterator = questionIds.iterator();
@@ -54,7 +55,6 @@ public class QuestionManifest extends BaseManifest {
         long topicId; Quij quiz; Question question;
         while (iterator.hasNext()) {
             question = questionByIdMap.get(iterator.next());
-            if (question.isPuzzle() != fuzzle) continue;
             if (question.getState() > fromState ||
                 question.getState() < toState) continue;
             
@@ -117,8 +117,9 @@ public class QuestionManifest extends BaseManifest {
                 grId[0] = ((Long)item.get(GR_ID_KEY)).intValue();
                 question.setGRId(grId);
                 float marks = ((Long)item.get(MARKS_KEY)).floatValue();
+                Log.d(TAG, question.getId() + " " + marks);
                 question.setState(marks < 0 ? RECEIVED : GRADED);
-                question.setMarks(marks*question.getOutOf()/5);
+                question.setMarks(marks);
             }
             questionByIdMap.put(question.getId(), question);
         }
