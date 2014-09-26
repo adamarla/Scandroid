@@ -33,9 +33,9 @@
     <string name="practise_button_browse"><b>Open questions</b>\nbrowse and attempt</string>
     <string name="practise_button_feedback"><b>View feedback</b>\non your work</string>
     
-    <string name="instruction1">Finish an answer on the page you start it</string>
-    <string name="instruction2">Do not copy the question text</string>
-    <string name="instruction3">Label your answers. Write using dark ink</string>
+    <string name="instruction1">Write answer with pen and paper. Use Capture button to send.</string>
+    <string name="instruction2">Finish an answer on the page you start it.</string>
+    <string name="instruction3">Do not copy the question text.</string>
     
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
 

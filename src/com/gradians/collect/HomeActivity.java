@@ -64,18 +64,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         
         if (resultCode == RESULT_OK) {
             try {
-                JSONParser jsonParser = new JSONParser();
-                JSONObject respObject = (JSONObject)jsonParser.parse(resultData);
-                
-                String name, email;
-                name = (String)respObject.get(NAME_KEY);
-                email = (String)respObject.get(EMAIL_KEY);
-                potd = (String)respObject.get(PZL_KEY);
-                
-                initialize(name, email);
-                
-                JSONArray topics = (JSONArray)respObject.get(TOPICS_KEY); 
-                saveTopics(topics.toJSONString());
+                initialize(resultData);
             } catch (Exception e) {
                 handleError("Oops, Auth activity request failed",
                         e.getMessage());
@@ -94,21 +83,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         if (resultCode == RESULT_OK) {
             try {
                 String json = data.getStringExtra(TAG);
-                JSONParser jsonParser = new JSONParser();
-                JSONObject respObject = (JSONObject)jsonParser.parse(json);
-                
-                String name, email, token, id;
-                token = (String)respObject.get(TOKEN_KEY);
-                name = (String)respObject.get(NAME_KEY);
-                email = (String)respObject.get(EMAIL_KEY);
-                id = String.valueOf((Long)respObject.get(ID_KEY));
-                potd = (String)respObject.get(PZL_KEY);
-                
-                setPreferences(name, email, token, id);
-                initialize(name, email);
-                
-                JSONArray topics = (JSONArray)respObject.get(TOPICS_KEY); 
-                saveTopics(topics.toJSONString());
+                initialize(json);
             } catch (Exception e) {
                 handleError("Oops, Auth activity request failed",
                         e.getMessage());
@@ -126,10 +101,6 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         Intent intent = null;
         try {
             switch (v.getId()) {
-//            case R.id.btnQotd:
-//                intent = new Intent(getApplicationContext(),
-//                    com.gradians.collect.QotdActivity.class);
-//                break;
             case R.id.btnSchool:
                 intent = new Intent(getApplicationContext(),
                     com.gradians.collect.TeacherActivity.class);
@@ -185,7 +156,31 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
             execute(new Download[] { download });
     }
 
-    private void initialize(String name, String email) {
+    private void initialize(String json) throws Exception {
+        JSONParser jsonParser = new JSONParser();
+        JSONObject respObject = (JSONObject)jsonParser.parse(json);
+        
+        String name, email, token, id;
+        token = (String)respObject.get(TOKEN_KEY);
+        name = (String)respObject.get(NAME_KEY);
+        email = (String)respObject.get(EMAIL_KEY);
+        id = String.valueOf((Long)respObject.get(ID_KEY));
+        potd = (String)respObject.get(PZL_KEY);
+        
+        File studentDir = new File(getExternalFilesDir(null), 
+            email.replace('@', '.'));
+        studentDir.mkdir();
+        (new File(studentDir, "problems")).mkdir();
+        (new File(studentDir, "files")).mkdir();
+        
+        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        Editor edit = prefs.edit();
+        edit.putString(NAME_KEY, name);
+        edit.putString(EMAIL_KEY, email);
+        edit.putString(TOKEN_KEY, token);
+        edit.putString(ID_KEY, id);
+        edit.putString(DIR_KEY, studentDir.getPath());
+        edit.commit();        
         setTitle(String.format("Hi %s", name));
         
         HugeButton school, ask, browse;
@@ -204,23 +199,9 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                 .getPackageInfo(getPackageName(), 0).versionName);
         } catch (Exception e) { }
         ((TextView)findViewById(R.id.tvVers)).setText(vers);        
-    }
-
-    private void setPreferences(String name, String email, String token, String id) {
-        File studentDir = new File(getExternalFilesDir(null), 
-            email.replace('@', '.'));
-        studentDir.mkdir();
-        (new File(studentDir, "problems")).mkdir();
-        (new File(studentDir, "files")).mkdir();
         
-        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-        Editor edit = prefs.edit();
-        edit.putString(NAME_KEY, name);
-        edit.putString(EMAIL_KEY, email);
-        edit.putString(TOKEN_KEY, token);
-        edit.putString(ID_KEY, id);
-        edit.putString(DIR_KEY, studentDir.getPath());
-        edit.commit();        
+        JSONArray topics = (JSONArray)respObject.get(TOPICS_KEY); 
+        saveTopics(topics.toJSONString());
     }
 
     private void resetPreferences() {
