@@ -350,19 +350,19 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
         String pref = null;
-        if (params.getColorEffect() != null) {
+        if (params.getSupportedColorEffects() != null) {
             pref = getOptimalColorEffect();
             if (pref != null) params.setColorEffect(pref);            
         }
-        if (params.getFlashMode() != null) {
+        if (params.getSupportedFlashModes() != null) {
             pref = getOptimalFlashMode();
             if (pref != null) params.setFlashMode(pref);
         }
-        if (params.getWhiteBalance() != null) {
+        if (params.getSupportedWhiteBalance() != null) {
             pref = getOptimalWhiteBalance();
             if (pref != null) params.setWhiteBalance(pref);
         }
-        if (params.getSceneMode() != null) {
+        if (params.getSupportedSceneModes() != null) {
             pref = getOptimalSceneMode();
             if (pref != null) params.setSceneMode(pref);
         }
