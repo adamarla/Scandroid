@@ -349,22 +349,27 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
     
     private Camera.Parameters configureParams(Camera.Parameters params) {
-        String pref = null;
-        if (params.getSupportedColorEffects() != null) {
-            pref = getOptimalColorEffect();
-            if (pref != null) params.setColorEffect(pref);            
+        String optimal = null;
+        List<String> supported = null;
+        supported = params.getSupportedColorEffects();
+        if (supported != null) {
+            optimal = getOptimal(supported, COLOR_EFFECT_PREFS);
+            if (optimal != null) params.setColorEffect(optimal);            
         }
-        if (params.getSupportedFlashModes() != null) {
-            pref = getOptimalFlashMode();
-            if (pref != null) params.setFlashMode(pref);
+        supported = params.getSupportedFlashModes();
+        if (supported != null) {
+            optimal = getOptimal(supported, FLASH_MODE_PREFS);
+            if (optimal != null) params.setColorEffect(optimal);            
         }
-        if (params.getSupportedWhiteBalance() != null) {
-            pref = getOptimalWhiteBalance();
-            if (pref != null) params.setWhiteBalance(pref);
+        supported = params.getSupportedWhiteBalance();
+        if (supported != null) {
+            optimal = getOptimal(supported, WHITE_BAL_PREFS);
+            if (optimal != null) params.setColorEffect(optimal);            
         }
-        if (params.getSupportedSceneModes() != null) {
-            pref = getOptimalSceneMode();
-            if (pref != null) params.setSceneMode(pref);
+        supported = params.getSupportedSceneModes();
+        if (supported != null) {
+            optimal = getOptimal(supported, SCENE_MODE_PREFS);
+            if (optimal != null) params.setColorEffect(optimal);            
         }
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
@@ -373,10 +378,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         return params;
     }
     
-    private String getOptimalWhiteBalance() {
-        String[] preferences = { Camera.Parameters.WHITE_BALANCE_TWILIGHT,
-            Camera.Parameters.WHITE_BALANCE_SHADE };
-        List<String> options = camera.getParameters().getSupportedWhiteBalance();
+    private String getOptimal(List<String> options, String[] preferences) {
         for (String pref : preferences) {
             for (String option : options) {
                 if (option.equals(pref))
@@ -386,43 +388,6 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         return null;
     }
     
-    private String getOptimalFlashMode() {
-        String[] preferences = { Camera.Parameters.FLASH_MODE_AUTO };
-        List<String> options = camera.getParameters().getSupportedFlashModes();
-        for (String pref : preferences) {
-            for (String option : options) {
-                if (option.equals(pref))
-                    return pref;
-            }
-        }
-        return null;
-    }
-    
-    private String getOptimalColorEffect() {
-        String[] preferences = { Camera.Parameters.EFFECT_MONO,
-            Camera.Parameters.EFFECT_WHITEBOARD, Camera.Parameters.EFFECT_POSTERIZE};
-        List<String> options = camera.getParameters().getSupportedColorEffects();
-        for (String pref : preferences) {
-            for (String option : options) {
-                if (option.equals(pref))
-                    return pref;
-            }
-        }
-        return null;
-    }
-    
-    private String getOptimalSceneMode() {
-        String[] preferences = { Camera.Parameters.SCENE_MODE_STEADYPHOTO };
-        List<String> options = camera.getParameters().getSupportedSceneModes();
-        for (String pref : preferences) {
-            for (String option : options) {
-                if (option.equals(pref))
-                    return pref;
-            }
-        }
-        return null;
-    }
-
     private Size getOptimalSize(Parameters params) {
         Size s = null;
         int delta = Integer.MAX_VALUE, index = 0;
@@ -452,6 +417,13 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     
     private final int PORTRAIT = 90;
     private final int[] PREFERRED_SIZE = {1600, 1200};
+    
+    private final String[] WHITE_BAL_PREFS = { Camera.Parameters.WHITE_BALANCE_TWILIGHT,
+        Camera.Parameters.WHITE_BALANCE_SHADE };
+    private final String[] FLASH_MODE_PREFS = { Camera.Parameters.FLASH_MODE_AUTO };
+    private final String[] COLOR_EFFECT_PREFS = { Camera.Parameters.EFFECT_MONO,
+        Camera.Parameters.EFFECT_WHITEBOARD, Camera.Parameters.EFFECT_POSTERIZE};
+    private final String[] SCENE_MODE_PREFS = { Camera.Parameters.SCENE_MODE_STEADYPHOTO };    
 }
 
 class PartButton extends Button {
