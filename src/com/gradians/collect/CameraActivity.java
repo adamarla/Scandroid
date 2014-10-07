@@ -53,7 +53,6 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         
         btnAction = (ImageButton)findViewById(R.id.btnAction);
         btnAction.setEnabled(question.getState() == DOWNLOADED);
-//        updateCounts();
     }
     
     @Override
@@ -359,17 +358,17 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         supported = params.getSupportedFlashModes();
         if (supported != null) {
             optimal = getOptimal(supported, FLASH_MODE_PREFS);
-            if (optimal != null) params.setColorEffect(optimal);            
+            if (optimal != null) params.setFlashMode(optimal);
         }
         supported = params.getSupportedWhiteBalance();
         if (supported != null) {
             optimal = getOptimal(supported, WHITE_BAL_PREFS);
-            if (optimal != null) params.setColorEffect(optimal);            
+            if (optimal != null) params.setWhiteBalance(optimal);            
         }
         supported = params.getSupportedSceneModes();
         if (supported != null) {
             optimal = getOptimal(supported, SCENE_MODE_PREFS);
-            if (optimal != null) params.setColorEffect(optimal);            
+            if (optimal != null) params.setSceneMode(optimal);            
         }
         params.setRotation(PORTRAIT);
         params.setPictureFormat(ImageFormat.JPEG);
