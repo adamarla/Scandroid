@@ -53,6 +53,11 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         
         btnAction = (ImageButton)findViewById(R.id.btnAction);
         btnAction.setEnabled(question.getState() == DOWNLOADED);
+        
+        if (Build.VERSION.SDK_INT < 11) {
+            findViewById(R.id.tvVert1).setVisibility(View.INVISIBLE);
+            findViewById(R.id.tvVert2).setVisibility(View.INVISIBLE);
+        }        
     }
     
     @Override

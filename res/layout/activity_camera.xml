@@ -36,4 +36,53 @@
         android:background="@drawable/btn_selector"
         android:src="@android:drawable/ic_menu_camera"/>
     
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toLeftOf="@id/btnAction"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="20dp"
+        android:padding="2dp"
+        android:background="@drawable/gray_background"
+        android:textColor="@color/white"
+        android:text="Text this way"/>
+    
+    <TextView
+        android:id="@+id/tvVert1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/btnAction"
+        android:layout_centerVertical="true"
+        android:padding="2dp"
+        android:layout_marginLeft="20dp"
+        android:background="@drawable/gray_background"
+        android:textColor="@color/white"
+        android:text="Text this way"/>
+    
+    <TextView
+        android:id="@+id/tvVert2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/btnAction"
+        android:padding="2dp"
+        android:layout_marginBottom="40dp"
+        android:background="@drawable/gray_background"
+        android:rotation="90"
+        android:textColor="#FFFF0000"
+        android:text="Not this way"/>
+    
+     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/btnAction"
+        android:padding="2dp"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/gray_background"
+        android:rotation="270"
+        android:textColor="#FFFF0000"
+        android:text="Not this way"/>
+    
+    
 </RelativeLayout>
