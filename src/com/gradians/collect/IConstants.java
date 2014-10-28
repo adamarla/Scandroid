@@ -10,16 +10,16 @@ public interface IConstants {
     String TOKEN_KEY = "token";
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
+    String BALANCE_KEY = "bal";
     String DIR_KEY = "dir";
     String QOTD_KEY = "qotd";
-    String COUNT_KEY = "count";
+    String MARKER_KEY = "marker";
     
     String TOPICS_KEY = "topics";
     String VERT_ID_KEY = "v_id";
     String VERT_NAME_KEY = "v_name";
     
     String ITEMS_KEY = "ws";
-    String MARKER_KEY = "marker";
     String QUIZ_ID_KEY = "quizId";
     String QUIZ_NAME_KEY = "quiz";
     String QUIZ_PATH_KEY = "locn";
@@ -51,12 +51,20 @@ public interface IConstants {
     String MARKS_KEY = "marks";
     String OUT_OF_KEY = "outof";
     String EXAMINER_KEY = "examiner";
+    String HAS_CODEX_KEY = "codex";
+    String HAS_ANSWER_KEY = "ans";
+    String AVAILBL_KEY = "available";
+    String GUESSED_KEY = "guesst";
+    String ANS_KEY = "bot_ans";
+    String SOLN_KEY = "bot_soln";
+    
     String FDBK_MRKR_KEY = "fdbkMrkr";
     String HINT_MRKR_KEY = "hintMrkr";
     
     // Directory names
     String QUESTIONS_DIR_NAME = "questions";
     String ANSWERS_DIR_NAME = "answers";
+    String ATTEMPTS_DIR_NAME = "attempts";
     String SOLUTIONS_DIR_NAME = "solutions";
     String FEEDBACK_DIR_NAME = "feedback";
     String UPLOAD_DIR_NAME = "upload";

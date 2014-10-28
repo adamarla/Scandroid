@@ -72,8 +72,8 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
             return;
         }
         
-        DownloadManager dm = (DownloadManager)
-                context.getSystemService(Context.DOWNLOAD_SERVICE);
+        DownloadManager dm = (DownloadManager)context.
+            getSystemService(Context.DOWNLOAD_SERVICE);
         DownloadManager.Query query = new DownloadManager.Query();
         query.setFilterById(id);
         Cursor cursor = dm.query(query);
@@ -95,14 +95,11 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
     @Override
     public void onDismiss(DialogInterface dialog) {
         activity.unregisterReceiver(this);
-        if (resultHandler != null)
-            resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_REQUEST_CODE, 
-                Activity.RESULT_FIRST_USER, null);       
     }
     
     public boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager 
-            = (ConnectivityManager)activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager)activity.
+            getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null ? activeNetworkInfo.isConnected() : false;
     }
@@ -111,7 +108,8 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         File file = new File(Uri.parse(uri).getPath());
         String name = file.getName();
         if (name.contains("-")) {
-            file.renameTo(new File(file.getParentFile(), name.replaceFirst("-.*\\.", ".")));
+            file.renameTo(new File(file.getParentFile(), 
+                name.replaceFirst("-.*\\.", ".")));
         }
         requestIds.remove(requestId);
         if (peedee != null) {
@@ -123,11 +121,11 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         }
         if (requestIds.size() == 0 && resultHandler != null) 
             resultHandler.onTaskResult(ITaskResult.DOWNLOAD_MONITOR_TASK_REQUEST_CODE, 
-                Activity.RESULT_OK, null);        
+                Activity.RESULT_OK, null);
     }
     
     private Activity activity;
-    public ArrayList<Download> downloads;
+    private ArrayList<Download> downloads;
     private ProgressDialog peedee;
     private ITaskResult resultHandler;
     private HashSet<Long> requestIds = new HashSet<Long>();

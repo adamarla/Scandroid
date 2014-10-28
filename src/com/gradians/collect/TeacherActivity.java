@@ -2,8 +2,6 @@ package com.gradians.collect;
 
 import java.io.File;
 
-import org.json.simple.JSONArray;
-
 import android.view.View;
 
 public class TeacherActivity extends BaseActivity {
@@ -18,6 +16,7 @@ public class TeacherActivity extends BaseActivity {
         if (manifest == null) return;
         Quij[] items = null;
         String title = null;
+        
         switch (v.getId()) {
         case R.id.btnInbox:
             items = ((QuizManifest)manifest).getInboxItems();
@@ -31,15 +30,16 @@ public class TeacherActivity extends BaseActivity {
             items = ((QuizManifest)manifest).getGradedItems();
             title = "Graded";
         }
+        
         if (items.length != 0) {
-            launchListActivity(items, title);
+            launchListActivity(items, title, v.getId());
         }
     }    
     
     @Override
-    protected BaseManifest getManifest(File studentDir, JSONArray items,
+    protected BaseManifest getManifest(File studentDir,
         Topic[] topics) throws Exception {
-        return new QuizManifest(studentDir, items, topics);
+        return new QuizManifest(studentDir, topics);
     }
 
     @Override

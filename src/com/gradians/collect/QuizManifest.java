@@ -6,12 +6,10 @@ import java.util.ArrayList;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import android.util.Log;
-
 public class QuizManifest extends BaseManifest {
     
-    public QuizManifest(File dir, JSONArray items, Topic[] topics) throws Exception {
-        super(dir, items, topics);
+    public QuizManifest(File dir, Topic[] topics) throws Exception {
+        super(dir, topics);
     }
 
     @Override
@@ -49,7 +47,7 @@ public class QuizManifest extends BaseManifest {
     }
     
     @Override
-    public void parse(JSONArray items) throws Exception {        
+    public void parse(JSONArray items, boolean remote) throws Exception {        
         quizzes = new Quij[items.size()];
         
         for (int i = 0; i < items.size(); i++) {
@@ -64,7 +62,7 @@ public class QuizManifest extends BaseManifest {
             JSONArray questions = (JSONArray)quizItem.get(QUESTIONS_KEY);
             for (int j = 0; j < questions.size(); j++) {
                 JSONObject item = (JSONObject)questions.get(j);
-                Log.d(TAG, item.toJSONString());
+                
                 Question question = new Question((
                     (String)item.get(NAME_KEY)).replace("-", ""),
                     (String)item.get(ID_KEY),
@@ -72,6 +70,9 @@ public class QuizManifest extends BaseManifest {
                     (String)item.get(SBPRTS_ID_KEY),
                     (String)item.get(IMG_PATH_KEY),
                     ((Long)item.get(IMG_SPAN_KEY)).shortValue());
+                
+                question.setHasCodex((Boolean)item.get(HAS_CODEX_KEY));
+                question.setHasAns((Boolean)item.get(HAS_ANSWER_KEY));
                 
                 if (item.get(GR_ID_KEY) != null) {
                     question.setGRId((String)item.get(GR_ID_KEY));
@@ -101,6 +102,7 @@ public class QuizManifest extends BaseManifest {
                         question.setMarks(marks);
                     }
                 }
+                
                 quizzes[i].add(question);
                 questionByIdMap.put(question.getId(), question);
             }

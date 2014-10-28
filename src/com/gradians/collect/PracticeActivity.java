@@ -2,22 +2,22 @@ package com.gradians.collect;
 
 import java.io.File;
 
-import org.json.simple.JSONArray;
-
 import android.view.View;
 
-public class PractiseActivity extends BaseActivity {
+public class PracticeActivity extends BaseActivity {
     
 
-    public PractiseActivity() {
-        super(R.layout.activity_practise, "qsns");
+    public PracticeActivity() {
+        super(R.layout.activity_practice, "qs");
     }
     
     @Override
     public void onClick(View v) {
         if (manifest == null) return;
+        
         Quij[] items = null;
-        String title = null;
+        String title = null;        
+        
         switch (v.getId()) {
         case R.id.btnToday:
             items = potdOffered;
@@ -25,21 +25,22 @@ public class PractiseActivity extends BaseActivity {
             break;
         case R.id.btnOffered:
             items = offered;
-            title = "Problems";
+            title = "Open problems";
             break;
         default:
             items = submitted;
-            title = "Feedback";
-        }        
-        if (items.length != 0) {
-            launchListActivity(items, title);
+            title = "My attempts";
         }
-    }    
+        
+        if (items.length != 0) {
+            launchListActivity(items, title, v.getId());
+        }
+    }
     
     @Override
-    protected BaseManifest getManifest(File studentDir, JSONArray items,
+    protected BaseManifest getManifest(File studentDir,
         Topic[] topics) throws Exception {
-        return new QuestionManifest(studentDir, items, topics);
+        return new QuestionManifest(studentDir, topics);
     }
 
     @Override
@@ -50,8 +51,8 @@ public class PractiseActivity extends BaseActivity {
         btnSubmitted = (HugeButton)findViewById(R.id.btnSent);
         
         potdOffered = ((QuestionManifest)manifest).getFuzzle(potd);
-        offered = ((QuestionManifest)manifest).getQsns(SENT, LOCKED);
-        submitted = ((QuestionManifest)manifest).getQsns(GRADED, RECEIVED);
+        offered = ((QuestionManifest)manifest).untried();
+        submitted = ((QuestionManifest)manifest).tried();
         
         today.setText(R.string.potd_button_attempt, R.drawable.hint);
         today.setEnabled(true);

@@ -9,21 +9,41 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 
 import android.app.Activity;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
 public class HttpCallsAsyncTask extends AsyncTask<Download, Void, String> implements IConstants {
     
-    public HttpCallsAsyncTask(ITaskResult caller, int resultCode) {
-        this.resultCode = resultCode;
+    public HttpCallsAsyncTask(ITaskResult caller, int requestCode) {
+        this.requestCode = requestCode;
         this.caller = caller;
+        this.downloads = new ArrayList<Download>();
     }
     
     String[] params;
     public void setUpdateParams(String...params) {
         this.params = params;
+    }
+    
+    public void add(String title, Uri srcUri, Uri destUri) {
+        Download download = new Download(title, srcUri, destUri);
+        for (Download d : downloads) {
+            if (d.equals(download)) return;
+        }
+        downloads.add(download);
+    }
+    
+    public int getCount() {
+        return downloads.size();
+    }
+    
+    ArrayList<Download> downloads;
+    public void start() {
+        this.execute(downloads.toArray(new Download[downloads.size()]));
     }
     
     @Override
@@ -49,7 +69,7 @@ public class HttpCallsAsyncTask extends AsyncTask<Download, Void, String> implem
                     conn.getOutputStream().write(this.params[i].getBytes(charset));
                     conn.getOutputStream().close();
                 }
-                    
+                
                 int responseCode = conn.getResponseCode();
                 InputStream istream = conn.getInputStream();
                 BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
@@ -65,11 +85,19 @@ public class HttpCallsAsyncTask extends AsyncTask<Download, Void, String> implem
                         }
                         writer.close();
                     }
+                    resultCode = Activity.RESULT_OK;
                 } else {
+                    resultCode = Activity.RESULT_FIRST_USER;
                     throw new Exception("HTTP Response Code: " + responseCode);
                 }
+                
+            } catch (NullPointerException npe){
+                resultCode = Activity.RESULT_CANCELED;
+                Log.e(TAG, "Null Pointer Exception");
+                result = null;
             } catch (Exception e){
-                Log.e(TAG, e.getMessage());
+                resultCode = Activity.RESULT_CANCELED;
+                Log.e(TAG, e.getClass().getName().toString());
                 result = null;
             }
         }
@@ -79,10 +107,9 @@ public class HttpCallsAsyncTask extends AsyncTask<Download, Void, String> implem
     @Override
     protected void onPostExecute(String result) {
         if (caller != null)
-            caller.onTaskResult(resultCode, result != null ? 
-                Activity.RESULT_OK : Activity.RESULT_FIRST_USER, result);
+            caller.onTaskResult(requestCode, resultCode, result);
     }
 
     private ITaskResult caller;
-    private int resultCode;
+    private int requestCode, resultCode;
 }

@@ -204,8 +204,8 @@
             android:contentDescription="@string/capture_button"
             android:background="@drawable/btn_selector"
             android:gravity="center"
-            android:onClick="activateCamera"
-            android:drawableTop="@drawable/ic_action_camera"/>
+            android:onClick="onOptionsClick"
+            android:drawableTop="@android:drawable/ic_menu_info_details"/>
 
 	</LinearLayout>
 	

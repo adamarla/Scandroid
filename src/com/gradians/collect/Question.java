@@ -15,6 +15,7 @@ class Question implements Parcelable, JSONAware, IConstants {
         this.qsnId = qsnId;
         this.imgLocn = imgLocn;
         this.imgSpan = span;
+        this.guess = -1;
         
         String[] tokens = spIds.split(",");
         int subparts = tokens.length;
@@ -75,7 +76,7 @@ class Question implements Parcelable, JSONAware, IConstants {
     public int[] getPgMap() {
         return pgMap;
     }
-
+    
     public String getPgMap(String delim) {
         Integer[] tmp = new Integer[pgMap.length];
         for (int i = 0; i < tmp.length; i++) {
@@ -108,11 +109,54 @@ class Question implements Parcelable, JSONAware, IConstants {
         return hintMrkr;
     }
     
-    public char getVersion() {
+    public int getVersion() {
         int posn = this.imgLocn.lastIndexOf('/');
-        return imgLocn.charAt(posn+1);
+        return (int)imgLocn.charAt(posn+1) - (int)'0';
     }
-
+    
+    public int getGuess() {
+        return guess;
+    }
+    
+    public boolean hasScan() {
+        return getPgMap("").matches(".*[1-9].*");
+    }
+    
+    public boolean hasCodex() {
+        return hasCodex;
+    }
+    
+    public boolean hasAnswer() {
+        return hasAns;
+    }
+    
+    public boolean tried() {
+        return guess != -1;
+    }
+    
+    public boolean botAnswer() {
+        return botAns;
+    }
+    
+    public boolean botSolution() {
+        return botSoln;
+    }
+    
+    public boolean canSeeSolution(String quizType) {
+        if (quizType.equals(QSN_TYPE))
+            return botSoln;
+        else
+            return (state == RECEIVED || state == GRADED);
+    }
+    
+    public boolean isStab() {
+        return guess != -1 || botAns || botSoln || state > SENT;
+    }
+    
+    public boolean isDirty() {
+        return dirty;
+    }
+    
     public void setGRId(String grIds) {
         if (grIds != null) {
             String[] tokens = grIds.split(",");
@@ -174,7 +218,7 @@ class Question implements Parcelable, JSONAware, IConstants {
     }
     
     public void setOutOf(short outof) {
-        this.outof = outof;        
+        this.outof = outof;
     }
     
     public void setImgSpan(short imgSpan) {
@@ -194,11 +238,35 @@ class Question implements Parcelable, JSONAware, IConstants {
     }
 
     public void setFdbkMarker(long marker) {
-        this.fdbkMrkr = marker;        
+        this.fdbkMrkr = marker;
     }
     
     public void setHintMarker(long marker) {
         this.hintMrkr = marker;
+    }
+
+    public void setHasCodex(boolean hasCodex) {
+        this.hasCodex = hasCodex;
+    }
+    
+    public void setHasAns(boolean hasAns) {
+        this.hasAns = hasAns;
+    }
+    
+    public void setGuess(int guess) {
+        this.guess = guess;
+    }
+    
+    public void setBotAns(boolean botAns) {
+        this.botAns = botAns;
+    }
+    
+    public void setBotSoln(boolean botSoln) {
+        this.botSoln = botSoln;
+    }
+    
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
     }
 
     @Override
@@ -220,7 +288,6 @@ class Question implements Parcelable, JSONAware, IConstants {
             }
     };
     
-
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
@@ -232,12 +299,16 @@ class Question implements Parcelable, JSONAware, IConstants {
         dest.writeFloat(marks);
         dest.writeInt(outof);
         dest.writeIntArray(grId);
+        dest.writeInt(puzzle ? 1 : 0);
         dest.writeInt(imgSpan);
         dest.writeString(imgLocn);
         dest.writeStringArray(scans);
-        dest.writeInt(puzzle ? 1 : 0);
-        dest.writeLong(hintMrkr);
-        dest.writeLong(fdbkMrkr);
+        dest.writeInt(hasCodex ? 1 : 0);
+        dest.writeInt(hasAns ? 1 : 0);
+        dest.writeInt(guess);
+        dest.writeInt(botAns ? 1 : 0);
+        dest.writeInt(botSoln ? 1 : 0);
+        dest.writeInt(dirty? 1 : 0);
     }
     
     private Question(Parcel in) {
@@ -250,12 +321,16 @@ class Question implements Parcelable, JSONAware, IConstants {
         marks = in.readFloat();
         outof = (short)in.readInt();
         grId = in.createIntArray();
+        puzzle = in.readInt() == 1;
         imgSpan = (short)in.readInt();
         imgLocn = in.readString();
         scans = in.createStringArray();
-        puzzle = in.readInt() == 1;
-        hintMrkr = in.readLong();
-        fdbkMrkr = in.readLong();
+        hasCodex = in.readInt() == 1;
+        hasAns = in.readInt() == 1;
+        guess = in.readInt();
+        botAns = in.readInt() == 1;
+        botSoln = in.readInt() == 1;
+        dirty = in.readInt() == 1;
     }
     
     @Override
@@ -268,19 +343,23 @@ class Question implements Parcelable, JSONAware, IConstants {
     @Override
     public String toJSONString() {
         JSONObject obj = new JSONObject();
-        obj.put(NAME_KEY, name);
         obj.put(ID_KEY, id);
         obj.put(QUESN_ID_KEY, qsnId);
         obj.put(SBPRTS_ID_KEY, getSubpartId(","));
+        obj.put(GR_ID_KEY, grId[0] == 0 ? null : grId[0]);
+        obj.put(PZL_KEY, puzzle);
+        obj.put(NAME_KEY, name);
         obj.put(IMG_PATH_KEY, imgLocn);
         obj.put(IMG_SPAN_KEY, imgSpan);
-        obj.put(GR_ID_KEY, grId[0] == 0 ? null : getGRId(","));
         obj.put(SCANS_KEY, grId[0] == 0 ? null : TextUtils.join(",", scans));
         obj.put(OUT_OF_KEY, outof);
-        obj.put(MARKS_KEY, grId[0] == 0 ? -1f : marks);
+        obj.put(MARKS_KEY, (int)marks);
         obj.put(EXAMINER_KEY, examiner == 0 ? null : examiner);
-        obj.put(FDBK_MRKR_KEY, fdbkMrkr == 0 ? null : fdbkMrkr);
-        obj.put(HINT_MRKR_KEY, hintMrkr == 0 ? null : hintMrkr);
+        obj.put(HAS_CODEX_KEY, hasCodex);
+        obj.put(HAS_ANSWER_KEY, hasAns);
+        obj.put(GUESSED_KEY, guess == -1 ? null : guess);
+        obj.put(ANS_KEY, grId[0] == 0 ? null : botAns);
+        obj.put(SOLN_KEY, grId[0] == 0 ? null : botSoln);
         return obj.toString();
     }
 
@@ -294,7 +373,10 @@ class Question implements Parcelable, JSONAware, IConstants {
     private float marks;
     private short outof;
     private int examiner;
+    private int guess;
+    private boolean hasCodex, hasAns, botAns, botSoln;
     private boolean puzzle;
+    private boolean dirty;
     
     public static final String SEP = ",";
 

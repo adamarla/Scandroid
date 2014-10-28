@@ -3,7 +3,6 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.json.simple.JSONArray;
@@ -11,6 +10,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -54,6 +54,20 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         // as you specify a parent activity in AndroidManifest.xml.
         if (item.getItemId() == R.id.action_sign_out)
             initiateAuthActivity();
+        else {
+            String vers = null;
+            try {
+                vers = String.format("Scanbot %s", getPackageManager()
+                    .getPackageInfo(getPackageName(), 0).versionName);
+            } catch (Exception e) { }
+            String[] settings = new String[2];
+            settings[0] = "Balance Remaining: " + balance + "₲";
+            settings[1] = "Version: " + vers;
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, 
+                R.style.RobotoDialogTitleStyle);
+            builder.setTitle("Settings").setItems(settings, null);
+            builder.show();
+        }
         return super.onOptionsItemSelected(item);
     }
     
@@ -61,20 +75,19 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
         if (peedee != null) 
             peedee.dismiss();
-        
-        if (resultCode == RESULT_OK) {
-            try {
+        try {
+            if (resultCode == RESULT_OK) {
                 initialize(resultData);
-            } catch (Exception e) {
-                handleError("Oops, Auth activity request failed",
-                        e.getMessage());
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(), 
+                    "No Internet :/ soldiering on regardless", 
+                    Toast.LENGTH_LONG).show();
+                initialize(retrieveResponse());
+            } else if (resultCode == RESULT_FIRST_USER) {
+                this.finish();
             }
-        } else if (resultCode != Activity.RESULT_CANCELED) {
-            Toast.makeText(getApplicationContext(),
-                    "Oops.. auth check failed. Please try again",
-                    Toast.LENGTH_SHORT).show();
-        } else {
-            this.finish();
+        } catch (Exception e) {
+            handleError("Oops, Verify auth task failed", e.getMessage());
         }
     }
 
@@ -109,10 +122,10 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                 break;
             case R.id.btnBrowse:
                 intent = new Intent(getApplicationContext(),
-                    com.gradians.collect.PractiseActivity.class);
+                    com.gradians.collect.PracticeActivity.class);
             }
             intent.putExtra(PZL_KEY, potd);
-            intent.putExtra(TOPICS_KEY, loadTopics());
+            intent.putExtra(TOPICS_KEY, topics);
             startActivity(intent);
         } catch (Exception e) {
             handleError("Oops, Activity launch failed",
@@ -166,6 +179,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         email = (String)respObject.get(EMAIL_KEY);
         id = String.valueOf((Long)respObject.get(ID_KEY));
         potd = (String)respObject.get(PZL_KEY);
+        balance = ((Long)respObject.get(BALANCE_KEY)).intValue();
         
         File studentDir = new File(getExternalFilesDir(null), 
             email.replace('@', '.'));
@@ -180,6 +194,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         edit.putString(TOKEN_KEY, token);
         edit.putString(ID_KEY, id);
         edit.putString(DIR_KEY, studentDir.getPath());
+        edit.putInt(BALANCE_KEY, balance);
         edit.commit();        
         setTitle(String.format("Hi %s", name));
         
@@ -193,15 +208,8 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         ask.setText(R.string.home_button_aaq, R.drawable.ic_action_chat);
         ask.setEnabled(false);
         
-        String vers = null;
-        try {
-            vers = String.format("Scanbot %s", getPackageManager()
-                .getPackageInfo(getPackageName(), 0).versionName);
-        } catch (Exception e) { }
-        ((TextView)findViewById(R.id.tvVers)).setText(vers);        
-        
-        JSONArray topics = (JSONArray)respObject.get(TOPICS_KEY); 
-        saveTopics(topics.toJSONString());
+        topics = getTopics((JSONArray)respObject.get(TOPICS_KEY)); 
+        saveResponse(json);
     }
 
     private void resetPreferences() {
@@ -211,17 +219,26 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         edit.commit();
     }
     
-    private void saveTopics(String json) throws Exception {
+    private void saveResponse(String json) throws Exception {
         FileOutputStream fos = 
             openFileOutput(filename, Context.MODE_PRIVATE);
         fos.write(json.getBytes());
         fos.close();
     }
     
-    private Topic[] loadTopics() throws Exception {
-        JSONParser jsonParser = new JSONParser();
+    private String retrieveResponse() throws Exception {
         FileInputStream fis = openFileInput(filename);
-        JSONArray items = (JSONArray)jsonParser.parse(new InputStreamReader(fis));
+        StringBuffer sb = new StringBuffer();
+        byte[] buffer = new byte[1024];
+        int bytesRead = 0;
+        while ((bytesRead = fis.read(buffer)) != -1) {
+            sb.append(new String(buffer, 0, bytesRead));
+        }
+        fis.close();
+        return sb.toString();
+    }
+    
+    private Topic[] getTopics(JSONArray items) {
         ArrayList<Topic> topics = new ArrayList<Topic>();
         JSONObject item;
         for (int i = 0; i < items.size(); i++) {
@@ -239,9 +256,11 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         Log.e(TAG, error + " " + message);
     }
  
+    private Topic[] topics;
+    private int balance;
     private String potd;
     private ProgressDialog peedee;
-    private final String filename = "topics.json";
+    private final String filename = "init.json";
 }
 
 class HugeButton extends RelativeLayout {

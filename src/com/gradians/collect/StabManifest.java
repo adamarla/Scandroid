@@ -19,8 +19,8 @@ import org.json.simple.JSONObject;
 
 public class StabManifest extends BaseManifest {
     
-    public StabManifest(File dir, JSONArray items, Topic[] topics) throws Exception {
-        super(dir, items, topics);
+    public StabManifest(File dir, Topic[] topics) throws Exception {
+        super(dir, topics);
     }
     
     public Quij[] getStabs() {
@@ -37,7 +37,7 @@ public class StabManifest extends BaseManifest {
     }
     
     @Override
-    public void parse(JSONArray items) throws Exception {        
+    public void parse(JSONArray items, boolean clean) throws Exception {        
         if (items == null) return;
         
         Date today = new Date();

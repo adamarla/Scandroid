@@ -47,17 +47,16 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         
         selectedParts = new HashSet<Integer>();
         
-        final LinearLayout llButtons = 
-            (LinearLayout)this.findViewById(R.id.llSelectorBtns);
-        cameraOn = layoutPartButtons(llButtons);
-        
         btnAction = (ImageButton)findViewById(R.id.btnAction);
-        btnAction.setEnabled(question.getState() == DOWNLOADED);
+        btnAction.setEnabled(true);
         
-        if (Build.VERSION.SDK_INT < 11) {
+        llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);        
+        createPartButtons(llButtons);
+        
+        if (Build.VERSION.SDK_INT < 11) {   // No vertical rotation below this level
             findViewById(R.id.tvVert1).setVisibility(View.INVISIBLE);
             findViewById(R.id.tvVert2).setVisibility(View.INVISIBLE);
-        }        
+        } 
     }
     
     @Override
@@ -86,6 +85,8 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     protected void onResume() {
         super.onResume();
         comandeerCamera();
+        refreshButtons();        
+        onClick((PartButton)llButtons.getChildAt(0));
     }
 
     @Override
@@ -118,7 +119,34 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 openPgNo++;
                 name = question.getId() + "." + String.valueOf(openPgNo);
             }
-            camera.takePicture(null, null, new PictureWriter(this, picture));
+            
+            final Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
+                // don't do anything here, but we need to implement the callback to get 
+                // the shutter sound (at least on Galaxy Nexus and Nexus 7)
+                public void onShutter() { }
+            };
+            
+            final CameraActivity caller = this;
+            if (autofocus) {
+                // focus camera            
+                Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback() {
+                    @Override
+                    public void onAutoFocus(boolean success, Camera camera) {
+                        camera.takePicture(shutterCallback, null, new PictureWriter(caller, picture));
+                    }
+                };
+                
+                try {
+                    camera.autoFocus(autoFocusCallback);
+                } catch(RuntimeException e) {
+                    Log.e("gradians", "autofocus runtime ex " + e.getMessage());
+                    camera.takePicture(shutterCallback, null, new PictureWriter(this, picture));
+                }
+                
+            } else {                
+                camera.takePicture(shutterCallback, null, new PictureWriter(this, picture));
+            }
+            
         } else {
             // discard action
             map = question.getPgMap();
@@ -132,17 +160,17 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 map[partIdx] = 0;
             }
             question.setPgMap(map);
+            question.setState(DOWNLOADED);
             refreshButtons();
+            
             selectedParts.clear();
             comandeerCamera();
         }
     }
     
-    @SuppressWarnings("deprecation")
     @Override
     public void onClick(View v) {
         PartButton pb = (PartButton)v;
-        if (pb.isSent()) return;
         
         pb.setSelected(!pb.isSelected());
         pb.refreshDrawableState();
@@ -172,13 +200,9 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             btnAction.setImageResource(R.drawable.ic_action_rotate_right);            
             if (pb.isSelected()) {
                 btnAction.setEnabled(true);
-                cameraOn = false;                
-                File file = new File(imagesDir, question.getId() + "." + map[pbPartIdx]);                
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                    cameraPreview.setBackground(Drawable.createFromPath(file.getPath()));
-                } else {
-                    cameraPreview.setBackgroundDrawable(Drawable.createFromPath(file.getPath()));
-                }                
+                
+                File file = new File(imagesDir, question.getId() + "." + map[pbPartIdx]);
+                displayImage(file);
             } else {
                 btnAction.setEnabled(false);
                 comandeerCamera();
@@ -212,9 +236,8 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 btnAction.setEnabled(true);
             } else {
                 btnAction.setEnabled(false);
-            }            
+            }
         }
-        
     }
 
     protected void doneTaking(boolean success) {
@@ -233,7 +256,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 
                 partIdx = (Integer)pb.getTag();
                 map[partIdx] = pg;
-            }            
+            }
             question.setPgMap(map);
             selectedParts.clear();
             refreshButtons();
@@ -242,7 +265,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             releaseCamera();
             Intent intent = new Intent();
             setResult(Activity.RESULT_FIRST_USER, intent);
-            finish();            
+            finish();
         }
     }
     
@@ -271,15 +294,13 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 setResult(RESULT_FIRST_USER);
                 finish();
                 return;
-            }
+            }            
         }
         
         if (cameraPreview == null) {
             cameraPreview = new CameraPreview(this, camera);
-            ((FrameLayout)findViewById(R.id.camera_preview)).
-                addView(cameraPreview);
-            cameraPreview.setCamera(camera);
-        } else {
+            ((FrameLayout)findViewById(R.id.camera_preview)).addView(cameraPreview);            
+        } else {            
             camera.stopPreview();
             camera.startPreview();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -288,29 +309,43 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 cameraPreview.setBackgroundDrawable(null);
             }
         }
+        
         btnAction.setImageResource(android.R.drawable.ic_menu_camera);
         cameraOn = true;
+    }
+    
+    @SuppressWarnings("deprecation")
+    private void displayImage(File file) {
+        cameraOn = false;        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            cameraPreview.setBackground(Drawable.createFromPath(file.getPath()));
+        } else {
+            cameraPreview.setBackgroundDrawable(Drawable.createFromPath(file.getPath()));
+        }
     }
     
     private void releaseButtons() {
         LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
         for (int i = 0; i < llButtons.getChildCount(); i++) {
-            llButtons.getChildAt(i).setSelected(false);            
-        }        
+            llButtons.getChildAt(i).setSelected(false);
+        }
     }
     
     private void refreshButtons() {
+        PartButton btn = null;
+        int[] pgMap = question.getPgMap();
         LinearLayout llButtons = (LinearLayout) this.findViewById(R.id.llSelectorBtns);        
         for (int i = 0; i < llButtons.getChildCount(); i++) {
-            llButtons.getChildAt(i).refreshDrawableState();            
-        }        
+            btn = (PartButton)llButtons.getChildAt(i);
+            btn.setIsCaptured(pgMap[i] != 0);
+            btn.refreshDrawableState();
+        }
     }
     
-    private boolean layoutPartButtons(LinearLayout llButtons) {
+    private void createPartButtons(LinearLayout llButtons) {
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         int pixels = (int)(metrics.density*50f + 0.5f);
         
-        boolean anySelected = false;
         PartButton btn = null;
         int[] pgMap = question.getPgMap();
         for (int j = 0; j < pgMap.length; j++) {
@@ -328,18 +363,9 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             LayoutParams lp = new LayoutParams(pixels, pixels);
             lp.setMargins(2, 0, 2, 0);
             btn.setLayoutParams(lp);
-            btn.setIsSent(question.getState() > CAPTURED);
-            btn.setIsCaptured(question.getState() > DOWNLOADED);            
-            if (question.getState() == DOWNLOADED) {
-                btn.setIsCaptured(pgMap[j] != 0);
-                btn.setSelected(pgMap[j] == 0);
-                anySelected = anySelected ? true : pgMap[j] == 0; 
-            }
             btn.setOnClickListener(this);
             llButtons.addView(btn);
         }
-        refreshButtons();
-        return anySelected;
     }
 
     /**
@@ -355,15 +381,23 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     private Camera.Parameters configureParams(Camera.Parameters params) {
         String optimal = null;
         List<String> supported = null;
+        supported = params.getSupportedFocusModes();
+        if (supported != null) {
+            optimal = getOptimal(supported, FOCUS_MODE_PREFS);
+            if (optimal != null) {
+                params.setFocusMode(optimal);
+                autofocus = true;
+            }
+        }
         supported = params.getSupportedColorEffects();
         if (supported != null) {
             optimal = getOptimal(supported, COLOR_EFFECT_PREFS);
-            if (optimal != null) params.setColorEffect(optimal);            
+            if (optimal != null) params.setColorEffect(optimal);
         }
         supported = params.getSupportedFlashModes();
         if (supported != null) {
             optimal = getOptimal(supported, FLASH_MODE_PREFS);
-            if (optimal != null) params.setFlashMode(optimal);
+            if (optimal != null) params.setFlashMode(optimal);            
         }
         supported = params.getSupportedWhiteBalance();
         if (supported != null) {
@@ -410,8 +444,10 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
 
     private Question question;
-    private boolean cameraOn;
+    private boolean cameraOn, autofocus;
     private File picture, imagesDir;
+    
+    private LinearLayout llButtons;    
     
     private HashSet<Integer> selectedParts;
     
@@ -422,12 +458,14 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     private final int PORTRAIT = 90;
     private final int[] PREFERRED_SIZE = {1600, 1200};
     
-    private final String[] WHITE_BAL_PREFS = { Camera.Parameters.WHITE_BALANCE_TWILIGHT,
-        Camera.Parameters.WHITE_BALANCE_SHADE };
-    private final String[] FLASH_MODE_PREFS = { Camera.Parameters.FLASH_MODE_AUTO };
-    private final String[] COLOR_EFFECT_PREFS = { Camera.Parameters.EFFECT_MONO,
-        Camera.Parameters.EFFECT_WHITEBOARD, Camera.Parameters.EFFECT_POSTERIZE};
-    private final String[] SCENE_MODE_PREFS = { Camera.Parameters.SCENE_MODE_STEADYPHOTO };    
+    private final String[] WHITE_BAL_PREFS = { Parameters.WHITE_BALANCE_TWILIGHT,
+        Parameters.WHITE_BALANCE_SHADE };
+    private final String[] FLASH_MODE_PREFS = { Parameters.FLASH_MODE_AUTO };
+    private final String[] COLOR_EFFECT_PREFS = { Parameters.EFFECT_MONO,
+        Parameters.EFFECT_WHITEBOARD, Parameters.EFFECT_POSTERIZE};
+    private final String[] SCENE_MODE_PREFS = { Parameters.SCENE_MODE_STEADYPHOTO };
+    private final String[] FOCUS_MODE_PREFS = { Parameters.FOCUS_MODE_MACRO, 
+        Parameters.FOCUS_MODE_AUTO };
 }
 
 class PartButton extends Button {
@@ -446,23 +484,16 @@ class PartButton extends Button {
         if (captured) {
             mergeDrawableStates(drawableState, STATE_CAPTURED);
         }
-        if (sent) {
-            mergeDrawableStates(drawableState, STATE_SENT);
-        }
         return drawableState;
     }
     
     public void setIsCaptured(boolean b) { captured = b; }
-    public void setIsSent(boolean b) { sent = b; }
     
     public boolean isCaptured() { return captured; }
-    public boolean isSent() { return sent; }
     
     private boolean captured = false;
-    private boolean sent = false;    
     
     private static final int[] STATE_CAPTURED = {R.attr.state_captured};
-    private static final int[] STATE_SENT = {R.attr.state_sent};
     
 }
 

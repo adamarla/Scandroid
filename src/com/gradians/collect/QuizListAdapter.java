@@ -3,6 +3,7 @@ package com.gradians.collect;
 import java.util.ArrayList;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,10 +24,12 @@ public class QuizListAdapter extends BaseAdapter implements IConstants {
         for (int i = 0; i < questions.length; i++) {
             q = quiz.get(i);
             if (questions[i].getState() != q.getState() ||
-                !questions[i].getPgMap("").equals(q.getPgMap(""))) {
-                q.setPgMap(questions[i].getPgMap());
-                q.setState(questions[i].getState());
-                dirtys.add(q);
+                !questions[i].getPgMap("").equals(q.getPgMap("")) ||
+                questions[i].tried() != q.tried() ||
+                questions[i].botAnswer() != q.botAnswer() ||
+                questions[i].botSolution() != q.botSolution()) {
+                quiz.set(i, questions[i]);
+                dirtys.add(questions[i]);
             }
         }
         quiz.determineState();

@@ -9,7 +9,7 @@ import org.json.simple.JSONArray;
 
 public abstract class BaseManifest implements IConstants {
 
-    public BaseManifest(File dir, JSONArray items, Topic[] topics) 
+    public BaseManifest(File dir, Topic[] topics) 
         throws Exception {
         this.topics = topics;
         File stateFile = new File(dir, STATE_FILE);
@@ -17,15 +17,11 @@ public abstract class BaseManifest implements IConstants {
         state = new Properties();
         state.load(new FileInputStream(stateFile));
         questionByIdMap = new HashMap<String, Question>();
-        parse(items);
     }
 
     public void update(Question[] questions) {
-        Question question;
-        for (Question q : questions) {
-            question = questionByIdMap.get(q.getId());
-            question.setState(q.getState());
-            question.setPgMap(q.getPgMap());
+        for (Question q : questions) {            
+            questionByIdMap.put(q.getId(), q);
         }
     }
     
@@ -44,7 +40,7 @@ public abstract class BaseManifest implements IConstants {
         return array.toJSONString();
     }
     
-    public abstract void parse(JSONArray items) throws Exception;
+    public abstract void parse(JSONArray items, boolean remote) throws Exception;
 
     protected Topic[] topics;
     protected Properties state;

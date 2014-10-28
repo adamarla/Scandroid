@@ -28,7 +28,7 @@ public class ImageUploadService extends IntentService implements IConstants {
         Parcelable[] parcels = intent.getParcelableArrayExtra(TAG);
         File quizDir = new File(intent.getStringExtra(QUIZ_PATH_KEY));        
         File uploadsDir = new File(quizDir, UPLOAD_DIR_NAME);
-        File answersDir = new File(quizDir, ANSWERS_DIR_NAME);
+        File answersDir = new File(quizDir, ATTEMPTS_DIR_NAME);
         
         SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
         String studentId = prefs.getString(ID_KEY, null);        

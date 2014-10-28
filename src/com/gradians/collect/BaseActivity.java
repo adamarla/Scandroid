@@ -46,7 +46,7 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
         studentDir = new File(prefs.getString(DIR_KEY, null));
         email = prefs.getString(EMAIL_KEY, null);
         token = prefs.getString(TOKEN_KEY, null);
-        marker = prefs.getInt(subpath, 0);
+        marker = prefs.getInt(subpath, -1);
         
         refresh();
     }
@@ -85,41 +85,45 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
             JSONArray delta, items = null;
             JSONParser jsonParser = new JSONParser();
             
-            if (marker == 0) {
+            if (marker < 0) {
                 cache.delete();
             }
             
-            if (cache.exists()) {
+            manifest = getManifest(filesDir, topics);            
+            if (cache.exists() && marker > 0) {
                 FileReader fr = new FileReader(cache);
                 items = (JSONArray)jsonParser.parse(fr);
+                Log.d(TAG, "Cache Size: " + items.size());
+                manifest.parse(items, false);
             } else {
                 items = new JSONArray();
             }
             
-            manifest = getManifest(filesDir, items, topics);            
             if (resultCode == RESULT_OK) {
                 respObject = (JSONObject)jsonParser.parse(resultData);
                 delta = (JSONArray)respObject.get(ITEMS_KEY);
+                Log.d(TAG, "Delta Size: " + delta.size());
                 if (delta.size() > 0) {
-                    manifest.parse(delta);
+                    manifest.parse(delta, true);
                 }
+                
+                marker = ((Long)respObject.get(MARKER_KEY)).intValue();
                 SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
                 Editor edit = prefs.edit();
-                edit.putInt(subpath, ((Long)respObject.get(MARKER_KEY)).intValue());
+                edit.putInt(subpath, marker);
                 edit.commit();
+                Log.d(TAG, "marker: " + marker);
+                if (marker > 0) {
+                    FileWriter fw = new FileWriter(cache);
+                    fw.write(manifest.toJSONArray());
+                    fw.close();                
+                }
                 
-            } else {
+           } else {
                 Toast.makeText(getApplicationContext(), 
-                    "No Internet access, continuing with cached content", 
-                    Toast.LENGTH_LONG).show();                
-            }
-            
-            if (cache.exists()) {
-                FileWriter fw = new FileWriter(cache);
-                fw.write(manifest.toJSONArray());
-                fw.close();                
-            }
-            
+                    "No Internet, continuing with cached content", 
+                    Toast.LENGTH_LONG).show();
+            }            
             updateCounts(manifest);
         } catch (NullPointerException npe) {
             handleError("Refresh task failed ", "Null Pointer Exception");
@@ -129,18 +133,19 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
     }
     
     protected abstract BaseManifest getManifest(File studentDir, 
-        JSONArray items, Topic[] topics) throws Exception;
+        Topic[] topics) throws Exception;
     
     protected abstract void updateCounts(BaseManifest manifest);
     
     public abstract void onClick(View v);
 
-    protected void launchListActivity(Quij[] items, String title) {
+    protected void launchListActivity(Quij[] items, String title, int categoryId) {
         Intent listIntent = new Intent(getApplicationContext(),
             com.gradians.collect.ListActivity.class);
         listIntent.putExtra(NAME_KEY, studentDir.getPath());
         listIntent.putExtra(TAG, items);
         listIntent.putExtra(TAG_ID, title);
+        listIntent.putExtra(ID_KEY, categoryId);
         startActivityForResult(listIntent, LIST_ACTIVITY_REQUEST_CODE);
     }
 

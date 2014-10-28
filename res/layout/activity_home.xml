@@ -1,52 +1,52 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.gradians.collect.HomeActivity" >
+    android:orientation="vertical"
+    tools:context=".HomeActivity" >
 
-    <LinearLayout
+    <Space 
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>    
+    
+    <com.gradians.collect.HugeButton
+        android:id="@+id/btnBrowse"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:orientation="vertical">
-        
-<!--         <com.gradians.collect.HugeButton -->
-<!--             android:id="@+id/btnQotd" -->
-<!-- 	        android:layout_width="wrap_content" -->
-<!-- 	        android:layout_height="wrap_content" -->
-<!--             android:background="@drawable/btn_selector" -->
-<!--             android:onClick="onClick"/> -->
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/btn_selector"
+        android:onClick="onClick"/>
     
-        <com.gradians.collect.HugeButton
-            android:id="@+id/btnBrowse"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/btn_selector"
-            android:onClick="onClick"/>
-        
-        <com.gradians.collect.HugeButton
-            android:id="@+id/btnSchool"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
-            android:background="@drawable/btn_selector"
-            android:onClick="onClick"/>
-        
-        <com.gradians.collect.HugeButton
-            android:id="@+id/btnAsk"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="30dp"
-            android:background="@drawable/btn_selector"
-            android:onClick="onClick"/>    
-        
-        </LinearLayout>
-        
-    <TextView 
-        android:id="@+id/tvVers"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
+    <Space 
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+    
+    <com.gradians.collect.HugeButton
+        android:id="@+id/btnSchool"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/btn_selector"
+        android:onClick="onClick"/>
+        
+    <Space 
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
     
-</RelativeLayout>
+    <com.gradians.collect.HugeButton
+        android:id="@+id/btnAsk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/btn_selector"
+        android:onClick="onClick"/>    
+        
+    <Space 
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+    
+</LinearLayout>

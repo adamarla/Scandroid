@@ -15,6 +15,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,9 +35,10 @@ import android.widget.TextView;
 public class LoginActivity extends Activity implements IConstants {
     
     /** POST parameter name for the user's account name */
-    private static final String PARAM_EMAIL = "email";
-    /** POST parameter name for the user's password */
-    private static final String PARAM_PASSWORD = "password";
+    private static final String 
+        PARAM_EMAIL = "email", 
+        PARAM_PASSWORD = "password",
+        PARAM_SIG = "signature";
 
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
@@ -248,13 +251,19 @@ public class LoginActivity extends Activity implements IConstants {
         protected String doInBackground(String... params) {
             String result = null;
             String hostport = params[0];
-            try {
+            try {                
+                PackageManager pm = getApplicationContext().getPackageManager();
+                String signature = String.format("OS=Android %s; AppVers=%s; Autofocus=%s", 
+                    Build.VERSION.SDK_INT,
+                    pm.getPackageInfo(getApplicationContext().getPackageName(), 0).versionName,
+                    pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
+                
                 String charset = Charset.defaultCharset().name();
-                URL createToken = new URL(String.format("http://%s/tokens", 
-                        hostport));
-                String authParams = String.format("%s=%s&%s=%s", 
+                URL createToken = new URL(String.format("http://%s/tokens", hostport));
+                String authParams = String.format("%s=%s&%s=%s&%s=%s", 
                         PARAM_EMAIL, URLEncoder.encode(mEmail, charset),
-                        PARAM_PASSWORD, URLEncoder.encode(mPassword, charset));
+                        PARAM_PASSWORD, URLEncoder.encode(mPassword, charset),
+                        PARAM_SIG, URLEncoder.encode(signature, charset));
                 HttpURLConnection conn = (HttpURLConnection)createToken.openConnection();
                 conn.setDoOutput(true); // Triggers HTTP POST
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
