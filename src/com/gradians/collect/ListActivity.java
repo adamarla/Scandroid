@@ -35,7 +35,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
 
     @Override
     public void onBackPressed() {
-        commit();
         Intent intent = new Intent();
         intent.putExtra(TAG_ID, adapter.getDirtys());
         this.setResult(RESULT_OK, intent);
@@ -50,6 +49,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     String key = categoryId + "." + quiz.getType() + "." + quiz.getId();
                     int bookmark = data.getIntExtra(TAG_ID, 0);
                     if (bookmark != 0) markers.put(key, String.valueOf(bookmark));
+                    commit();
+                    
                     Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
                     Question[] questions = new Question[parcels.length];
                     for (int i = 0; i < parcels.length; i++)
@@ -171,7 +172,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             if (question.canSeeSolution(quiz.getType())) {
                 for (short i = 0; i < question.getImgSpan(); i++) {
                     image = new File(solutionsDir, 
-                        question.getId() + "." + (i+1));
+                        question.getVersion() + "." + question.getId() + "." + (i+1));
                     if (question.isDirty()) image.delete();
                     if (!image.exists()) {
                         src = Uri.parse(String.format(SOLN_URL, 
@@ -181,7 +182,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     }
                 }
             } else {
-                image = new File(questionsDir, question.getId());
+                image = new File(questionsDir, 
+                    question.getVersion() + "." + question.getId());
                 if (question.isDirty()) image.delete();
                 if (!image.exists()) {
                     src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, 
@@ -189,7 +191,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     dest = Uri.fromFile(image);
                     dlm.add(question.getId(), src, dest);
                 }
-                
+                /* Removing hints for now
                 File hint = new File(hintsDir, question.getId());
                 if (hintMarker < question.getHintMarker()) {
                     hint.delete();
@@ -201,7 +203,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                         question.getQsnId()));
                     dest = Uri.fromFile(hint);
                     hcat.add(null, src, dest);
-                }                
+                } */               
             }
             
             if (question.hasCodex()) {
@@ -209,7 +211,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 answersDir = new File(quizDir, ANSWERS_DIR_NAME);
                 for (int codex : codices) {
                     image = new File(answersDir, 
-                        question.getId() + "-" + codex);
+                        codex + "." + question.getId());
                     if (question.isDirty()) image.delete();
                     if (!image.exists()) {
                         src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, 

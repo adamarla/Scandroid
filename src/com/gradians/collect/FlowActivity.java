@@ -95,14 +95,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
         hintsIndicator = (CirclePageIndicator)findViewById(R.id.circlesHints);        
         
-        int page = 0, fdbkPg = 0;
+        int page = 0;
         if (savedInstanceState == null) {
+            fdbkIdx = 0;
             vpPreview.setCurrentItem(0);
             initialPageScroll = true;
             bookmark = getIntent().getIntExtra(TAG_ID, 0);
         } else {
             adapter.setFlipped(savedInstanceState.getBoolean(FLIPPED_KEY));
-            fdbkPg = savedInstanceState.getInt(FDBK_IDX_KEY, NO_FEEDBACK);
+            fdbkIdx = savedInstanceState.getInt(FDBK_IDX_KEY, NO_FEEDBACK);
             fdbkShown = savedInstanceState.getBoolean(FDBK_SHOWN_KEY);
             hintShown = savedInstanceState.getBoolean(HINT_SHOWN_KEY);
             page = savedInstanceState.getInt(PAGE_KEY);
@@ -114,7 +115,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
         setTitle(getIntent().getStringExtra(NAME_KEY));
         loadHints(quizDir);
-        adjustView(page, fdbkPg);
+        adjustView(page, fdbkIdx);
     }
     
     @Override
@@ -161,7 +162,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 
                 if (!question.getPgMap("").contains("0")) {
                     question.setState(CAPTURED);
-                    stateMap.put(question.getId(), question.toString());
+                    stateMap.put(question.getId(), question.toString());                    
                 } else {
                     question.setState(DOWNLOADED);
                     stateMap.remove(question.getId());
@@ -169,13 +170,18 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 commit();
                 
                 adapter.update(vpPreview.getCurrentItem());
-                adjustView(vpPreview.getCurrentItem(), 0);                
+                adjustView(vpPreview.getCurrentItem(), 0);
+                
+                if (question.getState() == CAPTURED)
+                    triggerUploads(adapter.getQuestions());
             }
         }
     }
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
+        int currentIndex = vpPreview.getCurrentItem();
+        Question qsn = adapter.getQuestions()[currentIndex];        
         if (requestCode == PURCHASE_TASK_REQUEST_CODE) {
             peedee.dismiss();
             if (resultCode == RESULT_OK) {
@@ -190,8 +196,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                     edit.putInt(BALANCE_KEY, balance);
                     edit.commit();
                     
-                    int currentIndex = vpPreview.getCurrentItem();
-                    Question qsn = adapter.getQuestions()[currentIndex];
                     if (op.equals(BUY_ANS)) {
                         qsn.setBotAns(true);
                         dlCode = DL_ANS;
@@ -202,7 +206,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                         triggerDownloads(qsn);
                     } else { // op == GUESS
                         qsn.setGuess(guess);
-                        displayOptions(qsn);
+                        adjustView(currentIndex, fdbkIdx);
+                        displayAnswers(qsn, true);
                     }
                     
                 } catch (Exception e) {
@@ -218,14 +223,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             if (resultCode == RESULT_OK) {
                 switch (dlCode) {
                 case DL_CODEX:
-                    displayAnswers(true);
+                    displayAnswers(qsn, true);
                     break;
                 case DL_ANS:
-                    displayAnswers(false);
+                    displayAnswers(qsn, false);
                     break;
                 case DL_SOLN:
-                    int currentIndex = vpPreview.getCurrentItem();
                     adapter.update(currentIndex);
+                    adjustView(currentIndex, fdbkIdx);
                     break;
                 default:
                 }
@@ -300,53 +305,63 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         adapter.flip(currentIndex);
         adjustView(currentIndex, fdbkIdx);
     }
+    
+    public void purchase(View view) {
+        final int currentIndex = vpPreview.getCurrentItem();
+        final Question qsn = adapter.getQuestions()[currentIndex];
         
-    public void action(View view) {
+        int price = 0;
+        if (view.getId() == R.id.btnBuyAns) {
+            if (qsn.botAnswer() || qsn.botSolution()) {
+                dlCode = DL_ANS;
+                triggerDownloads(qsn);
+                return;
+            }
+            price = 5;
+        } else {
+            if (qsn.canSeeSolution(type)) {
+                if (qsn.hasScan() && !adapter.getFlipped()) {
+                    adapter.flip(currentIndex);
+                    adjustView(currentIndex, fdbkIdx);
+                }                    
+                return;
+            }
+            price = 20;
+        }
+        
+        final boolean answer = view.getId() == R.id.btnBuyAns;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this,
+            R.style.RobotoDialogTitleStyle);
+        builder.setTitle(
+            "Current Balance " + balance + "₲" + "\n" + 
+            "After Purchase   " + (balance - price) + "₲");
+        builder.setPositiveButton(R.string.purchase_conf_text,
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    recordAction(qsn, answer ? BUY_ANS : BUY_SOLN);
+                }
+            });
+        builder.setNegativeButton(android.R.string.cancel,
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                }
+            });
+        builder.show().getWindow().setBackgroundDrawable(
+            new ColorDrawable(Color.TRANSPARENT));
+    }
+        
+    public void selfCheck(View v) {
         int currentIndex = vpPreview.getCurrentItem();
         Question question = adapter.getQuestions()[currentIndex];
-        if (question.getState() > DOWNLOADED) {            
-            adapter.flip(currentIndex);
-            adjustView(currentIndex, fdbkIdx);
-        } else {
-            if (hintShown) {
-                unrenderHint();
-            } else {
-                ArrayList<String> partsWithHints = new ArrayList<String>();
-                Hint h = hints[currentIndex];
-                for (int i = 0; i < h.subparts; i++) {
-                    if (h.getText(i) != null) {
-                        partsWithHints.add("Part " + (char)((int)'A'+i));
-                    }
-                }
-                if (h.subparts > 1 && partsWithHints.size() > 1) {
-                    final int qsnIdx = currentIndex;
-                    final String[] parts = partsWithHints.toArray(
-                        new String[partsWithHints.size()]);
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-                        R.style.RobotoDialogTitleStyle);
-                    builder.setTitle("Show hints for...")
-                        .setItems(parts, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                int partIdx = (int)parts[which].charAt(5)-(int)'A';
-                                renderHint(qsnIdx, partIdx);
-                            }
-                    });
-                    builder.show().getWindow().
-                        setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-                } else if (h.subparts > 1 && partsWithHints.size() == 1) {
-                    renderHint(currentIndex, 
-                        ((int)partsWithHints.get(0).charAt(0)-(int)'a'));
-                } else if (partsWithHints.size() == 1) {
-                    renderHint(currentIndex, 0);
-                }
-            }
-        }
+        displayAnswers(question, true);
     }
-    
+        
     public void showHide(View view) {
         hide = !hide;
         int visibility = hide ? View.INVISIBLE : View.VISIBLE;
         findViewById(R.id.llBtnBar).setVisibility(visibility);
+        findViewById(R.id.tvName).setVisibility(visibility);
+        findViewById(R.id.tvMarks).setVisibility(visibility);
         
         if (fdbkShown) {
             vpFdbk.setVisibility(visibility);
@@ -359,39 +374,45 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
     }
     
-    public void upload(View view) {        
-        // prompt for uploading only if something is there
-        final Question[] questions = adapter.getQuestions();
-        if (nothingToUpload(questions)) return;
+    public void activateCamera(View view) {
+        final int posn = vpPreview.getCurrentItem();
+        final Question qsn = adapter.getQuestions()[posn];        
+        final File answersDir = new File(quizDir, ATTEMPTS_DIR_NAME);
         
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Upload now?");
-        builder.setPositiveButton(android.R.string.ok,
-            new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    triggerUploads(questions);                    
-                }
-            });
-        builder.setNegativeButton(android.R.string.no,
-            new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    // User cancelled the dialog
-                }
-            });
-        AlertDialog dialog = builder.create();
-        dialog.show();
-    }
-    
-    public void onOptionsClick(View v) {
-        int index = vpPreview.getCurrentItem();
-        Question q = adapter.getQuestions()[index];
-        if (q.getState() == CAPTURED) {
-            activateCamera(q);
-        } else {
-            displayOptions(q);
+        if (qsn.getState() == CAPTURED) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Discard?");
+            builder.setPositiveButton(android.R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {                   
+                        int[] map = qsn.getPgMap();
+                        for (int i = 0; i < map.length; i++) {
+                            if (map[i] == 0) continue;
+                            (new File(answersDir, qsn.getId() + "." + map[i])).delete();
+                            map[i] = 0;
+                        }
+                        qsn.setPgMap(map);
+                        qsn.setState(DOWNLOADED);
+                        launchCameraActivity(qsn);                        
+                    }
+                });
+            builder.setNegativeButton(android.R.string.no,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // User cancelled the dialog
+                    }
+                });
+            AlertDialog dialog = builder.create();
+            dialog.show();            
+        } else if (qsn.getState() == DOWNLOADED) {
+            launchCameraActivity(qsn);
+        } else if (qsn.hasScan()) {
+            int currentIndex = vpPreview.getCurrentItem();
+            adapter.flip(currentIndex);
+            adjustView(currentIndex, fdbkIdx);
         }
     }
-    
+
     public String[] getPaths(Question question, boolean flipped) {
         String[] paths = null;        
         if (flipped) {
@@ -417,84 +438,69 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     
     private void adjustView(int position, int fdbkPosn) {
-        Button btnFlip = (Button)this.findViewById(R.id.btnFlip);
-        Button btnHint = (Button)this.findViewById(R.id.btnHint);
+        Button btnSelfChk = (Button)this.findViewById(R.id.btnSelfChk);
+        TextView btnBuyAns = (TextView)this.findViewById(R.id.btnBuyAns);
+        TextView btnBuySoln = (TextView)this.findViewById(R.id.btnBuySoln);
         Button btnCamera = (Button)this.findViewById(R.id.btnCamera);
-        Button btnUpload = (Button)this.findViewById(R.id.btnUpload);
+        
         TextView tvMarks = (TextView)findViewById(R.id.tvMarks);
         TextView tvName = (TextView)findViewById(R.id.tvName);
         
         unrenderHint();
         unrenderFeedback(position);
         
-        Question[] questions = adapter.getQuestions();        
+        Question[] questions = adapter.getQuestions();
         Question q = questions[position];
         
         tvName.setText(String.format("%s of %s", position+1, questions.length));
         tvMarks.setText("");
-        btnFlip.setEnabled(q.hasScan());
+
+        int icon = R.drawable.ic_action_mic;
+        btnSelfChk.setEnabled(q.hasCodex());
+        btnSelfChk.setText("Self Check");
+        if (q.tried()) {
+            icon = q.getGuess() == q.getVersion() ? 
+                R.drawable.ic_action_accept : R.drawable.ic_action_cancel;
+        }
+        btnSelfChk.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0);
         
-        btnHint.setText("Hint");
-        btnHint.setEnabled(false);
-        
-        btnCamera.setText("Options");
-        
-        btnUpload.setEnabled(false);
-        
-        if (!q.hasScan() && !q.botSolution()) {
-            instructionShown = true;
-            findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-            btnHint.setEnabled(hints[position] != null);
+        btnBuyAns.setText(R.string.buy_answer_text);
+        btnBuySoln.setText(R.string.buy_soln_text);
+        btnBuyAns.setEnabled(false);
+        btnBuySoln.setEnabled(false);
+        if (type.equals(QSN_TYPE)) {
+            btnBuyAns.setEnabled(q.hasAnswer() && 
+                (balance >= 5 || q.botAnswer()) &&
+                !q.botSolution());
+            btnBuySoln.setEnabled(balance >= 20 || q.botSolution());
         } else {
+            btnBuySoln.setEnabled(q.canSeeSolution(type));
+        }
+        
+        if (q.hasScan()) {            
+            btnCamera.setText("Uploaded");
+            if (!adapter.getFlipped() && q.getState() == GRADED) {
+                renderFeedback(position, fdbkPosn);
+                tvMarks.setText(getQuantFdbk(q));
+            }            
+        } else {
+            btnCamera.setText("Get Review");
+        }
+                
+        instructionShown = true;
+        findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
+        if (q.canSeeSolution(type) ||
+            (q.hasScan() && !adapter.getFlipped())) {
             instructionShown = false;
             findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
         }
         
-        if (adapter.getFlipped()) {
-            // Looking at printed text (question or solution)
-            if (q.hasScan()) {
-                btnFlip.setText("My Attempt");
-            } else {
-                if (q.botSolution())
-                    btnFlip.setText("Solution");
-                else {
-                    btnFlip.setText("Question");
-//                    btnCamera.setEnabled(true);
-                }
-            }
-        } else {
-            // Looking at hand written text (answer)
-            if (instructionShown) { // so hide instructions
-                if (q.hasScan() || q.botSolution()) {
-                    instructionShown = false;
-                    findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
-                    btnHint.setEnabled(false);
-                }
-            }
-            
-            if (q.canSeeSolution(type)) {
-                btnFlip.setText("Solution");
-            } else {
-                btnFlip.setText("Question");
-                btnUpload.setEnabled(q.getState() == CAPTURED);
-//                btnCamera.setEnabled(true);
-            }
-            
-            if (q.getState() == GRADED) {
-                renderFeedback(position, fdbkPosn);
-                tvMarks.setText(getQuantFdbk(q));
-            }
-        }
-        
-        if (q.getState() == CAPTURED) {
-            btnCamera.setText("Re-Capture");
-        }        
-
-        btnFlip.refreshDrawableState();
-        btnUpload.refreshDrawableState();
+        btnBuyAns.refreshDrawableState();
+        btnBuySoln.refreshDrawableState();
+        btnSelfChk.refreshDrawableState();
         btnCamera.refreshDrawableState();
     }
-
+    
     private String getQuantFdbk(Question q) {
         String quality = "";
         if (type.equals(GR_TYPE)) {
@@ -580,47 +586,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
     }
     
+    /* disabled hints for now - Vers 4.5.0 */
     private void loadHints(File quizDir) {
-        File hintsDir = new File(quizDir, HINTS_DIR_NAME);
-        Question[] questions = adapter.getQuestions();
-        for (int i = 0; i < hints.length; i++) {
-            hints[i] = Hint.load(hintsDir, questions[i]);            
-        }
+//        File hintsDir = new File(quizDir, HINTS_DIR_NAME);
+//        Question[] questions = adapter.getQuestions();
+        for (int i = 0; i < hints.length; i++)
+//            hints[i] = Hint.load(hintsDir, questions[i]);
+            hints[i] = null;
     }    
     
-    private void activateCamera(final Question qsn) {
-        final File answersDir = new File(quizDir, ATTEMPTS_DIR_NAME);
-        
-        if (qsn.getState() == CAPTURED) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Discard?");
-            builder.setPositiveButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {                   
-                        int[] map = qsn.getPgMap();
-                        for (int i = 0; i < map.length; i++) {
-                            if (map[i] == 0) continue;
-                            (new File(answersDir, qsn.getId() + "." + map[i])).delete();
-                            map[i] = 0;
-                        }
-                        qsn.setPgMap(map);
-                        qsn.setState(DOWNLOADED);
-                        launchCameraActivity(qsn);                        
-                    }
-                });
-            builder.setNegativeButton(android.R.string.no,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User cancelled the dialog
-                    }
-                });
-            AlertDialog dialog = builder.create();
-            dialog.show();            
-        } else {
-            launchCameraActivity(qsn);
-        }        
-    }
-        
     private void launchCameraActivity(Question q) {
         File answersDir = new File(quizDir, ATTEMPTS_DIR_NAME);
         Intent takePictureIntent = new Intent(this.getApplicationContext(), 
@@ -665,154 +639,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         startService(uploadIntent);
     }
     
-    private void displayOptions(final Question qsn) {
-        class OptionItem {            
-            public OptionItem(int textId, String price, int icon) {
-                this.textId = textId;
-                this.price = price;
-                this.icon = icon;
-            }            
-            public String price;            
-            public int textId, icon;
-        }
-        
-        ArrayList<OptionItem> chooseFrom = new ArrayList<OptionItem>();
-        // guess option
-        int icon = android.R.drawable.ic_btn_speak_now;
-        int textId = R.string.option_chk_answer;
-        String price = "Free";
-        if (qsn.hasCodex() && qsn.tried()) {
-            price = "Used";
-            icon = qsn.getVersion() == qsn.getGuess() ?
-                R.drawable.ic_action_accept:
-                R.drawable.ic_action_cancel;
-            textId = qsn.getVersion() == qsn.getGuess() ?
-                R.string.option_chk_right:
-                R.string.option_chk_wrong;
-        }
-        chooseFrom.add(new OptionItem(textId, price, icon));
-        // feedback option
-        chooseFrom.add(new OptionItem(R.string.option_get_feedback, "Free",
-            android.R.drawable.ic_menu_camera));
-        // pay for answer option
-        if (qsn.hasCodex() && qsn.botAnswer())
-            chooseFrom.add(new OptionItem(R.string.option_show_answer, "Bought",
-                android.R.drawable.ic_menu_directions));
-        else
-            chooseFrom.add(new OptionItem(R.string.option_show_answer, "5₲",
-                android.R.drawable.ic_menu_directions));
-        // pay for solution option
-        if (qsn.botSolution())
-            chooseFrom.add(new OptionItem(R.string.option_show_solution, "Bought",
-                android.R.drawable.ic_menu_compass));
-        else
-            chooseFrom.add(new OptionItem(R.string.option_show_solution, "20₲",
-                android.R.drawable.ic_menu_compass));
-
-        final OptionItem[] options = chooseFrom.toArray(new OptionItem[chooseFrom.size()]);
-        ListAdapter optionsAdapter = new ArrayAdapter<OptionItem>(
-            this, R.layout.layout_quiz,
-            android.R.id.text1, options) {
-
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                //User super class to create the View
-                LayoutInflater inflater = LayoutInflater.from(getContext());
-                if(convertView == null) {
-                    convertView = inflater.inflate(R.layout.layout_quiz, parent, false);
-                }
-                
-                TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
-                tv.setText(getItem(position).textId);
-                if (!isEnabled(position)) {
-                    tv.setTextColor(getResources().getColor(R.color.gray));
-                } else {
-                    tv.setTextColor(getResources().getColor(R.color.white));
-                }                
-                
-                TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
-                tvTotal.setText(options[position].price);
-                if (!isEnabled(position)) {
-                    tvTotal.setBackground(getResources().getDrawable(
-                        R.drawable.label_quiz_counts_disabled));
-                } else {
-                    tvTotal.setBackground(getResources().getDrawable(
-                        R.drawable.label_quiz_counts));
-                }
-
-                //Put the image on the TextView
-                tv.setCompoundDrawablesWithIntrinsicBounds(options[position].icon, 0, 0, 0);
-
-                //Add margin between image and text (support various screen densities)
-                int dp5 = (int) (5 * getResources().getDisplayMetrics().density + 0.5f);
-                tv.setCompoundDrawablePadding(dp5);
-
-                return convertView;
-            }
-
-            @Override
-            public boolean isEnabled(int position) {
-                boolean enabled = true;
-                OptionItem item = getItem(position);                
-                if (type.equals(QSN_TYPE)) {
-                    if (item.textId == R.string.option_show_answer) {
-                        enabled = qsn.hasAnswer() && (balance >= 5 || qsn.botAnswer());                        
-                    } else if (item.textId == R.string.option_show_solution) 
-                        enabled = balance >= 20 || qsn.botSolution();
-                } else {
-                    if (item.textId == R.string.option_show_answer ||
-                        item.textId == R.string.option_show_solution)
-                        enabled = false;
-                }                
-                if (item.textId == R.string.option_chk_answer)
-                    enabled = qsn.hasCodex();
-                if (item.textId == R.string.option_get_feedback)
-                    enabled = qsn.getState() == DOWNLOADED;
-                return enabled;
-            }
-            
-        };
-            
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-        R.style.RobotoDialogTitleStyle);
-        builder.setTitle("Account Balance " + balance + "₲");
-        builder.setAdapter(optionsAdapter, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                switch (options[which].textId) {
-                case R.string.option_chk_answer:
-                case R.string.option_chk_right:
-                case R.string.option_chk_wrong:
-                    dlCode = DL_CODEX;
-                    triggerDownloads(qsn);
-                    break;
-                case R.string.option_get_feedback:
-                    launchCameraActivity(qsn);
-                    break;
-                case R.string.option_show_answer:
-                    if (qsn.botAnswer()) {
-                        dlCode = DL_ANS;
-                        triggerDownloads(qsn);
-                    } else {
-                        recordAction(qsn, BUY_ANS);
-                    }
-                    break;
-                case R.string.option_show_solution:
-                    if (qsn.botSolution()) {
-                        // do nothing I guess
-                    } else {
-                        recordAction(qsn, BUY_SOLN);
-                    }
-                    break;
-                default:
-                }
-            }
-        });
-        builder.show().getWindow().setBackgroundDrawable(
-            new ColorDrawable(Color.TRANSPARENT));
-    }
-    
-    private void displayAnswers(boolean check) {
-        final Question qsn = adapter.getQuestions()[vpPreview.getCurrentItem()];
+    private void displayAnswers(final Question qsn, boolean check) {
         ArrayList<String> options = new ArrayList<String>();
         if (check) {
             if (qsn.tried()) {
@@ -848,18 +675,19 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 File image = null;
                 int version = (int)finalOptions[position].charAt(0) - (int)'A';
                 try {
-                    image = new File(answersDir, qsn.getId() + "-" + version);
+                    image = new File(answersDir, version + "." + qsn.getId());
                     tv.setText(finalOptions[position]);
                 } catch (Exception e) {
                     Log.e(TAG, e.getClass().toString());
                 }
                 
-                int dpx = 0, dipx = 60;
+                int dpx = 0, dipx = 60, imgHeight = 0;
                 float density = getApplicationContext().getResources().
                     getDisplayMetrics().density;
                 dpx = Math.round((float)dipx * density);
-                Bitmap bimg = BitmapFactory.decodeFile(image.getPath());                
-                int padX = (dpx - bimg.getHeight() - 10)/2;
+                Bitmap bimg = BitmapFactory.decodeFile(image.getPath());
+                imgHeight = Math.round(bimg.getHeight() * density);
+                int padX = (dpx - imgHeight - 10)/2;
                 if (padX > 0) iv.setPadding(0, padX, 0, padX);
                 
                 iv.setImageURI(Uri.fromFile(image));
@@ -872,16 +700,21 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         AlertDialog.Builder builder = new AlertDialog.Builder(this, 
         R.style.RobotoDialogTitleStyle);
         
-        if (check && !qsn.tried()) {
-            builder.setTitle("Options");
-            builder.setAdapter(optionsAdapter, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    guess = which;
-                    recordAction(qsn, GUESS);
-                }
-            });
-        } else {            
-            builder.setTitle(check ? "You Picked" : "Correct Answer");
+        if (check) {
+            if (qsn.tried()) {
+                builder.setTitle("You Picked");
+                builder.setAdapter(optionsAdapter, null);
+            } else {
+                builder.setTitle("Options");
+                builder.setAdapter(optionsAdapter, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        guess = which;
+                        recordAction(qsn, GUESS);
+                    }
+                });
+            }            
+        } else {
+            builder.setTitle("Correct Answer");
             builder.setAdapter(optionsAdapter, null);
         }        
         builder.show().getWindow().setBackgroundDrawable(
@@ -901,7 +734,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 codices = new int[] { question.getVersion() };
             dlDir = new File(quizDir, ANSWERS_DIR_NAME);
             for (int codex : codices) {
-                image = new File(dlDir, question.getId() + "-" + codex);
+                image = new File(dlDir, codex + "." + question.getId());
                 if (!image.exists()) {
                     src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, 
                         question.getImgLocn().replaceFirst("/[0-3]$", ""), 
@@ -914,7 +747,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         case DL_SOLN:
             dlDir = new File(quizDir, SOLUTIONS_DIR_NAME);
             for (short i = 0; i < question.getImgSpan(); i++) {
-                image = new File(dlDir, question.getId() + "." + (i+1));
+                image = new File(dlDir,
+                    question.getVersion() + "." +  question.getId() + "." + (i+1));
                 if (!image.exists()) {
                     src = Uri.parse(String.format(SOLN_URL, 
                         BANK_HOST_PORT, question.getImgLocn(), (i+1)));
@@ -935,10 +769,10 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } else {
             switch (dlCode) {
             case DL_CODEX:
-                displayAnswers(true);
+                displayAnswers(question, true);
                 break;
             case DL_ANS:
-                displayAnswers(false);
+                displayAnswers(question, false);
                 break;
             case DL_SOLN:
                 int currentIndex = vpPreview.getCurrentItem();
@@ -979,21 +813,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } catch (Exception e) { }
     }
     
-    private boolean nothingToUpload(Question[] questions) {
-        boolean somethingToUpload = false;
-        for (Question q : questions) {
-            if (q.getState() == CAPTURED) {
-                somethingToUpload = true;
-                break;
-            }
-        }
-        return !somethingToUpload;
-    }
-
     private String[] getQuestion(Question question) {
         File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
         String[] paths = new String[] 
-            {new File(questionsDir, question.getId()).getPath()};
+            {new File(questionsDir, 
+                question.getVersion() + "." + question.getId()).getPath()};
         return paths;
     }
 
@@ -1015,7 +839,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         File solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME);
         String[] paths = new String[question.getImgSpan()];
         for (int i = 0; i < paths.length; i++) {
-            paths[i] = (new File(solutionsDir, question.getId() + "." + (i+1))).getPath();
+            paths[i] = (new File(solutionsDir, 
+                question.getVersion() + "." + question.getId() + "." + (i+1))).getPath();
         }
         return paths;
     }

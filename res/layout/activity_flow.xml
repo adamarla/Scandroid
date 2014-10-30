@@ -142,71 +142,73 @@
         android:layout_marginRight="2dp">
         
         <Button
-            android:id="@+id/btnFlip"
+            android:id="@+id/btnSelfChk"
             android:layout_weight="1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginLeft="2dp" 
             android:layout_marginRight="1dp"
-            android:paddingTop="5dp"
+            android:paddingTop="7dp"
             android:contentDescription="@string/capture_button"
-            android:onClick="flip"
             android:textColor="@color/white"
             android:textSize="@dimen/small_font_size" 
             android:background="@drawable/btn_selector"
             android:gravity="center"
-            android:drawableTop="@drawable/ic_action_chat"/>
-    	        
-        <Button
-            android:id="@+id/btnHint"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="1dp" 
-            android:layout_marginRight="1dp"
-            android:paddingTop="5dp"
-            android:contentDescription="@string/capture_button"
-            android:onClick="toggleHint"
-            android:textColor="@color/white"
-            android:textSize="@dimen/small_font_size" 
-            android:background="@drawable/btn_selector"
-            android:gravity="center"
-            android:drawableTop="@drawable/help"/>
-                
-        <Button
-            android:id="@+id/btnUpload"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="1dp" 
-            android:layout_marginRight="1dp"
-            android:paddingTop="5dp"
-            android:textColor="@color/white"
-            android:text="@string/upload_text"
-            android:textSize="@dimen/small_font_size" 
-            android:contentDescription="@string/capture_button"
-            android:background="@drawable/btn_selector"
-            android:gravity="center"
-            android:onClick="upload"
-            android:drawableTop="@drawable/ic_action_upload"/>            
-                       
-        <Button
-            android:id="@+id/btnCamera"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginLeft="1dp" 
-            android:layout_marginRight="2dp"
-            android:paddingTop="5dp"
-            android:textColor="@color/white"
-            android:text="@string/activate_text"
-            android:textSize="@dimen/small_font_size" 
-            android:contentDescription="@string/capture_button"
-            android:background="@drawable/btn_selector"
-            android:gravity="center"
-            android:onClick="onOptionsClick"
-            android:drawableTop="@android:drawable/ic_menu_info_details"/>
+            android:onClick="selfCheck"
+            android:drawableTop="@drawable/ic_action_mic"
+            android:drawablePadding="-7dp"/>
 
-	</LinearLayout>
+        <TextView
+            android:id="@+id/btnBuyAns"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="1dp" 
+            android:layout_marginRight="1dp"
+            android:paddingTop="5dp"
+            android:textColor="@color/white"
+            android:text="@string/buy_answer_text"
+            android:textSize="@dimen/small_font_size"
+            android:background="@drawable/btn_selector"
+            android:gravity="center"
+            android:clickable="true"
+            android:onClick="purchase"/>
+        	        
+        <TextView
+            android:id="@+id/btnBuySoln"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="1dp" 
+            android:layout_marginRight="1dp"
+            android:paddingTop="5dp"
+            android:textColor="@color/white"
+            android:text="@string/buy_soln_text"
+            android:textSize="@dimen/small_font_size" 
+            android:contentDescription="@string/capture_button"
+            android:background="@drawable/btn_selector"
+            android:gravity="center"
+            android:clickable="true"
+            android:onClick="purchase"/>
+                    
+        <Button
+            android:id="@+id/btnCamera" 
+            android:layout_weight="1" 
+            android:layout_width="0dp" 
+            android:layout_height="match_parent" 
+            android:layout_marginLeft="1dp" 
+            android:layout_marginRight="2dp" 
+            android:paddingTop="7dp"            
+            android:textColor="@color/white" 
+            android:text="@string/activate_text" 
+            android:textSize="@dimen/small_font_size" 
+            android:contentDescription="@string/capture_button" 
+            android:background="@drawable/btn_selector" 
+            android:gravity="center" 
+            android:onClick="activateCamera"
+            android:drawableTop="@android:drawable/ic_menu_camera" 
+            android:drawablePadding="-7dp"/>
+        
+    </LinearLayout>
 	
 </RelativeLayout>

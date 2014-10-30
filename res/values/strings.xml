@@ -18,7 +18,9 @@
     <string name="title_activity_registration">Gradians.com - Registration</string>
     
     <string name="capture_button">Capture</string>
-    <string name="upload_text">Upload</string>
+    <string name="buy_answer_text"><big><big>5₲</big></big>\nSee Answer</string>
+    <string name="buy_soln_text"><big><big>20₲</big></big>\nSee Solution</string>
+    <string name="purchase_conf_text">Continue</string>
     <string name="activate_text">Capture</string>
     
     <string name="action_sign_refresh">Refresh</string>
@@ -29,9 +31,9 @@
     <string name="home_button_aaq"><b>Ask a Question</b>\nstrictly on Math!</string>
     <string name="home_button_browse"><b>Practice Corner</b>\nfresh problems daily</string>
     
-    <string name="potd_button_attempt"><b>Problem of the day</b>\ntake the challenge</string>
-    <string name="practise_button_browse"><b>Open questions</b>\nbrowse and attempt</string>
-    <string name="practise_button_feedback"><b>My attempts</b>\nproblems you tried</string>
+    <string name="potd_button_attempt"><b>Problem of the Day</b>\ntake the challenge</string>
+    <string name="practise_button_browse"><b>Open Questions</b>\nbrowse and attempt</string>
+    <string name="practise_button_feedback"><b>My Attempts</b>\nproblems you tried</string>
     
     <string name="instruction1">Finish an answer on the page you start it.</string>
     <string name="instruction2">Write using pen and paper.</string>
@@ -41,8 +43,8 @@
     <string name="option_chk_right"><b>Self Check</b>\ncorrect pick</string>
     <string name="option_chk_wrong"><b>Self Check</b>\nincorrect pick</string>
     <string name="option_get_feedback"><b>Review Work</b>\nfeedback in 24 hours</string>
-    <string name="option_show_answer"><b>Show Answer</b>\nthe one correct one</string>
-    <string name="option_show_solution"><b>Show Solution</b>\nsee how its done</string>
+    <string name="option_show_answer"><b>Buy Answer</b>\nthe correct one</string>
+    <string name="option_show_solution"><b>Buy Solution</b>\nsee how its done</string>
     
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
 

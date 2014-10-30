@@ -11,6 +11,7 @@ public interface IConstants {
     String NAME_KEY = "name";
     String EMAIL_KEY = "email";
     String BALANCE_KEY = "bal";
+    String ENRL_KEY = "enrl";
     String DIR_KEY = "dir";
     String QOTD_KEY = "qotd";
     String MARKER_KEY = "marker";

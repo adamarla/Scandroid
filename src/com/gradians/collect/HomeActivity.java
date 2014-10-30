@@ -54,19 +54,21 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         // as you specify a parent activity in AndroidManifest.xml.
         if (item.getItemId() == R.id.action_sign_out)
             initiateAuthActivity();
-        else {
+        else if (item.getItemId() == R.id.action_settings) {
             String vers = null;
             try {
                 vers = String.format("Scanbot %s", getPackageManager()
                     .getPackageInfo(getPackageName(), 0).versionName);
             } catch (Exception e) { }
             String[] settings = new String[2];
-            settings[0] = "Balance Remaining: " + balance + "₲";
+            settings[0] = "Current Balance: " + balance + "₲";
             settings[1] = "Version: " + vers;
             AlertDialog.Builder builder = new AlertDialog.Builder(this, 
                 R.style.RobotoDialogTitleStyle);
             builder.setTitle("Settings").setItems(settings, null);
             builder.show();
+        } else {
+            checkAuth();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -174,12 +176,14 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         JSONObject respObject = (JSONObject)jsonParser.parse(json);
         
         String name, email, token, id;
+        boolean enrolled;
         token = (String)respObject.get(TOKEN_KEY);
         name = (String)respObject.get(NAME_KEY);
         email = (String)respObject.get(EMAIL_KEY);
         id = String.valueOf((Long)respObject.get(ID_KEY));
         potd = (String)respObject.get(PZL_KEY);
         balance = ((Long)respObject.get(BALANCE_KEY)).intValue();
+        enrolled = (Boolean)respObject.get(ENRL_KEY);
         
         File studentDir = new File(getExternalFilesDir(null), 
             email.replace('@', '.'));
@@ -203,8 +207,9 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         ask = (HugeButton)findViewById(R.id.btnAsk);
         browse = (HugeButton)findViewById(R.id.btnBrowse);
         
-        school.setText(R.string.home_button_teacher, R.drawable.ic_action_sent);
         browse.setText(R.string.home_button_browse, R.drawable.ic_action_rotate_right);
+        school.setText(R.string.home_button_teacher, R.drawable.ic_action_sent);
+        school.setEnabled(enrolled);
         ask.setText(R.string.home_button_aaq, R.drawable.ic_action_chat);
         ask.setEnabled(false);
         

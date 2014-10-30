@@ -28,7 +28,9 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 
@@ -74,11 +76,14 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent();
-        intent.putExtra(TAG, question);
-        this.setResult(RESULT_OK, intent);
-        releaseCamera();
-        super.onBackPressed();
+        if (!question.getPgMap("").contains("0")) {
+            confirmUpload();
+        } else {
+            Intent intent = new Intent();
+            intent.putExtra(TAG, question);
+            setResult(RESULT_OK, intent);
+            super.onBackPressed();
+        }
     }
 
     @Override
@@ -267,6 +272,29 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             setResult(Activity.RESULT_FIRST_USER, intent);
             finish();
         }
+    }
+    
+    private void confirmUpload() {
+        // prompt for uploading only if something is there
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Upload now?");
+        builder.setPositiveButton(android.R.string.ok,
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    releaseCamera();
+                    Intent intent = new Intent();
+                    intent.putExtra(TAG, question);
+                    setResult(RESULT_OK, intent);
+                    finish();
+                }
+            });
+        builder.setNegativeButton(android.R.string.no,
+            new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                }
+            });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
     
     private void releaseCamera() {

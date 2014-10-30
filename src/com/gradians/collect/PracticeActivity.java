@@ -25,11 +25,11 @@ public class PracticeActivity extends BaseActivity {
             break;
         case R.id.btnOffered:
             items = offered;
-            title = "Open problems";
+            title = "Open Questions";
             break;
         default:
             items = submitted;
-            title = "My attempts";
+            title = "My Attempts";
         }
         
         if (items.length != 0) {

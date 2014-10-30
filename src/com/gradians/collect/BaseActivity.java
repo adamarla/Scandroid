@@ -1,8 +1,11 @@
 package com.gradians.collect;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -46,8 +49,8 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
         studentDir = new File(prefs.getString(DIR_KEY, null));
         email = prefs.getString(EMAIL_KEY, null);
         token = prefs.getString(TOKEN_KEY, null);
-        marker = prefs.getInt(subpath, -1);
-        
+        loadMarker();
+
         refresh();
     }
 
@@ -84,39 +87,34 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
             JSONObject respObject = null;
             JSONArray delta, items = null;
             JSONParser jsonParser = new JSONParser();
-            
+
             if (marker < 0) {
                 cache.delete();
             }
             
-            manifest = getManifest(filesDir, topics);            
+            manifest = getManifest(filesDir, topics);
             if (cache.exists() && marker > 0) {
                 FileReader fr = new FileReader(cache);
                 items = (JSONArray)jsonParser.parse(fr);
-                Log.d(TAG, "Cache Size: " + items.size());
                 manifest.parse(items, false);
             } else {
                 items = new JSONArray();
             }
-            
+            Log.d(TAG, "marker: " + marker + " Cache Size: " + items.size());
             if (resultCode == RESULT_OK) {
                 respObject = (JSONObject)jsonParser.parse(resultData);
                 delta = (JSONArray)respObject.get(ITEMS_KEY);
-                Log.d(TAG, "Delta Size: " + delta.size());
                 if (delta.size() > 0) {
                     manifest.parse(delta, true);
                 }
                 
                 marker = ((Long)respObject.get(MARKER_KEY)).intValue();
-                SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-                Editor edit = prefs.edit();
-                edit.putInt(subpath, marker);
-                edit.commit();
-                Log.d(TAG, "marker: " + marker);
+                commitMarker();
+                Log.d(TAG, "marker: " + marker + " Delta Size: " + delta.size());
                 if (marker > 0) {
                     FileWriter fw = new FileWriter(cache);
                     fw.write(manifest.toJSONArray());
-                    fw.close();                
+                    fw.close();                    
                 }
                 
            } else {
@@ -125,6 +123,7 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
                     Toast.LENGTH_LONG).show();
             }            
             updateCounts(manifest);
+            
         } catch (NullPointerException npe) {
             handleError("Refresh task failed ", "Null Pointer Exception");
         } catch (Exception e) {
@@ -172,6 +171,34 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
         Download download = new Download(null, src, null);
         new HttpCallsAsyncTask(this, REFRESH_WS_TASK_REQUEST_CODE).
             execute(new Download[] { download });
+    }
+    
+    private void commitMarker() {
+        File filesDir = new File(studentDir, "files");
+        File markerFile = new File(filesDir, "markers.txt");
+        Properties markers = new Properties();
+        try {
+            markers.put(subpath, String.valueOf(marker));
+            markers.store(new FileOutputStream(markerFile), null);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }        
+    }
+    
+    private void loadMarker() {
+        File filesDir = new File(studentDir, "files");
+        File markerFile = new File(filesDir, "markers.txt");
+        Properties markers = new Properties();
+        try {
+            markerFile.createNewFile();
+            markers.load(new FileInputStream(markerFile));
+            if (markers.containsKey(subpath))
+                marker = Integer.parseInt((String)markers.get(subpath));
+            else
+                marker = -1;
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }        
     }
     
     protected void handleError(String error, String message) {
