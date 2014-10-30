@@ -19,6 +19,8 @@
     
     <string name="capture_button">Capture</string>
     <string name="buy_answer_text"><big><big>5₲</big></big>\nSee Answer</string>
+    <string name="bot_answer_text"><big><big>0₲</big></big>\nSee Answer</string>
+    <string name="bot_soln_text"><big><big>0₲</big></big>\nSee Solution</string>
     <string name="buy_soln_text"><big><big>20₲</big></big>\nSee Solution</string>
     <string name="purchase_conf_text">Continue</string>
     <string name="activate_text">Capture</string>

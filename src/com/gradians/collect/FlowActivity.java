@@ -198,10 +198,12 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                     
                     if (op.equals(BUY_ANS)) {
                         qsn.setBotAns(true);
+                        adjustView(currentIndex, fdbkIdx);
                         dlCode = DL_ANS;
                         triggerDownloads(qsn);
                     } else if (op.equals(BUY_SOLN)) {
                         qsn.setBotSoln(true);
+                        adjustView(currentIndex, fdbkIdx);
                         dlCode = DL_SOLN;
                         triggerDownloads(qsn);
                     } else { // op == GUESS
@@ -470,12 +472,15 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         btnBuySoln.setEnabled(false);
         if (type.equals(QSN_TYPE)) {
             btnBuyAns.setEnabled(q.hasAnswer() && 
-                (balance >= 5 || q.botAnswer()) &&
-                !q.botSolution());
+                (balance >= 5 || q.botAnswer()));
+            if (q.botAnswer()) 
+                btnBuyAns.setText(R.string.bot_answer_text);
             btnBuySoln.setEnabled(balance >= 20 || q.botSolution());
         } else {
             btnBuySoln.setEnabled(q.canSeeSolution(type));
         }
+        if (q.canSeeSolution(type)) 
+            btnBuySoln.setText(R.string.bot_soln_text);
         
         if (q.hasScan()) {            
             btnCamera.setText("Uploaded");

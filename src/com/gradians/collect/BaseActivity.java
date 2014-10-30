@@ -178,6 +178,7 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
         File markerFile = new File(filesDir, "markers.txt");
         Properties markers = new Properties();
         try {
+            markers.load(new FileInputStream(markerFile));
             markers.put(subpath, String.valueOf(marker));
             markers.store(new FileOutputStream(markerFile), null);
         } catch (Exception e) {
@@ -195,7 +196,7 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
             if (markers.containsKey(subpath))
                 marker = Integer.parseInt((String)markers.get(subpath));
             else
-                marker = -1;
+                marker = -1;            
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }        
