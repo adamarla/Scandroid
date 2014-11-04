@@ -4,14 +4,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
+import java.util.Stack;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Toast;
@@ -26,11 +30,28 @@ public class ListActivity extends Activity implements OnItemClickListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
         
+        setupActionBar();
+        parents.push(getIntent());
+        
         Parcelable[] quizItems = getIntent().getParcelableArrayExtra(TAG);
         String path = getIntent().getStringExtra(NAME_KEY);
 
         initialize(quizItems, path, getIntent().getIntExtra(ID_KEY, 0));
         setTitle(getIntent().getStringExtra(TAG_ID));
+    }
+    
+    public static Stack<Intent> parents = new Stack<Intent>();    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+        case android.R.id.home:
+            Intent intent = new Intent();
+            intent.putExtra(TAG_ID, adapter.getDirtys());
+            this.setResult(RESULT_OK, intent);
+            finish();
+        default:
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -115,7 +136,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     private void setUpDownloads(DownloadMonitor dlm, HttpCallsAsyncTask hcat, Quij quiz) {
-        File problemsDir = new File(studentDir, "problems");        
+        File problemsDir = new File(studentDir, PROBLEMS_DIR_NAME);
         String dirName = String.valueOf(quiz.getId());
         quizDir = new File(problemsDir, dirName);
         quizDir.mkdir();
@@ -141,6 +162,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             hintMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[0]);
             fdbkMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[1]);
             
+            // Feedback
             if (question.getState() == GRADED) {
                 File fdbk = new File(feedbackDir, question.getId());
                 if (fdbkMarker < question.getFdbkMarker()) {
@@ -156,6 +178,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
             }
             
+            // Attempt
             if (question.getState() > SENT) {
                 for (int i = 0; i < pageNos.length; i++) {
                     image = new File(attemptsDir, 
@@ -167,8 +190,21 @@ public class ListActivity extends Activity implements OnItemClickListener,
                         dlm.add(question.getId(), src, dest);
                     }
                 }
+            } else if (question.getState() == SENT || question.getState() == CAPTURED) {
+                for (int i = 0; i < pageNos.length; i++) {
+                    if (pageNos[i] != 0) {
+                        image = new File(attemptsDir, 
+                            question.getId() + "." + pageNos[i]);
+                        if (!image.exists()) { // recapture
+                            pageNos[i] = 0;
+                            question.setState(DOWNLOADED);
+                        }
+                    }
+                }
+                question.setPgMap(pageNos);
             }
             
+            // Solution
             if (question.canSeeSolution(quiz.getType())) {
                 for (short i = 0; i < question.getImgSpan(); i++) {
                     image = new File(solutionsDir, 
@@ -181,31 +217,20 @@ public class ListActivity extends Activity implements OnItemClickListener,
                         dlm.add(question.getId(), src, dest);
                     }
                 }
-            } else {
-                image = new File(questionsDir, 
-                    question.getVersion() + "." + question.getId());
-                if (question.isDirty()) image.delete();
-                if (!image.exists()) {
-                    src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, 
-                        imgLocn));
-                    dest = Uri.fromFile(image);
-                    dlm.add(question.getId(), src, dest);
-                }
-                /* Removing hints for now
-                File hint = new File(hintsDir, question.getId());
-                if (hintMarker < question.getHintMarker()) {
-                    hint.delete();
-                    hintMarker = question.getHintMarker();
-                }
-                if (question.isDirty()) hint.delete();
-                if (!hint.exists()) {
-                    src = Uri.parse(String.format(HINT_URL, WEB_APP_HOST_PORT, 
-                        question.getQsnId()));
-                    dest = Uri.fromFile(hint);
-                    hcat.add(null, src, dest);
-                } */               
             }
             
+            // Question
+            image = new File(questionsDir, 
+                question.getVersion() + "." + question.getId());
+            if (question.isDirty()) image.delete();
+            if (!image.exists()) {
+                src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, 
+                    imgLocn));
+                dest = Uri.fromFile(image);
+                dlm.add(question.getId(), src, dest);
+            }
+            
+            // Answer
             if (question.hasCodex()) {
                 int[] codices = { 0, 1, 2, 3 };
                 answersDir = new File(quizDir, ANSWERS_DIR_NAME);
@@ -222,19 +247,20 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }                    
             }
             
-            if (question.getState() == SENT || question.getState() == CAPTURED) {
-                for (int i = 0; i < pageNos.length; i++) {
-                    if (pageNos[i] != 0) {
-                        image = new File(attemptsDir, 
-                            question.getId() + "." + pageNos[i]);
-                        if (!image.exists()) { // recapture
-                            pageNos[i] = 0;
-                            question.setState(DOWNLOADED);
-                        }
-                    }
-                }
-                question.setPgMap(pageNos);
-            }            
+            /* Removing hints for now
+            File hint = new File(hintsDir, question.getId());
+            if (hintMarker < question.getHintMarker()) {
+                hint.delete();
+                hintMarker = question.getHintMarker();
+            }
+            if (question.isDirty()) hint.delete();
+            if (!hint.exists()) {
+                src = Uri.parse(String.format(HINT_URL, WEB_APP_HOST_PORT, 
+                    question.getQsnId()));
+                dest = Uri.fromFile(hint);
+                hcat.add(null, src, dest);
+            } */
+            
             markers.put(question.getId(), hintMarker + "," + fdbkMarker);
             question.setDirty(false);
         }
@@ -246,8 +272,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
         
         this.categoryId = categoryId;
         markers = new Properties();
-        File filesDir = new File(studentDir, "files");
-        File markerFile = new File(filesDir, "markers.txt");
+        File filesDir = new File(studentDir, FILES_DIR_NAME);
+        File markerFile = new File(filesDir, MARKER_FILE);
         try {
             markerFile.createNewFile();
             markers.load(new FileInputStream(markerFile));
@@ -267,8 +293,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
     
     private void commit() {
-        File filesDir = new File(studentDir, "files");
-        File markerFile = new File(filesDir, "markers.txt");
+        File filesDir = new File(studentDir, FILES_DIR_NAME);
+        File markerFile = new File(filesDir, MARKER_FILE);
         try {
             markers.store(new FileOutputStream(markerFile), null);
         } catch (Exception e) {
@@ -292,6 +318,16 @@ public class ListActivity extends Activity implements OnItemClickListener,
 
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
+    }
+    
+    /**
+     * Set up the {@link android.app.ActionBar}, if the API is available.
+     */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private void setupActionBar() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            getActionBar().setDisplayHomeAsUpEnabled(true);
+        }
     }
 
     private int categoryId;

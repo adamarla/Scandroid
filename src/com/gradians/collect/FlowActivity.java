@@ -102,13 +102,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             initialPageScroll = true;
             bookmark = getIntent().getIntExtra(TAG_ID, 0);
         } else {
-            adapter.setFlipped(savedInstanceState.getBoolean(FLIPPED_KEY));
             fdbkIdx = savedInstanceState.getInt(FDBK_IDX_KEY, NO_FEEDBACK);
             fdbkShown = savedInstanceState.getBoolean(FDBK_SHOWN_KEY);
             hintShown = savedInstanceState.getBoolean(HINT_SHOWN_KEY);
             page = savedInstanceState.getInt(PAGE_KEY);
             vpPreview.setCurrentItem(page);
         }
+        showing = questions[page].hasScan() ? ATMPT :
+            (questions[page].canSeeSolution(type) ? SOLN : QSN);
         
         SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
         balance = prefs.getInt(BALANCE_KEY, 0);
@@ -123,7 +124,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         outState.putParcelableArray(TAG, adapter.getQuestions());
         outState.putString(QUIZ_PATH_KEY, quizDir.getPath());
         outState.putInt(PAGE_KEY, vpPreview.getCurrentItem());
-        outState.putBoolean(FLIPPED_KEY, adapter.getFlipped());
         outState.putInt(FDBK_IDX_KEY, fdbkIdx);
         outState.putBoolean(FDBK_SHOWN_KEY, fdbkShown);
         outState.putBoolean(FDBK_SHOWN_KEY, hintShown);
@@ -251,11 +251,14 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     }
     @Override
     public void onPageSelected(int position) {
-        if (pageSwipe) {
+        if (pageSwipe) {            
             pageSwipe = false;
             fdbkIdx = 0;
             hide = true; 
             showHide(null);
+            Question qsn = adapter.getQuestions()[position];
+            showing = qsn.hasScan() ? ATMPT :
+                (qsn.canSeeSolution(type) ? SOLN : QSN);
             adjustView(vpPreview.getCurrentItem(), fdbkIdx);
         } else {
             fdbkIdx = position;
@@ -302,12 +305,6 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }        
     }
     
-    public void flip(View view) {
-        int currentIndex = vpPreview.getCurrentItem();
-        adapter.flip(currentIndex);
-        adjustView(currentIndex, fdbkIdx);
-    }
-    
     public void purchase(View view) {
         final int currentIndex = vpPreview.getCurrentItem();
         final Question qsn = adapter.getQuestions()[currentIndex];
@@ -322,8 +319,9 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
             price = 5;
         } else {
             if (qsn.canSeeSolution(type)) {
-                if (qsn.hasScan() && !adapter.getFlipped()) {
-                    adapter.flip(currentIndex);
+                if (showing != SOLN) {
+                    showing = SOLN;
+                    adapter.update(currentIndex);
                     adjustView(currentIndex, fdbkIdx);
                 }                    
                 return;
@@ -334,16 +332,16 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         final boolean answer = view.getId() == R.id.btnBuyAns;
         AlertDialog.Builder builder = new AlertDialog.Builder(this,
             R.style.RobotoDialogTitleStyle);
-        builder.setTitle(
-            "Current Balance " + balance + "₲" + "\n" + 
-            "After Purchase   " + (balance - price) + "₲");
+        builder.setMessage(
+            String.format("Current Balance %3d ₲\nAfter Purchase    %3d ₲", 
+                balance , (balance - price)));
         builder.setPositiveButton(R.string.purchase_conf_text,
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                     recordAction(qsn, answer ? BUY_ANS : BUY_SOLN);
                 }
             });
-        builder.setNegativeButton(android.R.string.cancel,
+        builder.setNegativeButton(R.string.purchase_cancel_text,
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                 }
@@ -371,70 +369,40 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         } else if (hintShown) {
             vpHints.setVisibility(visibility);
             hintsIndicator.setVisibility(visibility);
-        } else if (instructionShown) {
-            findViewById(R.id.llInstruction).setVisibility(visibility);
         }
     }
     
     public void activateCamera(View view) {
-        final int posn = vpPreview.getCurrentItem();
-        final Question qsn = adapter.getQuestions()[posn];        
-        final File answersDir = new File(quizDir, ATTEMPTS_DIR_NAME);
-        
-        if (qsn.getState() == CAPTURED) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Discard?");
-            builder.setPositiveButton(android.R.string.ok,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {                   
-                        int[] map = qsn.getPgMap();
-                        for (int i = 0; i < map.length; i++) {
-                            if (map[i] == 0) continue;
-                            (new File(answersDir, qsn.getId() + "." + map[i])).delete();
-                            map[i] = 0;
-                        }
-                        qsn.setPgMap(map);
-                        qsn.setState(DOWNLOADED);
-                        launchCameraActivity(qsn);                        
-                    }
-                });
-            builder.setNegativeButton(android.R.string.no,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        // User cancelled the dialog
-                    }
-                });
-            AlertDialog dialog = builder.create();
-            dialog.show();            
-        } else if (qsn.getState() == DOWNLOADED) {
+        int posn = vpPreview.getCurrentItem();
+        Question qsn = adapter.getQuestions()[posn];        
+        if (qsn.getState() == DOWNLOADED) {
             launchCameraActivity(qsn);
         } else if (qsn.hasScan()) {
-            int currentIndex = vpPreview.getCurrentItem();
-            adapter.flip(currentIndex);
-            adjustView(currentIndex, fdbkIdx);
+            if (showing == ATMPT) showing = QSN;
+            else showing = ATMPT;
+            adapter.update(posn);
+            adjustView(posn, fdbkIdx);
         }
     }
-
-    public String[] getPaths(Question question, boolean flipped) {
-        String[] paths = null;        
-        if (flipped) {
-            if (question.canSeeSolution(type)) {
-                paths = getSolution(question);
-            } else {
-                paths = getQuestion(question);
-            }
-        } else {
-            if (question.hasScan()) {
-                paths = getAttempt(question);
-            } else if (question.botSolution()) {
-                paths = getSolution(question);
-            } else  {
-                paths = getQuestion(question);
-            }
-        }        
+    
+    public String[] getPaths(Question question) {
+        String[] paths = null;
+        switch (showing) {
+        case ATMPT:
+            paths = getAttempt(question);
+            break;
+        case SOLN:
+            paths = getSolution(question);
+            break;
+        default:
+            paths = getQuestion(question);
+        }
+        if (paths.length == 0) {
+            paths = getQuestion(question);
+        }
         return paths;
     }
-    
+
     public Feedback getFeedback() {
         return feedback[vpPreview.getCurrentItem()];
     }
@@ -453,10 +421,11 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
         Question[] questions = adapter.getQuestions();
         Question q = questions[position];
-        
+        Log.d(TAG, q.getId() + " showing: " + showing);
         tvName.setText(String.format("%s of %s", position+1, questions.length));
         tvMarks.setText("");
 
+        // Self Check Button
         int icon = R.drawable.ic_action_mic;
         btnSelfChk.setEnabled(q.hasCodex());
         btnSelfChk.setText("Self Check");
@@ -466,6 +435,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         }
         btnSelfChk.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0);
         
+        // Answer and Solution Buttons
         btnBuyAns.setText(R.string.buy_answer_text);
         btnBuySoln.setText(R.string.buy_soln_text);
         btnBuyAns.setEnabled(false);
@@ -482,24 +452,18 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         if (q.canSeeSolution(type)) 
             btnBuySoln.setText(R.string.bot_soln_text);
         
+        // Review (Camera) Button
         if (q.hasScan()) {            
-            btnCamera.setText("Uploaded");
-            if (!adapter.getFlipped() && q.getState() == GRADED) {
+            btnCamera.setText(showing != ATMPT ?
+                "See Attempt" : "See Question");
+            if (q.getState() == GRADED && showing == ATMPT) {
                 renderFeedback(position, fdbkPosn);
                 tvMarks.setText(getQuantFdbk(q));
-            }            
+            }
         } else {
             btnCamera.setText("Get Review");
         }
                 
-        instructionShown = true;
-        findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
-        if (q.canSeeSolution(type) ||
-            (q.hasScan() && !adapter.getFlipped())) {
-            instructionShown = false;
-            findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
-        }
-        
         btnBuyAns.refreshDrawableState();
         btnBuySoln.refreshDrawableState();
         btnSelfChk.refreshDrawableState();
@@ -572,9 +536,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         vpHints.setOffscreenPageLimit(3);
         vpHints.setAdapter(hintsAdapter);
         vpHints.setVisibility(View.VISIBLE);
-        findViewById(R.id.llInstruction).setVisibility(View.INVISIBLE);
         hintShown = true;
-        instructionShown = false;
         
         //Bind the circle indicator to the adapter
         hintsIndicator.setVisibility(View.VISIBLE);
@@ -584,20 +546,19 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private void unrenderHint() {
         if (hintShown) {
             hintShown = false;
-            instructionShown = true;
             vpHints.setVisibility(View.INVISIBLE);
             hintsIndicator.setVisibility(View.INVISIBLE);
-            findViewById(R.id.llInstruction).setVisibility(View.VISIBLE);
         }
     }
     
     /* disabled hints for now - Vers 4.5.0 */
     private void loadHints(File quizDir) {
+        for (int i = 0; i < hints.length; i++)
+            hints[i] = null;
 //        File hintsDir = new File(quizDir, HINTS_DIR_NAME);
 //        Question[] questions = adapter.getQuestions();
-        for (int i = 0; i < hints.length; i++)
+//        for (int i = 0; i < hints.length; i++)
 //            hints[i] = Hint.load(hintsDir, questions[i]);
-            hints[i] = null;
     }    
     
     private void launchCameraActivity(Question q) {
@@ -881,7 +842,8 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private FlowAdapter adapter;
     
     private int fdbkIdx;
-    private boolean hide, fdbkShown, hintShown, instructionShown;
+    private char showing;
+    private boolean hide, fdbkShown, hintShown;
     private ViewPager vpFdbk, vpHints;
     private LatexAdapter fdbkAdapter, hintsAdapter;
     private CirclePageIndicator fdbkIndicator, hintsIndicator;
@@ -890,17 +852,19 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
     private final int DL_CODEX = 1, DL_ANS = 2, DL_SOLN = 3;
     private final String OP_KEY = "op";
     private final String 
+        GUESS = "guess", 
+        GET_FDBK = "grade", 
+        BUY_ANS = "answer", 
+        BUY_SOLN = "solution";    
+    private final String 
         BILL_STAB_URL = "http://%s/tokens/record?s=%s&q=%s&v=%s&g=%s&op=%s",
         BILL_ATTEMPT_URL = "http://%s/tokens/record?id=%s&g=%s&op=%s",
         ANSR_URL = "http://%s/vault/%s/%s/codex.png",
         SOLN_URL = "http://%s/vault/%s/pg-%d.jpg";
-
-    private final String FLIPPED_KEY = "flipped", FDBK_SHOWN_KEY = "fdbkShown",
-        HINT_SHOWN_KEY = "hintShown", FDBK_IDX_KEY = "fdbkIdx", PAGE_KEY = "page";
-    
-    private final String GUESS = "guess", GET_FDBK = "grade", BUY_ANS = "answer", 
-        BUY_SOLN = "solution";
-    
+    private final String FDBK_SHOWN_KEY = "fdbkShown",
+        HINT_SHOWN_KEY = "hintShown", FDBK_IDX_KEY = "fdbkIdx", 
+        PAGE_KEY = "page";
+    private final char ATMPT = 'a', SOLN = 's', QSN = 'q';    
     public static final int NO_FEEDBACK = -1;
 }
 

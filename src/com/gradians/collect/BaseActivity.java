@@ -16,7 +16,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -81,7 +80,7 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
         if (peedee != null)
             peedee.dismiss();
         
-        File filesDir = new File(studentDir, "files");
+        File filesDir = new File(studentDir, FILES_DIR_NAME);
         File cache = new File(filesDir, subpath + ".json");
         try {
             JSONObject respObject = null;
@@ -100,7 +99,7 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
             } else {
                 items = new JSONArray();
             }
-            Log.d(TAG, "marker: " + marker + " Cache Size: " + items.size());
+            
             if (resultCode == RESULT_OK) {
                 respObject = (JSONObject)jsonParser.parse(resultData);
                 delta = (JSONArray)respObject.get(ITEMS_KEY);
@@ -110,7 +109,6 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
                 
                 marker = ((Long)respObject.get(MARKER_KEY)).intValue();
                 commitMarker();
-                Log.d(TAG, "marker: " + marker + " Delta Size: " + delta.size());
                 if (marker > 0) {
                     FileWriter fw = new FileWriter(cache);
                     fw.write(manifest.toJSONArray());
@@ -174,8 +172,8 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
     }
     
     private void commitMarker() {
-        File filesDir = new File(studentDir, "files");
-        File markerFile = new File(filesDir, "markers.txt");
+        File filesDir = new File(studentDir, FILES_DIR_NAME);
+        File markerFile = new File(filesDir, MARKER_FILE);
         Properties markers = new Properties();
         try {
             markers.load(new FileInputStream(markerFile));
@@ -187,8 +185,8 @@ public abstract class BaseActivity extends Activity implements ITaskResult, ICon
     }
     
     private void loadMarker() {
-        File filesDir = new File(studentDir, "files");
-        File markerFile = new File(filesDir, "markers.txt");
+        File filesDir = new File(studentDir, FILES_DIR_NAME);
+        File markerFile = new File(filesDir, MARKER_FILE);
         Properties markers = new Properties();
         try {
             markerFile.createNewFile();

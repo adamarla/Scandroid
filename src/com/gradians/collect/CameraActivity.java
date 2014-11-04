@@ -7,14 +7,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.Size;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -65,11 +66,16 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            Intent intent = new Intent();
-            intent.putExtra(TAG, question);
-            this.setResult(RESULT_OK, intent);
-            releaseCamera();
-            NavUtils.navigateUpFromSameTask(this);
+            if (!question.getPgMap("").contains("0")) {
+                confirmUpload();
+                return true;
+            } else if (question.hasScan()) {
+                // some parts complete
+                promptIncomplete();
+            } else {
+                concludeActivity();
+            }
+        default:
         }
         return super.onOptionsItemSelected(item);
     }
@@ -77,11 +83,14 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     @Override
     public void onBackPressed() {
         if (!question.getPgMap("").contains("0")) {
+            // all parts complete
             confirmUpload();
+        } else if (question.hasScan()) {
+            // some parts complete
+            promptIncomplete();
         } else {
-            Intent intent = new Intent();
-            intent.putExtra(TAG, question);
-            setResult(RESULT_OK, intent);
+            // no picture taken
+            concludeActivity();
             super.onBackPressed();
         }
     }
@@ -90,8 +99,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     protected void onResume() {
         super.onResume();
         comandeerCamera();
-        refreshButtons();        
-        onClick((PartButton)llButtons.getChildAt(0));
+        refreshButtons();
     }
 
     @Override
@@ -202,7 +210,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 }
             }
             
-            btnAction.setImageResource(R.drawable.ic_action_rotate_right);            
+            btnAction.setImageResource(R.drawable.ic_action_discard);            
             if (pb.isSelected()) {
                 btnAction.setEnabled(true);
                 
@@ -233,7 +241,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 }
             }
             
-            btnAction.setImageResource(android.R.drawable.ic_menu_camera);            
+            btnAction.setImageResource(R.drawable.ic_action_camera);            
             if (pb.isSelected() || anySelected) {
                 if (!cameraOn) {
                     comandeerCamera();
@@ -265,7 +273,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
             question.setPgMap(map);
             selectedParts.clear();
             refreshButtons();
-            btnAction.setImageResource(R.drawable.ic_action_rotate_right);
+            btnAction.setImageResource(R.drawable.ic_action_discard);
         } else {
             releaseCamera();
             Intent intent = new Intent();
@@ -275,9 +283,9 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
     
     private void confirmUpload() {
-        // prompt for uploading only if something is there
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Upload now?");
+        AlertDialog.Builder builder = new AlertDialog.Builder(this,
+            R.style.RobotoDialogTitleStyle);
+        builder.setTitle("Upload?");
         builder.setPositiveButton(android.R.string.ok,
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
@@ -293,8 +301,26 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 public void onClick(DialogInterface dialog, int id) {
                 }
             });
+        builder.show().getWindow().setBackgroundDrawable(
+            new ColorDrawable(Color.TRANSPARENT));
+    }
+    
+    private void promptIncomplete() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this,
+            R.style.RobotoDialogTitleStyle);
+        builder.setTitle("Incomplete");
+        builder.setMessage("Please capture images for all parts of the question");
+        builder.setPositiveButton(android.R.string.ok, null);
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+    
+    private void concludeActivity() {
+        releaseCamera();
+        Intent intent = new Intent();
+        intent.putExtra(TAG, question);
+        setResult(RESULT_OK, intent);
+        finish();
     }
     
     private void releaseCamera() {
@@ -376,17 +402,17 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         
         PartButton btn = null;
         int[] pgMap = question.getPgMap();
-        for (int j = 0; j < pgMap.length; j++) {
-            
+        for (int j = 0; j < pgMap.length; j++) {            
             btn = new PartButton(this);
             btn.setTag(j);
             btn.setText(pgMap.length == 1 ? 
                 question.getName() :
                 question.getName() + (char)((int)'a'+j));
             btn.setTextColor(getResources().getColorStateList(
-                R.drawable.part_btn_text_selector));
+                R.drawable.part_btn_text_selector));            
             btn.setBackgroundResource(R.drawable.part_btn_selector);
 //                btn.setTextSize(getResources().getDimension(R.dimen.small_font_size));
+            btn.setSelected(true);
             btn.setTextSize(12f);
             LayoutParams lp = new LayoutParams(pixels, pixels);
             lp.setMargins(2, 0, 2, 0);

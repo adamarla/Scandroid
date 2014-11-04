@@ -188,8 +188,8 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         File studentDir = new File(getExternalFilesDir(null), 
             email.replace('@', '.'));
         studentDir.mkdir();
-        (new File(studentDir, "problems")).mkdir();
-        (new File(studentDir, "files")).mkdir();
+        (new File(studentDir, PROBLEMS_DIR_NAME)).mkdir();
+        (new File(studentDir, FILES_DIR_NAME)).mkdir();
         
         SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
         Editor edit = prefs.edit();

@@ -71,7 +71,11 @@ public interface IConstants {
     String UPLOAD_DIR_NAME = "upload";
     String HINTS_DIR_NAME = "hints";
     
+    String PROBLEMS_DIR_NAME = "problems";
+    String FILES_DIR_NAME = "files";
+    
     String STATE_FILE = "state.txt";
+    String MARKER_FILE = "markers.txt";
     
     // States: Question
     short LOCKED = 0,

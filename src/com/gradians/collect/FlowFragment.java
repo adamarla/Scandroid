@@ -26,12 +26,11 @@ import android.widget.LinearLayout.LayoutParams;
 public class FlowFragment extends Fragment implements IConstants {
     
     public static final FlowFragment newInstance(Question question,
-            boolean flipped, int fdbkIdx, int page) {
-        Bundle bundle = new Bundle(5);
+            int fdbkIdx, int page) {
+        Bundle bundle = new Bundle(3);
         bundle.putParcelable(TAG, question);
         bundle.putInt(FDBK_MRKR_KEY, fdbkIdx);
         bundle.putInt("page", page);
-        bundle.putBoolean("flipped", flipped);
         FlowFragment pf = new FlowFragment();
         pf.setArguments(bundle);
         return pf;
@@ -47,9 +46,9 @@ public class FlowFragment extends Fragment implements IConstants {
         Question question = bundle.getParcelable(TAG);
         final int fdbkIdx = bundle.getInt(FDBK_MRKR_KEY);
         final int page = bundle.getInt("page");
-        boolean flipped = bundle.getBoolean("flipped");
-        ViewGroup rootView = (ViewGroup)inflater.inflate(R.layout.fragment_flow, container, false);
-        String[] paths = activity.getPaths(question, flipped);
+        ViewGroup rootView = (ViewGroup)inflater.
+            inflate(R.layout.fragment_flow, container, false);
+        String[] paths = activity.getPaths(question);
         
         final WebView solnView = new DullWebView(activity);
         solnView.clearCache(true);
@@ -209,11 +208,6 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
         update(position);
     }
     
-    public void flip(int position) {
-        flipped = !flipped;
-        update(position);
-    }
-    
     public void update(int position) {
         lastChangedId = questions[position].getId();
         notifyDataSetChanged();
@@ -221,14 +215,6 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     
     public Question[] getQuestions() {
         return questions;
-    }
-    
-    public boolean getFlipped() {
-        return flipped;
-    }
-    
-    public void setFlipped(boolean flipped) {
-        this.flipped = flipped;
     }
     
     @Override
@@ -247,11 +233,10 @@ class FlowAdapter extends FragmentStatePagerAdapter implements IConstants {
     @Override
     public Fragment getItem(int position) {
         return FlowFragment.newInstance(questions[position], 
-                flipped, fdbkIdx, page);
+            fdbkIdx, page);
     }
     
     private int page, fdbkIdx;
-    private boolean flipped;
     private String lastChangedId;
     private Question[] questions;
     
