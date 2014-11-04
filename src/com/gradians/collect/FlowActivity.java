@@ -169,6 +169,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                 }
                 commit();
                 
+                showing = ATMPT;
                 adapter.update(vpPreview.getCurrentItem());
                 adjustView(vpPreview.getCurrentItem(), 0);
                 
@@ -231,6 +232,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
                     displayAnswers(qsn, false);
                     break;
                 case DL_SOLN:
+                    showing = SOLN;
                     adapter.update(currentIndex);
                     adjustView(currentIndex, fdbkIdx);
                     break;
@@ -333,7 +335,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         AlertDialog.Builder builder = new AlertDialog.Builder(this,
             R.style.RobotoDialogTitleStyle);
         builder.setMessage(
-            String.format("Current Balance %3d ₲\nAfter Purchase    %3d ₲", 
+            String.format("Current Balance %3d ₲\nAfter Purchase   %3d ₲", 
                 balance , (balance - price)));
         builder.setPositiveButton(R.string.purchase_conf_text,
             new DialogInterface.OnClickListener() {
@@ -421,7 +423,7 @@ public class FlowActivity extends FragmentActivity implements ViewPager.OnPageCh
         
         Question[] questions = adapter.getQuestions();
         Question q = questions[position];
-        Log.d(TAG, q.getId() + " showing: " + showing);
+        
         tvName.setText(String.format("%s of %s", position+1, questions.length));
         tvMarks.setText("");
 
