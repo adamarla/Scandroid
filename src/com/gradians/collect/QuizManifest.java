@@ -18,6 +18,15 @@ public class QuizManifest extends BaseManifest {
         for (Quij quiz : quizzes)
             quiz.determineState();
     }
+    
+    @Override
+    public Quij[] all() {
+        ArrayList<Quij> items = new ArrayList<Quij>();
+        for (Quij quiz : quizzes) {
+            items.add(quiz);
+        }
+        return items.toArray(new Quij[items.size()]);
+    }
 
     public Quij[] getInboxItems() {
         ArrayList<Quij> items = new ArrayList<Quij>();
@@ -82,8 +91,6 @@ public class QuizManifest extends BaseManifest {
                         0 : ((Long)item.get(EXAMINER_KEY)).intValue());
                     question.setFdbkMarker(item.get(FDBK_MRKR_KEY) == null ? 
                         0 : (Long)item.get(FDBK_MRKR_KEY));
-                    question.setHintMarker(item.get(HINT_MRKR_KEY) == null ? 
-                        0 : (Long)item.get(HINT_MRKR_KEY));
                     
                     boolean notYetReceived = question.getScanLocn()[0] == null;
                     if (notYetReceived) {

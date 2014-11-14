@@ -30,6 +30,8 @@ public abstract class BaseManifest implements IConstants {
         return questionByIdMap.values().toArray(new Question[size]);
     }
     
+    public abstract Quij[] all();
+    
     public String toJSONArray() {
         JSONArray array = new JSONArray();
         Question[] questions = new Question[questionByIdMap.size()];

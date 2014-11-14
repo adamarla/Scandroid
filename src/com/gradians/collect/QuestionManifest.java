@@ -36,6 +36,35 @@ public class QuestionManifest extends BaseManifest {
         return new Quij[] { toReturn };
     }    
     
+    @Override
+    public Quij[] all() {
+        HashMap<Long, Quij> quizByTopic = initialize(topics);
+        Set<String> questionIds = questionByIdMap.keySet();
+        Iterator<String> iterator = questionIds.iterator();
+        
+        long topicId; Quij quiz; Question question;
+        while (iterator.hasNext()) {
+            question = questionByIdMap.get(iterator.next());
+            
+            topicId = Long.parseLong(question.getId().split("\\.")[0]);
+            quiz = quizByTopic.get(topicId);
+            question.setName(String.format("Q.%s", quiz.size()+1));
+            quiz.add(question);
+        }
+        
+        ArrayList<Quij> toReturn = new ArrayList<Quij>();
+        Set<Long> quizIds = quizByTopic.keySet();
+        Iterator<Long> iter = quizIds.iterator();
+        while (iter.hasNext()) {
+            quiz = quizByTopic.get(iter.next());
+            if (quiz.size() > 0) {
+                toReturn.add(quiz);
+            }
+        }
+        
+        return toReturn.toArray(new Quij[toReturn.size()]);
+    }    
+    
     public Quij[] untried() {
         HashMap<Long, Quij> quizByTopic = initialize(topics);
         Set<String> questionIds = questionByIdMap.keySet();
@@ -157,8 +186,12 @@ public class QuestionManifest extends BaseManifest {
                 }
                 
                 if (noStab) {
-                    question.setDirty(remote);  // revised or new question
-                }                
+                    question.setDirty(remote);  // revised or new question                    
+                    if (questionByIdMap.containsKey(question.getId())) {
+                        question.setImgLocn(questionByIdMap.
+                            get(question.getId()).getImgLocn());
+                    }
+                }
             } else {
                 state.remove(question.getId());                
                 question.setPuzzle((Boolean)item.get(PZL_KEY));

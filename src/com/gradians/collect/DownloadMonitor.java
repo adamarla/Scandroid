@@ -49,6 +49,7 @@ public class DownloadMonitor extends BroadcastReceiver implements OnDismissListe
         peedee.setMessage(message);
         peedee.setIndeterminate(false);
         peedee.setMax(downloads.size());
+        peedee.setProgressNumberFormat("");
         peedee.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         peedee.setOnDismissListener(this);
         peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));

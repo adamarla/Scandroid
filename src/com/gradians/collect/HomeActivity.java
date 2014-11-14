@@ -3,6 +3,8 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 
 import org.json.simple.JSONArray;
@@ -20,6 +22,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -75,64 +78,168 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (peedee != null) 
-            peedee.dismiss();
-        try {
-            if (resultCode == RESULT_OK) {
-                initialize(resultData);
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-                Toast.makeText(getApplicationContext(), 
-                    "No Internet :/ soldiering on regardless", 
-                    Toast.LENGTH_LONG).show();
-                initialize(retrieveResponse());
-            } else if (resultCode == RESULT_FIRST_USER) {
-                this.finish();
+        if (peedee != null) peedee.dismiss();
+        if (requestCode == REFRESH_TASK_REQUEST_CODE) {
+            try {
+                if (resultCode == RESULT_OK) {
+                    initialize(resultData);
+                } else if (resultCode == Activity.RESULT_CANCELED) {
+                    Toast.makeText(getApplicationContext(), 
+                        "No Internet :/ soldiering on regardless", 
+                        Toast.LENGTH_LONG).show();
+                    initialize(retrieveResponse());
+                } else if (resultCode == RESULT_FIRST_USER) {
+                    this.finish();
+                }
+            } catch (Exception e) {
+                handleError("Oops, Verify auth task failed", e.getMessage());
             }
-        } catch (Exception e) {
-            handleError("Oops, Verify auth task failed", e.getMessage());
+        } else if (requestCode == REFRESH_WS_TASK_REQUEST_CODE) {
+            File filesDir = new File(studentDir, FILES_DIR_NAME);
+            File cache = new File(filesDir, subpath + ".json");
+            
+            BaseManifest manifest = subpath.equals("qs") ?
+                practiceManifest : schoolStuffManifest;
+            Markers markers = new Markers(studentDir);
+            int marker = markers.get(subpath) == null ? -1 :                
+                Integer.parseInt(markers.get(subpath));
+            int titleId = subpath.equals("qs") ?
+                R.string.title_activity_practise : 
+                R.string.title_activity_teacher;
+            String title = getApplicationContext().getResources().getString(titleId);
+            try {
+                JSONObject respObject = null;
+                JSONArray delta, items = null;
+                JSONParser jsonParser = new JSONParser();
+
+                if (marker < 0) {
+                    cache.delete();
+                }
+                
+                if (cache.exists() && marker > 0) {
+                    FileReader fr = new FileReader(cache);
+                    items = (JSONArray)jsonParser.parse(fr);
+                    manifest.parse(items, false);
+                } else {
+                    items = new JSONArray();
+                }
+                
+                if (resultCode == RESULT_OK) {
+                    respObject = (JSONObject)jsonParser.parse(resultData);
+                    delta = (JSONArray)respObject.get(ITEMS_KEY);
+                    if (delta.size() > 0) {
+                        manifest.parse(delta, true);
+                    }
+                    
+                    marker = ((Long)respObject.get(MARKER_KEY)).intValue();
+                    markers.set(subpath, String.valueOf(marker));
+                    markers.commit();
+                    if (marker > 0) {
+                        FileWriter fw = new FileWriter(cache);
+                        fw.write(manifest.toJSONArray());
+                        fw.close();                    
+                    }
+                    
+               } else {
+                    Toast.makeText(getApplicationContext(), 
+                        "No Internet, continuing with cached content", 
+                        Toast.LENGTH_LONG).show();
+                }                
+                launchListActivity(manifest.all(), title);
+            } catch (NullPointerException npe) {
+                handleError("Refresh task failed ", "Null Pointer Exception");
+            } catch (Exception e) {
+                handleError("Refresh task failed ", e.getMessage());
+            }
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            try {
-                String json = data.getStringExtra(TAG);
-                initialize(json);
-            } catch (Exception e) {
-                handleError("Oops, Auth activity request failed",
-                        e.getMessage());
+        if (requestCode == AUTH_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                try {
+                    String json = data.getStringExtra(TAG);
+                    initialize(json);
+                } catch (Exception e) {
+                    handleError("Oops, Auth activity request failed",
+                            e.getMessage());
+                }
+            } else if (resultCode != Activity.RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(),
+                        "Oops.. auth check failed. Please try again",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                this.finish();
             }
-        } else if (resultCode != Activity.RESULT_CANCELED) {
-            Toast.makeText(getApplicationContext(),
-                    "Oops.. auth check failed. Please try again",
+        } else if (requestCode == LIST_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                BaseManifest manifest = subpath.equals("qs") ?
+                    practiceManifest : schoolStuffManifest;
+                try {
+                    Parcelable[] parcels = data.getParcelableArrayExtra(TAG_ID);
+                    Question[] questions = new Question[parcels.length];
+                    for (int i = 0; i < parcels.length; i++) {
+                        questions[i] = (Question)parcels[i];
+                    }
+                    manifest.update(questions);
+                } catch (Exception e) {
+                    handleError("List activity failed", e.getMessage());
+                }
+            } else if (resultCode != Activity.RESULT_CANCELED) {
+                Toast.makeText(getApplicationContext(),
+                    "Oops, an error, you may have lost work :/",
                     Toast.LENGTH_SHORT).show();
-        } else {
-            this.finish();
-        }
+            }
+        }        
     }
 
     public void onClick(View v) {
-        Intent intent = null;
         try {
             switch (v.getId()) {
+            case R.id.btnBrowse:
+                subpath = "qs";
+                refresh();
+                break;
             case R.id.btnSchool:
-                intent = new Intent(getApplicationContext(),
-                    com.gradians.collect.TeacherActivity.class);
+                subpath = "ws";
+                refresh();
                 break;
             case R.id.btnAsk:
                 break;
-            case R.id.btnBrowse:
-                intent = new Intent(getApplicationContext(),
-                    com.gradians.collect.PracticeActivity.class);
+            default:
             }
-            intent.putExtra(PZL_KEY, potd);
-            intent.putExtra(TOPICS_KEY, topics);
-            startActivity(intent);
         } catch (Exception e) {
-            handleError("Oops, Activity launch failed",
-                e.getMessage());
+            handleError("Oops, Activity launch failed", e.getMessage());
         }
+    }
+    
+    private void launchListActivity(Quij[] items, String title) {
+        Intent listIntent = new Intent(getApplicationContext(),
+            com.gradians.collect.ListActivity.class);
+        listIntent.putExtra(NAME_KEY, studentDir.getPath());
+        listIntent.putExtra(TAG, items);
+        listIntent.putExtra(TAG_ID, title);
+        startActivityForResult(listIntent, LIST_ACTIVITY_REQUEST_CODE);
+    }
+    
+    private void refresh() {
+        if (peedee == null)
+            peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
+        peedee.setTitle("Synchronizing ");
+        peedee.setMessage("Please wait...");
+        peedee.setIndeterminate(true);
+        peedee.setIcon(ProgressDialog.STYLE_SPINNER);
+        peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        peedee.show();
+        Markers markers = new Markers(studentDir);
+        String marker = markers.get(subpath) == null ? 
+            "-1" : markers.get(subpath);
+        Uri src = Uri.parse(String.format(REFRESH_URL, 
+            WEB_APP_HOST_PORT, subpath, email, token, marker));
+        Download download = new Download(null, src, null);
+        new HttpCallsAsyncTask(this, REFRESH_WS_TASK_REQUEST_CODE).
+            execute(new Download[] { download });
     }
     
     private void checkAuth() {
@@ -152,7 +259,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
             com.gradians.collect.LoginActivity.class);
         checkAuthIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivityForResult(checkAuthIntent, 
-            ITaskResult.AUTH_ACTIVITY_REQUEST_CODE);
+            AUTH_ACTIVITY_REQUEST_CODE);
     }
     
     private void initiateVerifActivity(String email, String token) {
@@ -167,7 +274,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         String refreshUrl = "http://%s/tokens/verify?email=%s&token=%s";
         Uri src = Uri.parse(String.format(refreshUrl, WEB_APP_HOST_PORT, email, token));
         Download download = new Download(null, src, null);
-        new HttpCallsAsyncTask(this, REFRESH_WS_TASK_REQUEST_CODE).
+        new HttpCallsAsyncTask(this, REFRESH_TASK_REQUEST_CODE).
             execute(new Download[] { download });
     }
 
@@ -175,17 +282,15 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         JSONParser jsonParser = new JSONParser();
         JSONObject respObject = (JSONObject)jsonParser.parse(json);
         
-        String name, email, token, id;
         boolean enrolled;
         token = (String)respObject.get(TOKEN_KEY);
         name = (String)respObject.get(NAME_KEY);
         email = (String)respObject.get(EMAIL_KEY);
         id = String.valueOf((Long)respObject.get(ID_KEY));
-        potd = (String)respObject.get(PZL_KEY);
         balance = ((Long)respObject.get(BALANCE_KEY)).intValue();
         enrolled = (Boolean)respObject.get(ENRL_KEY);
         
-        File studentDir = new File(getExternalFilesDir(null), 
+        studentDir = new File(getExternalFilesDir(null), 
             email.replace('@', '.'));
         studentDir.mkdir();
         (new File(studentDir, PROBLEMS_DIR_NAME)).mkdir();
@@ -215,6 +320,9 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         
         topics = getTopics((JSONArray)respObject.get(TOPICS_KEY)); 
         saveResponse(json);
+        
+        practiceManifest = new QuestionManifest(studentDir, topics);
+        schoolStuffManifest = new QuizManifest(studentDir, topics);        
     }
 
     private void resetPreferences() {
@@ -260,12 +368,18 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     private void handleError(String error, String message) {
         Log.e(TAG, error + " " + message);
     }
+    
+    private BaseManifest practiceManifest, schoolStuffManifest;
  
+    private File studentDir;
+    private String subpath, name, email, token, id;
     private Topic[] topics;
     private int balance;
-    private String potd;
     private ProgressDialog peedee;
     private final String filename = "init.json";
+    
+    private final String REFRESH_URL = 
+        "http://%s/tokens/refresh/%s?email=%s&token=%s&marker=%s";    
 }
 
 class HugeButton extends RelativeLayout {

@@ -1,23 +1,27 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Properties;
-import java.util.Stack;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.BaseAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
@@ -31,7 +35,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         setContentView(R.layout.activity_list);
         
         setupActionBar();
-        parents.push(getIntent());
         
         Parcelable[] quizItems = getIntent().getParcelableArrayExtra(TAG);
         String path = getIntent().getStringExtra(NAME_KEY);
@@ -40,7 +43,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         setTitle(getIntent().getStringExtra(TAG_ID));
     }
     
-    public static Stack<Intent> parents = new Stack<Intent>();    
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -66,12 +68,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         if (requestCode == FLOW_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
-                    Quij quiz = (Quij)adapter.getItem(selectedQuizPosition);
-                    String key = categoryId + "." + quiz.getType() + "." + quiz.getId();
-                    int bookmark = data.getIntExtra(TAG_ID, 0);
-                    if (bookmark != 0) markers.put(key, String.valueOf(bookmark));
-                    commit();
-                    
                     Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
                     Question[] questions = new Question[parcels.length];
                     for (int i = 0; i < parcels.length; i++)
@@ -122,20 +118,15 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
     
     private void launchFlowActivity(Quij quiz) {
-        Question[] questions = quiz.getQuestions();
-        Intent flowIntent = new Intent(this.getApplicationContext(), 
-            com.gradians.collect.FlowActivity.class);   
-        flowIntent.putExtra(TAG, questions);
-        flowIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
-        flowIntent.putExtra(NAME_KEY, quiz.getName());
-        flowIntent.putExtra(ID_KEY, quiz.getType());
-        String key = categoryId + "." + quiz.getType() + "." + quiz.getId();
-        if (markers.containsKey(key))
-            flowIntent.putExtra(TAG_ID, Integer.valueOf(markers.getProperty(key)));
-        startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
+        Intent browseIntent = new Intent(this.getApplicationContext(), 
+            com.gradians.collect.BrowseActivity.class);
+        browseIntent.putExtra(TAG, (Parcelable)quiz);
+        browseIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
+        startActivityForResult(browseIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
 
-    private void setUpDownloads(DownloadMonitor dlm, HttpCallsAsyncTask hcat, Quij quiz) {
+    private void setUpDownloads(DownloadMonitor dlm, 
+        HttpCallsAsyncTask hcat, Quij quiz) {
         File problemsDir = new File(studentDir, PROBLEMS_DIR_NAME);
         String dirName = String.valueOf(quiz.getId());
         quizDir = new File(problemsDir, dirName);
@@ -149,6 +140,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         File hintsDir = dirs[4];
         File answersDir = dirs[5];
         
+        Markers markers = new Markers(studentDir);
         Question[] questions = quiz.getQuestions();
         for (Question question : questions) {
             
@@ -157,10 +149,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             String imgLocn = question.getImgLocn();
             String[] scans = question.getScanLocn();
             int[] pageNos = question.getPgMap();
-            long hintMarker, fdbkMarker;
-            String marker = (String)markers.get(question.getId());
-            hintMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[0]);
-            fdbkMarker = marker == null ? 0 : Long.parseLong(marker.split(",")[1]);
+            long fdbkMarker = markers.getFdbkId(question.getId());
             
             // Feedback
             if (question.getState() == GRADED) {
@@ -219,12 +208,12 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 }
             }
             
-            // Question
+            // Question (thin)
             image = new File(questionsDir, 
-                question.getVersion() + "." + question.getId());
+                "m." + question.getVersion() + "." + question.getId());
             if (question.isDirty()) image.delete();
             if (!image.exists()) {
-                src = Uri.parse(String.format(QUES_URL, BANK_HOST_PORT, 
+                src = Uri.parse(String.format(MOBL_URL, BANK_HOST_PORT, 
                     imgLocn));
                 dest = Uri.fromFile(image);
                 dlm.add(question.getId(), src, dest);
@@ -233,18 +222,27 @@ public class ListActivity extends Activity implements OnItemClickListener,
             // Answer
             if (question.hasCodex()) {
                 int[] codices = { 0, 1, 2, 3 };
-                answersDir = new File(quizDir, ANSWERS_DIR_NAME);
                 for (int codex : codices) {
                     image = new File(answersDir, 
                         codex + "." + question.getId());
                     if (question.isDirty()) image.delete();
                     if (!image.exists()) {
-                        src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, 
+                        src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT,
                             imgLocn.replaceFirst("/[0-3]$", ""), codex));
                         dest = Uri.fromFile(image);
                         dlm.add(question.getId(), src, dest);
                     }
                 }                    
+            } else if (question.hasAnswer()) {
+                image = new File(answersDir, 
+                    question.getVersion() + "." + question.getId());
+                if (question.isDirty()) image.delete();
+                if (!image.exists()) {
+                    src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT, 
+                        imgLocn.replaceFirst("/[0-3]$", ""), question.getVersion()));
+                    dest = Uri.fromFile(image);
+                    dlm.add(question.getId(), src, dest);
+                }
             }
             
             /* Removing hints for now
@@ -261,26 +259,14 @@ public class ListActivity extends Activity implements OnItemClickListener,
                 hcat.add(null, src, dest);
             } */
             
-            markers.put(question.getId(), hintMarker + "," + fdbkMarker);
+            markers.setFdbkId(question.getId(), fdbkMarker);
             question.setDirty(false);
         }
         commit();
     }
 
     private void initialize(Parcelable[] quizItems, String path, int categoryId) {
-        studentDir = new File(path);
-        
-        this.categoryId = categoryId;
-        markers = new Properties();
-        File filesDir = new File(studentDir, FILES_DIR_NAME);
-        File markerFile = new File(filesDir, MARKER_FILE);
-        try {
-            markerFile.createNewFile();
-            markers.load(new FileInputStream(markerFile));
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
-        
+        studentDir = new File(path);        
         quizzes = new Quij[quizItems.length];
         for (int i = 0; i < quizItems.length; i++)
             quizzes[i] = (Quij)quizItems[i];
@@ -330,7 +316,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
     }
 
-    private int categoryId;
     private Properties markers;
     private Quij[] quizzes;
     private QuizListAdapter adapter;
@@ -342,9 +327,78 @@ public class ListActivity extends Activity implements OnItemClickListener,
     private final String
         SOLN_URL = "http://%s/vault/%s/pg-%d.jpg",
         ATMPT_URL = "http://%s/locker/%s",
-        QUES_URL = "http://%s/vault/%s/notrim.jpg",
+        MOBL_URL = "http://%s/vault/%s/mobile.black.png",
         FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s&type=%s",
         HINT_URL = "http://%s/tokens/view_hints.json?id=%s",
         ANSR_URL = "http://%s/vault/%s/%s/codex.png";
+
+}
+
+
+class QuizListAdapter extends BaseAdapter implements IConstants {
+    
+    public QuizListAdapter(Context context, Quij[] quizzes) {
+        this.inflater = LayoutInflater.from(context);
+        this.quizzes = quizzes;
+        this.dirtys = new ArrayList<Question>();
+    }
+        
+    public void update(int quizPosn, Question[] questions) {
+        Quij quiz = quizzes[quizPosn];
+        Question q = null;
+        for (int i = 0; i < questions.length; i++) {
+            q = quiz.get(i);
+            if (questions[i].getState() != q.getState() ||
+                questions[i].tried() != q.tried() ||
+                questions[i].botAnswer() != q.botAnswer() ||
+                questions[i].botSolution() != q.botSolution()) {
+                quiz.set(i, questions[i]);
+                dirtys.add(questions[i]);
+            }
+        }
+        quiz.determineState();
+        notifyDataSetChanged();
+    }
+    
+    public Question[] getDirtys() {
+        return dirtys.toArray(new Question[dirtys.size()]);
+    }
+
+    @Override
+    public int getCount() {
+        return quizzes.length;
+    }
+
+    @Override
+    public Object getItem(int position) {
+        return quizzes[position];
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        if(convertView == null) {
+            convertView = inflater.inflate(R.layout.layout_quiz, parent, false);
+        }        
+        
+        TextView tv = (TextView)convertView.findViewById(R.id.tvQuiz);
+        tv.setTag(position);
+        
+        Quij quiz = (Quij)getItem(position);
+        tv.setText(quiz.toString());
+        
+        TextView tvTotal = (TextView)convertView.findViewById(R.id.tvTotal);
+        tvTotal.setText(quiz.getDisplayTotal());
+        
+        return convertView;
+    }
+
+    private ArrayList<Question> dirtys;
+    private Quij[] quizzes;
+    private LayoutInflater inflater;
 
 }
