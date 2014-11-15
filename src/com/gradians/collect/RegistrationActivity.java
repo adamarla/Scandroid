@@ -17,6 +17,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -153,7 +154,14 @@ public class RegistrationActivity extends FragmentActivity implements
                         ids[i] = String.valueOf((Long) student.get("id"));
                     }
                     
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    AlertDialog.Builder builder = null;
+                    try {
+                        builder = new AlertDialog.Builder(this,
+                            R.style.RobotoDialogTitleStyle);        
+                    } catch (NoSuchMethodError e) {
+                        Log.e(TAG, "Older SDK, using old Builder");
+                        builder =  new AlertDialog.Builder(this);
+                    }        
                     builder.setTitle("Please confirm your name...");
                     builder.setItems(items, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {

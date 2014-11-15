@@ -283,8 +283,14 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
     
     private void confirmUpload() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this,
-            R.style.RobotoDialogTitleStyle);
+        AlertDialog.Builder builder = null;
+        try {
+            builder = new AlertDialog.Builder(this,
+                R.style.RobotoDialogTitleStyle);        
+        } catch (NoSuchMethodError e) {
+            Log.e(TAG, "Older SDK, using old Builder");
+            builder =  new AlertDialog.Builder(this);
+        }        
         builder.setTitle("Upload?");
         builder.setPositiveButton(android.R.string.ok,
             new DialogInterface.OnClickListener() {
@@ -306,8 +312,14 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     }
     
     private void promptIncomplete() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this,
-            R.style.RobotoDialogTitleStyle);
+        AlertDialog.Builder builder = null;
+        try {
+            builder = new AlertDialog.Builder(this,
+                R.style.RobotoDialogTitleStyle);        
+        } catch (NoSuchMethodError e) {
+            Log.e(TAG, "Older SDK, using old Builder");
+            builder =  new AlertDialog.Builder(this);
+        }        
         builder.setTitle("Incomplete");
         builder.setMessage("Please capture images for all parts of the question");
         builder.setPositiveButton(android.R.string.ok, null);

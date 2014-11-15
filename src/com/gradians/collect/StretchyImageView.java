@@ -2,6 +2,7 @@ package com.gradians.collect;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
@@ -34,15 +35,16 @@ class StretchyImageView extends ImageView {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Drawable mDrawable = getDrawable();
-        if (mDrawable != null) {
+        if (mDrawable != null && 
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2)) {
             int mDrawableWidth = mDrawable.getIntrinsicWidth();
             int mDrawableHeight = mDrawable.getIntrinsicHeight();
-            float actualAspect = (float) mDrawableWidth / (float) mDrawableHeight;
-            
+            float imageAspectRatio = (float) mDrawableWidth / (float) mDrawableHeight;
+
             // Assuming the width is ok, so we calculate the height.
             final int actualWidth = MeasureSpec.getSize(widthMeasureSpec);
-            final int height = (int) (actualWidth / actualAspect);
-            heightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+            final int height = (int) (actualWidth / imageAspectRatio);
+            heightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);                
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }

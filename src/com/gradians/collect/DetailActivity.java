@@ -14,8 +14,6 @@ import com.viewpagerindicator.CirclePageIndicator;
 
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBarActivity;
-import android.text.Html;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -25,11 +23,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -37,7 +33,6 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,10 +42,7 @@ import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ImageView.ScaleType;
-import android.widget.LinearLayout;
 import android.widget.ListAdapter;
-import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -242,8 +234,14 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         }
 
         final boolean answer = view.getId() == R.id.btnBuyAns;
-        AlertDialog.Builder builder =
-            new AlertDialog.Builder(this, R.style.RobotoDialogTitleStyle);
+        AlertDialog.Builder builder = null;
+        try {
+            builder = new AlertDialog.Builder(this,
+                R.style.RobotoDialogTitleStyle);        
+        } catch (NoSuchMethodError e) {
+            Log.e(TAG, "Older SDK, using old Builder");
+            builder =  new AlertDialog.Builder(this);
+        }        
         builder.setMessage(String.format(
             "Current Balance %3d ₲\nAfter Purchase   %3d ₲", balance,
             (balance - price)));
@@ -317,7 +315,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         DullWebView dwvCanvas = (DullWebView)findViewById(R.id.wvCanvas);            
         if (paths[0].contains(QUESTIONS_DIR_NAME)) {
             dwvCanvas.setVisibility(View.GONE);
-            Bitmap bimg = BitmapFactory.decodeFile(paths[0]);            
+            Bitmap bimg = BitmapFactory.decodeFile(paths[0]);
             StretchyImageView iv = (StretchyImageView)findViewById(R.id.ivCanvas);
             iv.setImageBitmap(bimg);
             canvas = svCanvas;
@@ -621,8 +619,14 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 }
             };
 
-        AlertDialog.Builder builder =
-            new AlertDialog.Builder(this, R.style.RobotoDialogTitleStyle);
+        AlertDialog.Builder builder = null;
+        try {
+            builder = new AlertDialog.Builder(this,
+                R.style.RobotoDialogTitleStyle);        
+        } catch (NoSuchMethodError e) {
+            Log.e(TAG, "Older SDK, using old Builder");
+            builder =  new AlertDialog.Builder(this);
+        }        
 
         if (check) {
             if (qsn.tried()) {
@@ -769,8 +773,9 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         File solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME);
         String[] paths = new String[question.getImgSpan()];
         for (int i = 0; i < paths.length; i++) {
-            paths[i] = (new File(solutionsDir, question.getVersion() + "."
-                + question.getId() + "." + (i + 1))).getPath();
+            paths[i] = (new File(solutionsDir, 
+                "m." + question.getVersion() + "." +
+                question.getId() + "." + (i + 1))).getPath();
         }
         return paths;
     }
@@ -818,7 +823,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         BILL_STAB_URL = "http://%s/tokens/record?s=%s&q=%s&v=%s&g=%s&op=%s",
         BILL_ATTEMPT_URL = "http://%s/tokens/record?id=%s&g=%s&op=%s",
         ANSR_URL = "http://%s/vault/%s/%s/codex.png",
-        SOLN_URL = "http://%s/vault/%s/pg-%d.jpg";
+        SOLN_URL = "http://%s/vault/%s/pg-%d.png";
     private final char ATMPT = 'a', SOLN = 's', QSN = 'q';    
 
     private final String JS_SCROLL = "document.getElementById('pg%s').scrollIntoView();";

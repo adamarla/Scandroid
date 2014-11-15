@@ -156,7 +156,7 @@ public class QuestionManifest extends BaseManifest {
                 ((Long)item.get(EXAMINER_KEY)).intValue());
             question.setHasCodex((Boolean)item.get(HAS_CODEX_KEY));
             question.setHasAns((Boolean)item.get(HAS_ANSWER_KEY));
-            
+            if (!question.hasAnswer()) continue;
             boolean noStab = true;
             if (item.get(SOLN_KEY) != null) {
                 question.setBotSoln((Boolean)item.get(SOLN_KEY));

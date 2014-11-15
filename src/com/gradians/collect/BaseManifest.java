@@ -12,7 +12,9 @@ public abstract class BaseManifest implements IConstants {
     public BaseManifest(File dir, Topic[] topics) 
         throws Exception {
         this.topics = topics;
-        File stateFile = new File(dir, STATE_FILE);
+        File filesDir = new File(dir, "files");
+        filesDir.mkdir();
+        File stateFile = new File(filesDir, STATE_FILE);
         stateFile.createNewFile();
         state = new Properties();
         state.load(new FileInputStream(stateFile));

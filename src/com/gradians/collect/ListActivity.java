@@ -1,9 +1,7 @@
 package com.gradians.collect;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.Properties;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -173,7 +171,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     image = new File(attemptsDir, 
                         question.getId() + "." + pageNos[i]);
                     if (!image.exists()) {
-                        src = Uri.parse(String.format(ATMPT_URL, 
+                        src = Uri.parse(String.format(TMPT_URL, 
                             BANK_HOST_PORT, scans[i]));
                         dest = Uri.fromFile(image);
                         dlm.add(question.getId(), src, dest);
@@ -197,7 +195,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
             if (question.canSeeSolution(quiz.getType())) {
                 for (short i = 0; i < question.getImgSpan(); i++) {
                     image = new File(solutionsDir, 
-                        question.getVersion() + "." + question.getId() + "." + (i+1));
+                        "m." + question.getVersion() + "." + 
+                        question.getId() + "." + (i+1));
                     if (question.isDirty()) image.delete();
                     if (!image.exists()) {
                         src = Uri.parse(String.format(SOLN_URL, 
@@ -262,7 +261,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
             markers.setFdbkId(question.getId(), fdbkMarker);
             question.setDirty(false);
         }
-        commit();
+        markers.commit();
     }
 
     private void initialize(Parcelable[] quizItems, String path, int categoryId) {
@@ -276,16 +275,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         lv.setAdapter(adapter);
         lv.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         lv.setOnItemClickListener(this);        
-    }
-    
-    private void commit() {
-        File filesDir = new File(studentDir, FILES_DIR_NAME);
-        File markerFile = new File(filesDir, MARKER_FILE);
-        try {
-            markers.store(new FileOutputStream(markerFile), null);
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }        
     }
     
     private File[] createDirs(File quizDir, Quij quiz) {
@@ -316,7 +305,6 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
     }
 
-    private Properties markers;
     private Quij[] quizzes;
     private QuizListAdapter adapter;
     
@@ -325,8 +313,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
     ProgressDialog peedee;
 
     private final String
-        SOLN_URL = "http://%s/vault/%s/pg-%d.jpg",
-        ATMPT_URL = "http://%s/locker/%s",
+        SOLN_URL = "http://%s/vault/%s/pg-%d.png",
+        TMPT_URL = "http://%s/locker/%s",
         MOBL_URL = "http://%s/vault/%s/mobile.black.png",
         FDBK_URL = "http://%s/tokens/view_fdb.json?id=%s&type=%s",
         HINT_URL = "http://%s/tokens/view_hints.json?id=%s",

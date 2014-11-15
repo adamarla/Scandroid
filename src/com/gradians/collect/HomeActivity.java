@@ -41,8 +41,18 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);        
         checkAuth();
+        
+        if (savedInstanceState != null)
+            subpath = savedInstanceState.getString("subpath");
     }
     
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // TODO Auto-generated method stub
+        outState.putString("subpath", subpath);
+        super.onSaveInstanceState(outState);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -63,11 +73,19 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                 vers = String.format("Scanbot %s", getPackageManager()
                     .getPackageInfo(getPackageName(), 0).versionName);
             } catch (Exception e) { }
+            
             String[] settings = new String[2];
             settings[0] = "Current Balance: " + balance + "₲";
             settings[1] = "Version: " + vers;
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, 
-                R.style.RobotoDialogTitleStyle);
+            
+            AlertDialog.Builder builder = null;
+            try {
+                builder = new AlertDialog.Builder(this,
+                    R.style.RobotoDialogTitleStyle);        
+            } catch (NoSuchMethodError e) {
+                Log.e(TAG, "Older SDK, using old Builder");
+                builder =  new AlertDialog.Builder(this);
+            }        
             builder.setTitle("Settings").setItems(settings, null);
             builder.show();
         } else {
@@ -111,7 +129,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                 JSONObject respObject = null;
                 JSONArray delta, items = null;
                 JSONParser jsonParser = new JSONParser();
-
+                
                 if (marker < 0) {
                     cache.delete();
                 }
@@ -139,13 +157,13 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                         fw.write(manifest.toJSONArray());
                         fw.close();                    
                     }
-                    
                } else {
                     Toast.makeText(getApplicationContext(), 
                         "No Internet, continuing with cached content", 
                         Toast.LENGTH_LONG).show();
-                }                
-                launchListActivity(manifest.all(), title);
+                }
+                
+                launchListActivity(manifest.all(), title);                
             } catch (NullPointerException npe) {
                 handleError("Refresh task failed ", "Null Pointer Exception");
             } catch (Exception e) {

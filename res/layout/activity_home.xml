@@ -5,7 +5,7 @@
     android:orientation="vertical"
     tools:context=".HomeActivity" >
 
-    <Space 
+    <View 
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"/>    
@@ -18,7 +18,7 @@
         android:background="@drawable/btn_selector"
         android:onClick="onClick"/>
     
-    <Space 
+    <View 
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"/>
@@ -31,7 +31,7 @@
         android:background="@drawable/btn_selector"
         android:onClick="onClick"/>
         
-    <Space 
+    <View 
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"/>
@@ -44,7 +44,7 @@
         android:background="@drawable/btn_selector"
         android:onClick="onClick"/>    
         
-    <Space 
+    <View 
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"/>
