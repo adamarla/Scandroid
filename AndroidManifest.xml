@@ -33,16 +33,41 @@
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
         <activity
-            android:name=".CameraActivity"
-            android:label="@string/title_activity_camera"
+            android:name=".HomeActivity"
+            android:label="@string/title_activity_home"
             android:launchMode="singleTop"
-            android:parentActivityName=".FlowActivity"
             android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".ListActivity"
             android:label="@string/title_activity_list"
             android:launchMode="singleTop"
+            android:parentActivityName=".HomeActivity"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".BrowseActivity"
+            android:label="@string/title_activity_browse"
+            android:launchMode="singleTop"
+            android:parentActivityName=".ListActivity"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".DetailActivity"
+            android:label="@string/title_activity_detail"
+            android:launchMode="singleTop"
+            android:parentActivityName=".BrowseActivity"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".CameraActivity"
+            android:label="@string/title_activity_camera"
+            android:launchMode="singleTop"
+            android:parentActivityName=".DetailActivity"
             android:screenOrientation="portrait" >
         </activity>
         <activity
@@ -54,28 +79,6 @@
             android:name=".RegistrationActivity"
             android:label="@string/title_activity_registration"
             android:screenOrientation="portrait" >
-        </activity>
-        <activity
-            android:name=".BrowseActivity"
-            android:label="@string/title_activity_browse"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait" >
-        </activity>
-        <activity
-            android:name=".DetailActivity"
-            android:label="@string/title_activity_detail"
-            android:parentActivityName=".BrowseActivity"
-            android:screenOrientation="portrait" >
-        </activity>
-        <activity
-            android:name=".HomeActivity"
-            android:label="@string/title_activity_home"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <service
             android:name=".ImageUploadService"

@@ -425,11 +425,15 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             btnBuyAns.setEnabled(false);
             btnBuySoln.setEnabled(false);
             if (type.equals(QSN_TYPE)) {
-                btnBuyAns.setEnabled(question.hasAnswer()
-                    && (balance >= ANS_PRICE || question.botAnswer()));
-                if (question.botAnswer())
-                    btnBuyAns.setText(R.string.bot_answer_text);
-                btnBuySoln.setEnabled(balance >= SOLN_PRICE || question.botSolution());
+                if (question.hasAnswer()) {
+                    if (balance >= ANS_PRICE || 
+                        question.botAnswer() || question.botSolution())
+                        btnBuyAns.setEnabled(true);
+                    if (question.botAnswer() || question.botSolution())
+                        btnBuyAns.setText(R.string.bot_answer_text);
+                }
+                if (balance >= SOLN_PRICE || question.botSolution())
+                    btnBuySoln.setEnabled(true);
             } else {
                 btnBuySoln.setEnabled(question.canSeeSolution(type));
             }
