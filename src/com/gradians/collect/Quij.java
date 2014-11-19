@@ -26,27 +26,21 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
         this.type = type;
     }
     
-    public String getDisplayTotal() {        
-        int completed = 0, graded = 0, total = 0;
+    public String getDisplayTotal() {
+        String display = "";
+        int touched = 0;
         Question[] questions = this.getQuestions();
-        for (Question q : questions ) {
-            if (q.getState() == CAPTURED) completed++;
-            total += q.getPgMap().length;
-            if (q.getState() == GRADED) graded++;
-        }
+        for (Question q : questions)
+            if (q.getState() > DOWNLOADED ||
+                q.tried() || q.botAnswer() ||
+                q.botSolution()) 
+                touched++;
         
-        String display;
-        if (getState() == NOT_YET_BILLED) {
-            display = String.format("%s", size());
-        } else if (getState() == NOT_YET_GRADED) {
-            display = String.format("%2d%%", (int)(graded*100/this.size()));
-        } else if (getState() == GRADED) {
-            display = path == null ?
-                String.format("%d", this.size()) :
-                String.format("%2d%%", (int)(this.getScore()*100/this.getMax()));
-        } else {
-            display = String.format("%2d%%", (int)(completed*100/total));
-        }        
+        display = String.format("%2d / %2d", touched, this.size());
+        if (getState() == GRADED && !type.equals(QSN_TYPE)) {
+            display = String.format("%2d%%",
+                (int)(this.getScore()*100/this.getMax()));
+        }
         return display;
     }
     

@@ -79,7 +79,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         fdbkIndicator = (CirclePageIndicator)findViewById(R.id.circlesFdbk);
         
         SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
-        balance = prefs.getInt(BALANCE_KEY, 0);        
+        balance = prefs.getInt(BALANCE_KEY, 0);
         
         position = getIntent().getIntExtra(TAG_ID, 0);
         title = getIntent().getStringExtra(NAME_KEY);
@@ -266,6 +266,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
 
     public void back() {
         setTitle(title);
+        findViewById(R.id.llTopBar).setVisibility(View.VISIBLE);        
         findViewById(R.id.llBtnBar).setVisibility(View.VISIBLE);
         findViewById(R.id.tvName).setVisibility(View.VISIBLE);
                 
@@ -313,10 +314,20 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         String[] paths = getPaths(question);
         ScrollView svCanvas = (ScrollView)findViewById(R.id.svCanvas);
         DullWebView dwvCanvas = (DullWebView)findViewById(R.id.wvCanvas);            
-        if (paths[0].contains(QUESTIONS_DIR_NAME)) {
+        if (paths[0].contains(QUESTIONS_DIR_NAME) ||
+            paths[0].contains(SOLUTIONS_DIR_NAME)) {
             dwvCanvas.setVisibility(View.GONE);
             Bitmap bimg = BitmapFactory.decodeFile(paths[0]);
-            StretchyImageView iv = (StretchyImageView)findViewById(R.id.ivCanvas);
+            StretchyImageView iv = (StretchyImageView)
+                findViewById(R.id.ivCanvas);
+            final int MIN_WIDTH = 280, PAD = 5;
+            float density = getApplicationContext().getResources().
+                getDisplayMetrics().density;
+            if (bimg.getWidth() < MIN_WIDTH) {
+                int paddingX = MIN_WIDTH - bimg.getWidth();
+                iv.setPadding((int)(paddingX/2*density), (int)(PAD*density), 
+                    (int)(paddingX/2*density), (int)(PAD*density));
+            }
             iv.setImageBitmap(bimg);
             canvas = svCanvas;
         } else {
@@ -439,6 +450,8 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             btnCamera.refreshDrawableState();
         } else {
             setTitle(String.format("%s %s", title, (position+1)));
+            if (showing == SOLN)
+                findViewById(R.id.llTopBar).setVisibility(View.GONE);
             findViewById(R.id.llBtnBar).setVisibility(View.GONE);
             findViewById(R.id.tvName).setVisibility(View.INVISIBLE);
             if (question.getState() == GRADED && showing == ATMPT) {
@@ -665,10 +678,9 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             for (int codex : codices) {
                 image = new File(dlDir, codex + "." + question.getId());
                 if (!image.exists()) {
-                    src =
-                        Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT,
-                            question.getImgLocn().replaceFirst("/[0-3]$", ""),
-                            codex));
+                    src = Uri.parse(String.format(ANSR_URL, BANK_HOST_PORT,
+                        question.getImgLocn().replaceFirst("/[0-3]$", ""),
+                        codex));
                     dest = Uri.fromFile(image);
                     dlm.add(question.getId(), src, dest);
                 }
@@ -677,13 +689,11 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         case DL_SOLN:
             dlDir = new File(quizDir, SOLUTIONS_DIR_NAME);
             for (short i = 0; i < question.getImgSpan(); i++) {
-                image =
-                    new File(dlDir, question.getVersion() + "."
-                        + question.getId() + "." + (i + 1));
+                image = new File(dlDir, "m." + question.getVersion() + "."
+                    + question.getId() + "." + (i + 1));
                 if (!image.exists()) {
-                    src =
-                        Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT,
-                            question.getImgLocn(), (i + 1)));
+                    src = Uri.parse(String.format(SOLN_URL, BANK_HOST_PORT,
+                        question.getImgLocn(), (i + 1)));
                     dest = Uri.fromFile(image);
                     dlm.add(question.getId(), src, dest);
                 }
