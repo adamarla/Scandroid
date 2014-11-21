@@ -2,6 +2,7 @@ package com.gradians.collect;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -61,7 +62,7 @@ public class QuestionManifest extends BaseManifest {
                 toReturn.add(quiz);
             }
         }
-        
+        Collections.sort(toReturn);
         return toReturn.toArray(new Quij[toReturn.size()]);
     }    
     

@@ -11,7 +11,7 @@ import android.os.Parcelable;
  * 
  * @author adamarla
  */
-class Quij extends ArrayList<Question> implements Parcelable, IConstants {
+class Quij extends ArrayList<Question> implements Parcelable, Comparable<Quij>, IConstants {
     
     public Quij(String name, String path, long id, int price, String type, String layout) {
         this.name = name;
@@ -172,6 +172,11 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     }
     
     @Override
+    public int compareTo(Quij another) {
+        return getName().compareTo(another.getName());
+    }
+    
+    @Override
     public String toString() {
         return name;
     }
@@ -183,4 +188,5 @@ class Quij extends ArrayList<Question> implements Parcelable, IConstants {
     private short state;
     
     private static final long serialVersionUID = 1L;
+
 }

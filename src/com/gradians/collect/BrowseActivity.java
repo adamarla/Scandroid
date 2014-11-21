@@ -32,8 +32,8 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
         setupActionBar();
         
         quizDir = new File(getIntent().getStringExtra(QUIZ_PATH_KEY));
-        quiz = (Quij)getIntent().getParcelableExtra(TAG);
-        initialize();
+        Quij quiz = (Quij)getIntent().getParcelableExtra(TAG);
+        initialize(quiz);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
         switch (item.getItemId()) {
         case android.R.id.home:
             Intent intent = new Intent();
-            intent.putExtra(TAG, quiz.getQuestions());
+            intent.putExtra(TAG, adapter.questions);
             this.setResult(RESULT_OK, intent);
             finish();
         default:
@@ -52,7 +52,7 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
     @Override
     public void onBackPressed() {
         Intent intent = new Intent();
-        intent.putExtra(TAG, quiz.getQuestions());
+        intent.putExtra(TAG, adapter.questions);
         this.setResult(RESULT_OK, intent);
         super.onBackPressed();
     }
@@ -65,8 +65,8 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
             com.gradians.collect.DetailActivity.class);
         flowIntent.putExtra(TAG, (Question)adapter.getItem(position));
         flowIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
-        flowIntent.putExtra(NAME_KEY, quiz.getName());
-        flowIntent.putExtra(ID_KEY, quiz.getType());
+        flowIntent.putExtra(NAME_KEY, quizName);
+        flowIntent.putExtra(ID_KEY, quizType);
         flowIntent.putExtra(TAG_ID, position);
         startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
     }
@@ -88,8 +88,10 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) { }
     
-    private void initialize() {
-        this.setTitle(quiz.getName());
+    private void initialize(Quij quiz) {
+        quizName = quiz.getName();
+        quizType = quiz.getType();
+        this.setTitle(quizName);
         adapter = new QuestionListAdapter(this, quiz.getQuestions(), quizDir);
         ListView lv = (ListView)this.findViewById(R.id.lvQuestions);
         lv.setAdapter(adapter);
@@ -109,7 +111,7 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
 
     private int position;
     private File quizDir;
-    private Quij quiz;
+    private String quizName, quizType;
     private QuestionListAdapter adapter;
     
 }
@@ -192,7 +194,7 @@ class QuestionListAdapter extends BaseAdapter implements IConstants {
 
     private Context context;
     private File quizDir;
-    private Question[] questions;
+    protected Question[] questions;
     private LayoutInflater inflater;
 
 }
