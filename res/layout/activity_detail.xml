@@ -146,14 +146,12 @@
         android:layout_below="@id/llTopBar"
         android:layout_above="@id/llBtnBar"
         android:background="@null">
-        <com.gradians.collect.StretchyImageView
-            android:id="@+id/ivCanvas"
+        <LinearLayout
+            android:id="@+id/llCanvas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:padding="5dp"
-            android:contentDescription="@string/capture_button">            
-        </com.gradians.collect.StretchyImageView>
+            android:orientation="vertical">
+        </LinearLayout>
     </ScrollView>
     
     <android.support.v4.view.ViewPager

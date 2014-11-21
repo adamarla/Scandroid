@@ -42,6 +42,7 @@ import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -317,18 +318,31 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         if (paths[0].contains(QUESTIONS_DIR_NAME) ||
             paths[0].contains(SOLUTIONS_DIR_NAME)) {
             dwvCanvas.setVisibility(View.GONE);
-            Bitmap bimg = BitmapFactory.decodeFile(paths[0]);
-            StretchyImageView iv = (StretchyImageView)
-                findViewById(R.id.ivCanvas);
+            LinearLayout llCanvas = (LinearLayout)findViewById(R.id.llCanvas);
+            llCanvas.removeAllViews();
+            
             final int MIN_WIDTH = 280, PAD = 5;
-            float density = getApplicationContext().getResources().
-                getDisplayMetrics().density;
-            if (bimg.getWidth() < MIN_WIDTH) {
-                int paddingX = MIN_WIDTH - bimg.getWidth();
-                iv.setPadding((int)(paddingX/2*density), (int)(PAD*density), 
-                    (int)(paddingX/2*density), (int)(PAD*density));
+            for (String path : paths) {                
+                Bitmap bimg = BitmapFactory.decodeFile(path);
+                StretchyImageView iv = 
+                    new StretchyImageView(getApplicationContext());
+                LinearLayout.LayoutParams lp = 
+                    new LinearLayout.LayoutParams(
+                    LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+                iv.setLayoutParams(lp);
+                iv.setAdjustViewBounds(true);
+                iv.setPadding(PAD, PAD, PAD, PAD);
+                
+                float density = getApplicationContext().getResources().
+                    getDisplayMetrics().density;
+                if (bimg.getWidth() < MIN_WIDTH) {
+                    int paddingX = MIN_WIDTH - bimg.getWidth();
+                    iv.setPadding((int)(paddingX/2*density), (int)(PAD*density), 
+                        (int)(paddingX/2*density), (int)(PAD*density));
+                }
+                iv.setImageBitmap(bimg);
+                llCanvas.addView(iv);
             }
-            iv.setImageBitmap(bimg);
             canvas = svCanvas;
         } else {
             svCanvas.setVisibility(View.GONE);
