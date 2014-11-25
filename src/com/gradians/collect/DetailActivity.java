@@ -90,6 +90,13 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     }
     
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // TODO Auto-generated method stub
+        outState.putParcelable(TAG, question);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
@@ -265,21 +272,6 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         displayAnswers(question, true);
     }
 
-    public void back() {
-        setTitle(title);
-        findViewById(R.id.llTopBar).setVisibility(View.VISIBLE);        
-        findViewById(R.id.llBtnBar).setVisibility(View.VISIBLE);
-        findViewById(R.id.tvName).setVisibility(View.VISIBLE);
-                
-        findViewById(R.id.tvMarks).setVisibility(View.INVISIBLE);
-        findViewById(R.id.svCanvas).setVisibility(View.GONE);
-        findViewById(R.id.wvCanvas).setVisibility(View.GONE);
-        unrenderFeedback();
-        
-        showing = QSN;
-        adjustView();
-    }
-
     public void activateCamera(View view) {
         if (question.getState() == DOWNLOADED) {
             launchCameraActivity(question);
@@ -291,25 +283,12 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             adjustView();
         }
     }
-
-    public String[] getPaths(Question question) {
-        String[] paths = null;
-        switch (showing) {
-        case ATMPT:
-            paths = getAttempt(question);
-            break;
-        case SOLN:
-            paths = getSolution(question);
-            break;
-        default:
-            paths = getQuestion(question);
-        }
-        if (paths.length == 0) {
-            paths = getQuestion(question);
-        }
-        return paths;
+    
+    public void showQuid(View v) {
+        Toast.makeText(getApplicationContext(),
+            "lib:" + question.getImgLocn(), Toast.LENGTH_LONG).show();
     }
-
+    
     private void display(int position) {
         View canvas = null;
         String[] paths = getPaths(question);
@@ -480,6 +459,21 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             }
         }        
         display(0);
+    }
+
+    private void back() {
+        setTitle(title);
+        findViewById(R.id.llTopBar).setVisibility(View.VISIBLE);        
+        findViewById(R.id.llBtnBar).setVisibility(View.VISIBLE);
+        findViewById(R.id.tvName).setVisibility(View.VISIBLE);
+                
+        findViewById(R.id.tvMarks).setVisibility(View.INVISIBLE);
+        findViewById(R.id.svCanvas).setVisibility(View.GONE);
+        findViewById(R.id.wvCanvas).setVisibility(View.GONE);
+        unrenderFeedback();
+        
+        showing = QSN;
+        adjustView();
     }
 
     private String getQuantFdbk(Question q) {
@@ -773,6 +767,24 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             stateMap.store(new FileOutputStream(stateFile), null);
         } catch (Exception e) {
         }
+    }
+
+    private String[] getPaths(Question question) {
+        String[] paths = null;
+        switch (showing) {
+        case ATMPT:
+            paths = getAttempt(question);
+            break;
+        case SOLN:
+            paths = getSolution(question);
+            break;
+        default:
+            paths = getQuestion(question);
+        }
+        if (paths.length == 0) {
+            paths = getQuestion(question);
+        }
+        return paths;
     }
 
     private String[] getQuestion(Question question) {

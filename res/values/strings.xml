@@ -7,13 +7,13 @@
     <string name="label_font">Helvetica</string>
     <string name="label_text">www.gradians.com © 2013</string>
     <string name="title_activity_help">Help</string>
-    <string name="title_activity_qotd">Puzzle of the Day</string>
     <string name="title_activity_teacher">School Stuff</string>
     <string name="title_activity_practise">Practice Corner</string>
     <string name="title_activity_home">Scanbot</string>
     <string name="title_activity_camera">Capture</string>
     <string name="title_activity_list">Items</string>
-    <string name="title_activity_flow">Question</string>
+    <string name="title_activity_browse"></string>
+    <string name="title_activity_detail"></string>
     <string name="title_activity_registration">Gradians.com - Registration</string>
     <string name="capture_button">Capture</string>
     <string name="buy_answer_text"><big><big>2₲</big></big>\nSee Answer</string>
@@ -32,8 +32,6 @@
     <string name="instruction2">2. Hold phone over your attempt to take a picture</string>
     <string name="instruction3">3. Go back &lt; to upload picture for review</string>
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
-    <string name="title_activity_browse">BrowseActivity</string>
     <string name="hello_world">Hello world!</string>
-    <string name="title_activity_detail">DetailActivity</string>
 
 </resources>

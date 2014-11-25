@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,7 +23,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class BrowseActivity extends Activity implements ITaskResult, OnItemClickListener, IConstants {
+public class BrowseActivity extends Activity implements OnItemClickListener, IConstants {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,9 +32,20 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
         
         setupActionBar();
         
+        Parcelable parcel = savedInstanceState == null ? 
+            getIntent().getParcelableExtra(TAG) :
+            savedInstanceState.getParcelable(TAG);
+        quiz = (Quij)parcel;
+        
         quizDir = new File(getIntent().getStringExtra(QUIZ_PATH_KEY));
-        Quij quiz = (Quij)getIntent().getParcelableExtra(TAG);
         initialize(quiz);
+    }
+    
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // TODO Auto-generated method stub        
+        outState.putParcelable(TAG, quiz);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -68,15 +80,16 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
         flowIntent.putExtra(NAME_KEY, quizName);
         flowIntent.putExtra(ID_KEY, quizType);
         flowIntent.putExtra(TAG_ID, position);
-        startActivityForResult(flowIntent, FLOW_ACTIVITY_REQUEST_CODE);
+        startActivityForResult(flowIntent, ITaskResult.FLOW_ACTIVITY_REQUEST_CODE);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == FLOW_ACTIVITY_REQUEST_CODE) {
+        if (requestCode == ITaskResult.FLOW_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Question question = (Question)data.getParcelableExtra(TAG);
                 adapter.update(question, position);
+                quiz.set(position, question);
             } else if (resultCode != Activity.RESULT_CANCELED) {
                 Toast.makeText(getApplicationContext(),
                         "Oops we had an error, you may have lost work :/",
@@ -85,13 +98,10 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
         }
     }
     
-    @Override
-    public void onTaskResult(int requestCode, int resultCode, String resultData) { }
-    
     private void initialize(Quij quiz) {
         quizName = quiz.getName();
         quizType = quiz.getType();
-        this.setTitle(quizName);
+        setTitle(quizName);
         adapter = new QuestionListAdapter(this, quiz.getQuestions(), quizDir);
         ListView lv = (ListView)this.findViewById(R.id.lvQuestions);
         lv.setAdapter(adapter);
@@ -109,6 +119,7 @@ public class BrowseActivity extends Activity implements ITaskResult, OnItemClick
         }
     }
 
+    private Quij quiz;
     private int position;
     private File quizDir;
     private String quizName, quizType;
