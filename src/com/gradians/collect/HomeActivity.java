@@ -303,13 +303,11 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     @SuppressLint("InflateParams")
     private void initiateVerifActivity(String email, String token) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this,
-            android.R.style.Theme_Black_NoTitleBar_Fullscreen);        
+            R.style.SplashScreenStyle);        
         LayoutInflater inflater = this.getLayoutInflater();
         View splashView = inflater.inflate(R.layout.layout_splash, null);
         builder.setView(splashView);
         splashDialog = builder.create();
-        splashDialog.getWindow().setBackgroundDrawable(
-            new ColorDrawable(Color.TRANSPARENT));
         splashDialog.setCancelable(false);
         splashDialog.show();
         
