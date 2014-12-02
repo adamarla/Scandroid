@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="37"
-    android:versionName="4.6.4" >
+    android:versionCode="38"
+    android:versionName="5.0.0" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -22,18 +22,20 @@
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="false"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/on_phone_lowres"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"
+            android:icon="@drawable/title_icon_lowres"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
         <activity
             android:name=".HomeActivity"
+            android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_home"
             android:launchMode="singleTop"
             android:screenOrientation="portrait" >
@@ -44,6 +46,7 @@
         </activity>
         <activity
             android:name=".ListActivity"
+            android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_list"
             android:launchMode="singleTop"
             android:parentActivityName=".HomeActivity"
@@ -51,6 +54,7 @@
         </activity>
         <activity
             android:name=".BrowseActivity"
+            android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_browse"
             android:launchMode="singleTop"
             android:parentActivityName=".ListActivity"
@@ -58,6 +62,7 @@
         </activity>
         <activity
             android:name=".DetailActivity"
+            android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_detail"
             android:launchMode="singleTop"
             android:parentActivityName=".BrowseActivity"
@@ -65,6 +70,7 @@
         </activity>
         <activity
             android:name=".CameraActivity"
+            android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_camera"
             android:launchMode="singleTop"
             android:parentActivityName=".DetailActivity"
@@ -77,6 +83,7 @@
         </activity>
         <activity
             android:name=".RegistrationActivity"
+            android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_registration"
             android:screenOrientation="portrait" >
         </activity>

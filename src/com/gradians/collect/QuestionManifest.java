@@ -152,27 +152,25 @@ public class QuestionManifest extends BaseManifest {
                 }
             }
             
+            if (!(Boolean)item.get(HAS_ANSWER_KEY)) continue;
+            
             question.setOutOf(((Long)item.get(OUT_OF_KEY)).shortValue());
             question.setExaminer(item.get(EXAMINER_KEY) == null ? 0 : 
                 ((Long)item.get(EXAMINER_KEY)).intValue());
             question.setHasCodex((Boolean)item.get(HAS_CODEX_KEY));
             question.setHasAns((Boolean)item.get(HAS_ANSWER_KEY));
-            if (!question.hasAnswer()) continue;
-            boolean noStab = true;
-            if (item.get(SOLN_KEY) != null) {
+            
+            if (item.containsKey(SOLN_KEY) && item.get(SOLN_KEY) != null)
                 question.setBotSoln((Boolean)item.get(SOLN_KEY));
-                noStab = false;
-            } 
             
-            if (item.get(ANS_KEY) != null) {
+            if (item.containsKey(ANS_KEY) && item.get(ANS_KEY) != null)
                 question.setBotAns((Boolean)item.get(ANS_KEY));
-                noStab = false;
-            } 
             
-            if (item.get(GUESSED_KEY) != null) {
+            if (item.containsKey(GUESSED_KEY) && item.get(GUESSED_KEY) != null)
                 question.setGuess(((Long)item.get(GUESSED_KEY)).intValue());
-                noStab = false;
-            }
+            
+            if (item.containsKey(DIRTY_KEY))
+                question.setDirty((Boolean)item.get(DIRTY_KEY));
             
             short qState = DOWNLOADED;
             boolean noScanReceived = item.get(SCANS_KEY) == null;            
@@ -185,14 +183,6 @@ public class QuestionManifest extends BaseManifest {
                             CAPTURED : SENT;
                     }
                 }
-                
-                if (noStab) {
-                    question.setDirty(remote);  // revised or new question                    
-                    if (questionByIdMap.containsKey(question.getId())) {
-                        question.setImgLocn(questionByIdMap.
-                            get(question.getId()).getImgLocn());
-                    }
-                }
             } else {
                 state.remove(question.getId());                
                 question.setPuzzle((Boolean)item.get(PZL_KEY));
@@ -202,9 +192,13 @@ public class QuestionManifest extends BaseManifest {
                 float marks = ((Long)item.get(MARKS_KEY)).floatValue();
                 qState = marks < 0 ? RECEIVED : GRADED;
                 question.setMarks(marks);
+            }            
+            question.setState(qState);
+            
+            if (questionByIdMap.containsKey(question.getId())) {
+                question.setImgLocn(questionByIdMap.get(question.getId()).getImgLocn());
             }
             
-            question.setState(qState);
             questionByIdMap.put(question.getId(), question);
         }
     }

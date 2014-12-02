@@ -6,14 +6,12 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Properties;
-
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
 import com.viewpagerindicator.CirclePageIndicator;
-
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -289,6 +287,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             "lib:" + question.getImgLocn(), Toast.LENGTH_LONG).show();
     }
     
+    @SuppressLint("SetJavaScriptEnabled")
     private void display(int position) {
         View canvas = null;
         String[] paths = getPaths(question);

@@ -6,13 +6,13 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -39,9 +39,28 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);        
-        checkAuth();
+
+        // Possible work around for market launches. See
+        // http://code.google.com/p/android/issues/detail?id=2373
+        // for more details. Essentially, the market launches the main activity
+        // on top of other activities.
+        // we never want this to happen. Instead, we check if we are the root
+        // and if not, we finish.
+        if (!isTaskRoot()) {
+            final Intent intent = getIntent();
+            final String intentAction = intent.getAction();
+            if (intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+                && intentAction != null
+                && intentAction.equals(Intent.ACTION_MAIN)) {
+                Log.w(TAG, "Main Activity is not the root.  Finishing instead of launching.");
+                finish();
+                return;
+            }
+        }
         
+        setContentView(R.layout.activity_home);
+        checkAuth();
+
         if (savedInstanceState != null)
             subpath = savedInstanceState.getString("subpath");
     }
@@ -96,8 +115,8 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     
     @Override
     public void onTaskResult(int requestCode, int resultCode, String resultData) {
-        if (peedee != null) peedee.dismiss();
         if (requestCode == REFRESH_TASK_REQUEST_CODE) {
+            if (splashDialog != null) splashDialog.dismiss();
             try {
                 if (resultCode == RESULT_OK) {
                     initialize(resultData);
@@ -113,6 +132,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                 handleError("Oops, Verify auth task failed", e.getMessage());
             }
         } else if (requestCode == REFRESH_WS_TASK_REQUEST_CODE) {
+            if (refreshDialog != null) refreshDialog.dismiss();
             File filesDir = new File(studentDir, FILES_DIR_NAME);
             File cache = new File(filesDir, subpath + ".json");
             
@@ -242,14 +262,14 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     }
     
     private void refresh() {
-        if (peedee == null)
-            peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
-        peedee.setTitle("Synchronizing ");
-        peedee.setMessage("Please wait...");
-        peedee.setIndeterminate(true);
-        peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-        peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        peedee.show();
+        if (refreshDialog == null)
+            refreshDialog = new ProgressDialog(this, 
+                R.style.RobotoDialogTitleStyle);
+        refreshDialog.setMessage("Synchronizing...");
+        refreshDialog.setIndeterminate(true);
+        refreshDialog.getWindow().setBackgroundDrawable(
+            new ColorDrawable(Color.TRANSPARENT));
+        refreshDialog.show();
         Markers markers = new Markers(studentDir);
         String marker = markers.get(subpath) == null ? 
             "-1" : markers.get(subpath);
@@ -280,14 +300,18 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
             AUTH_ACTIVITY_REQUEST_CODE);
     }
     
+    @SuppressLint("InflateParams")
     private void initiateVerifActivity(String email, String token) {
-        peedee = new ProgressDialog(this, R.style.RobotoDialogTitleStyle);
-        peedee.setTitle("Refreshing");
-        peedee.setMessage("Please wait...");
-        peedee.setIndeterminate(true);
-        peedee.setIcon(ProgressDialog.STYLE_SPINNER);
-        peedee.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        peedee.show();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this,
+            android.R.style.Theme_Black_NoTitleBar_Fullscreen);        
+        LayoutInflater inflater = this.getLayoutInflater();
+        View splashView = inflater.inflate(R.layout.layout_splash, null);
+        builder.setView(splashView);
+        splashDialog = builder.create();
+        splashDialog.getWindow().setBackgroundDrawable(
+            new ColorDrawable(Color.TRANSPARENT));
+        splashDialog.setCancelable(false);
+        splashDialog.show();
         
         String refreshUrl = "http://%s/tokens/verify?email=%s&token=%s";
         Uri src = Uri.parse(String.format(refreshUrl, WEB_APP_HOST_PORT, email, token));
@@ -393,7 +417,8 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     private String subpath, name, email, token, id;
     private Topic[] topics;
     private int balance;
-    private ProgressDialog peedee;
+    private Dialog splashDialog;
+    private ProgressDialog refreshDialog;
     private final String filename = "init.json";
     
     private final String REFRESH_URL = 

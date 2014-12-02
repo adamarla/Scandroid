@@ -58,6 +58,7 @@ public interface IConstants {
     String GUESSED_KEY = "guesst";
     String ANS_KEY = "bot_ans";
     String SOLN_KEY = "bot_soln";
+    String DIRTY_KEY = "dirty";
     
     String FDBK_MRKR_KEY = "fdbkMrkr";
     String HINT_MRKR_KEY = "hintMrkr";
