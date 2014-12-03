@@ -6,7 +6,7 @@
     <string name="action_sign_out">Sign Out</string>
     <string name="label_font">Helvetica</string>
     <string name="label_text">www.gradians.com © 2013</string>
-    <string name="title_activity_help">Help</string>
+    
     <string name="title_activity_teacher">School Stuff</string>
     <string name="title_activity_practise">Practice Corner</string>
     <string name="title_activity_home">PrepWell</string>
@@ -14,24 +14,37 @@
     <string name="title_activity_list">Items</string>
     <string name="title_activity_browse"></string>
     <string name="title_activity_detail"></string>
-    <string name="title_activity_registration">Gradians.com - Registration</string>
+    <string name="title_activity_forgot_password">PrepWell - Password Recovery</string>
+    <string name="title_activity_registration">PrepWell - Registration</string>
+    
     <string name="capture_button">Capture</string>
+    
     <string name="buy_answer_text"><big><big>2₲</big></big>\nSee Answer</string>
     <string name="bot_answer_text"><big><big>0₲</big></big>\nSee Answer</string>
     <string name="bot_soln_text"><big><big>0₲</big></big>\nSee Solution</string>
     <string name="buy_soln_text"><big><big>5₲</big></big>\nSee Solution</string>
     <string name="purchase_conf_text"><big>Continue</big></string>
     <string name="purchase_cancel_text"><big>Cancel</big></string>
+    
     <string name="action_sign_refresh">Refresh</string>
     <string name="action_sign_help">Help</string>
     <string name="action_sign_sign_out">Sign Out</string>
+    <string name="action_reset_pwd">Re-Send Password</string>
+    
     <string name="home_button_teacher"><b>School Stuff</b>\nfrom your teacher</string>
     <string name="home_button_aaq"><b>Ask a Question</b>\nstrictly on Math!</string>
     <string name="home_button_browse"><b>Practice Corner</b>\nfresh problems daily</string>
+    
     <string name="instruction1">1. Attempt the problem on a piece of paper</string>
     <string name="instruction2">2. Hold phone over your attempt to take a picture</string>
     <string name="instruction3">3. Go back &lt; to upload picture for review</string>
+    
+    <string name="reset_pwd_instruction">
+        Enter the email address you registered with. We will reset\n 
+        your password and send you the new password in an email.   
+    </string>
+    <string name="forgot_pwd_text"><u>Forgot Password?</u></string>
+    
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
-    <string name="hello_world">Hello world!</string>
 
 </resources>

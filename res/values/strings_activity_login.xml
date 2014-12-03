@@ -12,6 +12,7 @@
     <string name="action_sign_in_short">Sign in</string>
     <string name="action_forgot_password">Recover lost password</string>
     <string name="login_progress_signing_in">Signing in&#8230;</string>
+    <string name="error_unseen_email">This email address is not in our records</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_group_code">This Group Code is invalid</string>
     <string name="error_email_taken">Email address already registered</string>

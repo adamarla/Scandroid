@@ -85,7 +85,19 @@
 	                android:paddingRight="32dp"
                     android:background="@color/gray"
 	                android:text="@string/action_sign_in_short" />
-	                        
+                
+                <TextView
+                    android:id="@+id/forgot_password"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/sign_in_button"
+                    android:layout_alignLeft="@id/sign_in_button"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="5dp"
+                    android:onClick="launchForgotPasswordActivity"
+                    android:clickable="true"
+                    android:text="@string/forgot_pwd_text" />
+                              
             </RelativeLayout>
             
         </LinearLayout>

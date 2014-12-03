@@ -100,10 +100,16 @@ public class LoginActivity extends Activity implements IConstants {
     }
     
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO Auto-generated method stub
-        if (resultCode == RESULT_FIRST_USER) {
-            finish();
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {        
+        if (requestCode == ITaskResult.REGISTRATION_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_FIRST_USER) {
+                finish();
+            }
+        } else if (requestCode == ITaskResult.FORGOT_PWD_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_FIRST_USER) {
+                String email = data.getStringExtra(EMAIL_KEY);
+                mEmailView.setText(email);
+            }            
         }
     }
 
@@ -185,6 +191,13 @@ public class LoginActivity extends Activity implements IConstants {
             mAuthTask = new UserLoginTask();
             mAuthTask.execute(WEB_APP_HOST_PORT);
         }
+    }
+    
+    public void launchForgotPasswordActivity(View view) {
+        Intent registration = new Intent(getApplicationContext(),
+            com.gradians.collect.ForgotPasswordActivity.class);
+        startActivityForResult(registration, 
+            ITaskResult.FORGOT_PWD_ACTIVITY_REQUEST_CODE);
     }
     
     public void launchRegistrationActivity(View view) {
