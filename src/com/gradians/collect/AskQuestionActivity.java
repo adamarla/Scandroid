@@ -259,7 +259,7 @@ class DoubtsListAdapter extends BaseAdapter implements IConstants {
         
         ImageView ivState = (ImageView)convertView.findViewById(R.id.ivState);
         if (question.getScanLocn()[0] == null)
-            ivState.setImageResource(R.drawable.hint);
+            ivState.setImageDrawable(null);
         
         return convertView;
     }

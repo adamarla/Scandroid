@@ -22,7 +22,7 @@
         android:layout_centerVertical="true"
         android:gravity="center"
         android:contentDescription="@string/capture_button"
-        android:src="@drawable/ic_action_chat"
+        android:src="@drawable/ic_action_accept"
         android:layout_marginRight="4dp"/>
     
 </RelativeLayout>

@@ -3,11 +3,8 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Properties;
 
 import org.json.simple.JSONObject;
@@ -176,9 +173,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                     
                     if (op.equals(ASK_DOUBT)) {
                         question.setId(id);
-                        String name = new SimpleDateFormat
-                            ("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date());
-                        question.setName(name);
+                        question.setName((String)respObject.get(NAME_KEY));
                         question.setBotSoln(true);                        
                         question.setState(CAPTURED);
                         adjustView();
@@ -362,19 +357,12 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             dwvCanvas.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
             
             StringBuilder sbHtml = new StringBuilder();
-            if (paths[0].contains(ATTEMPTS_DIR_NAME)) {
                 sbHtml.append(HDR_ANS);
-            } else {
-                sbHtml.append(HDR);
-            }
             String styleImgWidth = "";
             for (int i = 0; i < paths.length; i++) {
                 sbHtml.append(String.format(PARENT_DIV, i));
-                if (paths[i].contains(ATTEMPTS_DIR_NAME)) {
-                    styleImgWidth = 
-                        Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? 
-                            "width: 100%%; " : "";
-                }
+                styleImgWidth = Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? 
+                    "width: 100%%; " : "";
                 sbHtml.append(String.format(IMG_DIV, 
                     Uri.fromFile(new File(paths[i])).toString(), styleImgWidth));
                 if (question.getState() == GRADED && paths[0].contains(ATTEMPTS_DIR_NAME)) {
@@ -946,7 +934,6 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     private final String IMG_DIV = "<img src='%s' style='%s'/>";
     private final String MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #F88017;'>%s</div>";
     private final String NON_MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #676767;'>%s</div>";
-    private final String HDR = "<html><head></head><body>";
     private final String HDR_ANS = "<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>";
     private final String FTR = "</body></html>"; 
     
