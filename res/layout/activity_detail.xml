@@ -48,8 +48,8 @@
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:layout_width="0dp"
-            android:contentDescription="@string/capture_button" 
-            android:background="@null" 
+            android:contentDescription="@string/capture_button"
+            android:background="@null"
             android:onClick="showQuid"
             android:gravity="center"/>
         

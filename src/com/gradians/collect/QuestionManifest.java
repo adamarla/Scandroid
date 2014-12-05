@@ -16,27 +16,6 @@ public class QuestionManifest extends BaseManifest {
         super(dir, topics);
     }
     
-    public Quij[] getFuzzle(String potd) {
-        Question question = questionByIdMap.get(potd);
-        question.setName("Q.1");
-        String locn = question.getImgLocn();
-        locn = locn.substring(0, locn.length()-1) + "0";
-        question.setImgLocn(locn);
-        
-        long topicId = Long.parseLong(question.getId().split("\\.")[0]);
-        Topic t = null;
-        for (Topic topic : topics) {
-            if (topicId == topic.id) {
-                t = topic;
-                break;
-            }
-        }
-        Quij toReturn = new Quij(t.name, null, t.id, 0, PZL_TYPE, null);
-        toReturn.add(question);
-        toReturn.determineState();
-        return new Quij[] { toReturn };
-    }    
-    
     @Override
     public Quij[] all() {
         HashMap<Long, Quij> quizByTopic = initialize(topics);
@@ -63,68 +42,6 @@ public class QuestionManifest extends BaseManifest {
             }
         }
         Collections.sort(toReturn);
-        return toReturn.toArray(new Quij[toReturn.size()]);
-    }    
-    
-    public Quij[] untried() {
-        HashMap<Long, Quij> quizByTopic = initialize(topics);
-        Set<String> questionIds = questionByIdMap.keySet();
-        Iterator<String> iterator = questionIds.iterator();
-        
-        long topicId; Quij quiz; Question question;
-        while (iterator.hasNext()) {
-            question = questionByIdMap.get(iterator.next());
-            if (question.getState() > DOWNLOADED ||
-                question.tried() || question.botAnswer() ||
-                question.botSolution()) continue;
-            
-            topicId = Long.parseLong(question.getId().split("\\.")[0]);
-            quiz = quizByTopic.get(topicId);
-            question.setName(String.format("Q.%s", quiz.size()+1));
-            quiz.add(question);
-        }
-        
-        ArrayList<Quij> toReturn = new ArrayList<Quij>();
-        Set<Long> quizIds = quizByTopic.keySet();
-        Iterator<Long> iter = quizIds.iterator();
-        while (iter.hasNext()) {
-            quiz = quizByTopic.get(iter.next());
-            if (quiz.size() > 0) {
-                toReturn.add(quiz);
-            }
-        }
-        
-        return toReturn.toArray(new Quij[toReturn.size()]);
-    }    
-    
-    public Quij[] tried() {
-        HashMap<Long, Quij> quizByTopic = initialize(topics);
-        Set<String> questionIds = questionByIdMap.keySet();
-        Iterator<String> iterator = questionIds.iterator();
-        
-        long topicId; Quij quiz; Question question;
-        while (iterator.hasNext()) {
-            question = questionByIdMap.get(iterator.next());
-            if (question.getState() == DOWNLOADED &&
-                !question.tried() && !question.botAnswer() &&
-                !question.botSolution()) continue;
-            
-            topicId = Long.parseLong(question.getId().split("\\.")[0]);
-            quiz = quizByTopic.get(topicId);
-            question.setName(String.format("Q.%s", quiz.size()+1));
-            quiz.add(question);
-        }
-        
-        ArrayList<Quij> toReturn = new ArrayList<Quij>();
-        Set<Long> quizIds = quizByTopic.keySet();
-        Iterator<Long> iter = quizIds.iterator();
-        while (iter.hasNext()) {
-            quiz = quizByTopic.get(iter.next());
-            if (quiz.size() > 0) {
-                toReturn.add(quiz);
-            }
-        }
-        
         return toReturn.toArray(new Quij[toReturn.size()]);
     }    
     

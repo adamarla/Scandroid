@@ -22,13 +22,13 @@ public class ImageUploadService extends IntentService implements IConstants {
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        
+    protected void onHandleIntent(Intent intent) {        
         String type = intent.getStringExtra(TAG_ID);
         Parcelable[] parcels = intent.getParcelableArrayExtra(TAG);
         File quizDir = new File(intent.getStringExtra(QUIZ_PATH_KEY));        
         File uploadsDir = new File(quizDir, UPLOAD_DIR_NAME);
-        File answersDir = new File(quizDir, ATTEMPTS_DIR_NAME);
+        File imagesDir = new File(quizDir, type.equals(DBT_TYPE) ? 
+            QUESTIONS_DIR_NAME : ATTEMPTS_DIR_NAME);
         
         SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
         String studentId = prefs.getString(ID_KEY, null);        
@@ -40,25 +40,30 @@ public class ImageUploadService extends IntentService implements IConstants {
         String boundary =  null;
         Question question;
         String prefix, ids;
+        int version = 0;
         for (Parcelable parcel : parcels) {
             question = (Question)parcel;
             
             prefix = question.getId();
-            if (type.equals(GR_TYPE)) {
+            if (type.equals(DBT_TYPE)) {
+                ids = question.getId();
+            } else if (type.equals(GR_TYPE)) {
                 ids = question.getGRId("-");
+                version = question.getVersion();
             } else {
                 ids = question.getSubpartId("-");
+                version = question.getVersion();
             }
             
             int[] pages = question.getPgMap();            
             for (int page : pages) {
                 boundary = String.valueOf(System.currentTimeMillis());
-                try {
+                try {                    
                     url = new URL(String.format(URL,
-                        BANK_HOST_PORT, type, ids, studentId, question.getVersion()));
+                        BANK_HOST_PORT, type, ids, studentId, version));
                     httpUrlConnection = (HttpURLConnection) url.openConnection();
                     httpUrlConnection.setDoOutput(true);
-
+                    
                     httpUrlConnection.setRequestMethod("POST");
                     httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
                     httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
@@ -66,8 +71,8 @@ public class ImageUploadService extends IntentService implements IConstants {
                             "multipart/form-data;boundary=" + boundary);
                     
                     ostream = httpUrlConnection.getOutputStream();
-                    opstream = new PrintWriter(ostream); 
-
+                    opstream = new PrintWriter(ostream);
+                    
                     opstream.append("--" + boundary).append(CRLF);
                     opstream.append("Content-Disposition: form-data; name=\"image\"; filename=\"" + 
                             prefix + "\"").append(CRLF);
@@ -78,7 +83,7 @@ public class ImageUploadService extends IntentService implements IConstants {
                     
                     InputStream imgstream = null;
                     byte[] buffer = new byte[1024];
-                    imgstream = new FileInputStream(new File(answersDir, question.getId() + "." + page));
+                    imgstream = new FileInputStream(new File(imagesDir, question.getId() + "." + page));
                     for (int length = 0; (length = imgstream.read(buffer)) > 0;) {
                         ostream.write(buffer, 0, length);
                     }
@@ -92,6 +97,8 @@ public class ImageUploadService extends IntentService implements IConstants {
                     
                     if (httpUrlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                         (new File(uploadsDir, question.getId() + "." + page)).delete();
+                    } else {
+                        Log.e(TAG, "Http Response Code: " + httpUrlConnection.getResponseCode());
                     }
                 } catch (Exception e) {
                     Log.e(TAG, e.getMessage());

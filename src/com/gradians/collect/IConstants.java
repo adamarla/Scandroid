@@ -29,6 +29,7 @@ public interface IConstants {
     String QUIZ_FDBK_KEY = "fdbkMrkr";
     String QUESTIONS_KEY = "questions";
     
+    String DBT_TYPE = "DBT";
     String PZL_TYPE = "PZL";
     String QSN_TYPE = "QSN";
     String GR_TYPE = "GR";
@@ -74,6 +75,7 @@ public interface IConstants {
     
     String PROBLEMS_DIR_NAME = "problems";
     String FILES_DIR_NAME = "files";
+    String DOUBTS_DIR_NAME = "doubts";
     
     String STATE_FILE = "state.txt";
     String MARKER_FILE = "markers.txt";

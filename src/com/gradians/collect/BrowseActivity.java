@@ -80,12 +80,12 @@ public class BrowseActivity extends Activity implements OnItemClickListener, ICo
         flowIntent.putExtra(NAME_KEY, quizName);
         flowIntent.putExtra(ID_KEY, quizType);
         flowIntent.putExtra(TAG_ID, position);
-        startActivityForResult(flowIntent, ITaskResult.FLOW_ACTIVITY_REQUEST_CODE);
+        startActivityForResult(flowIntent, ITaskResult.DETAIL_ACTIVITY_REQUEST_CODE);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == ITaskResult.FLOW_ACTIVITY_REQUEST_CODE) {
+        if (requestCode == ITaskResult.DETAIL_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Question question = (Question)data.getParcelableExtra(TAG);
                 adapter.update(question, position);

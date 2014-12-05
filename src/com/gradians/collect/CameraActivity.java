@@ -84,7 +84,12 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
     public void onBackPressed() {
         if (!question.getPgMap("").contains("0")) {
             // all parts complete
-            confirmUpload();
+            if (question.getName().equals("Q")) {
+                concludeActivity();
+                super.onBackPressed();
+            } else {
+                confirmUpload();
+            }
         } else if (question.hasScan()) {
             // some parts complete
             promptIncomplete();
@@ -152,7 +157,7 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
                 try {
                     camera.autoFocus(autoFocusCallback);
                 } catch(RuntimeException e) {
-                    Log.e("gradians", "autofocus runtime ex " + e.getMessage());
+                    Log.e(TAG, "autofocus runtime ex " + e.getMessage());
                     camera.takePicture(shutterCallback, null, new PictureWriter(this, picture));
                 }
                 
@@ -295,18 +300,10 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         builder.setPositiveButton(android.R.string.ok,
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    releaseCamera();
-                    Intent intent = new Intent();
-                    intent.putExtra(TAG, question);
-                    setResult(RESULT_OK, intent);
-                    finish();
+                    concludeActivity();
                 }
             });
-        builder.setNegativeButton(android.R.string.no,
-            new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                }
-            });
+        builder.setNegativeButton(android.R.string.no, null);
         builder.show().getWindow().setBackgroundDrawable(
             new ColorDrawable(Color.TRANSPARENT));
     }

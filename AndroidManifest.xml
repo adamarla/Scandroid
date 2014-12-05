@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gradians.collect"
-    android:versionCode="39"
-    android:versionName="5.0.1" >
+    android:versionCode="40"
+    android:versionName="5.0.2" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -25,11 +25,10 @@
         android:icon="@drawable/on_phone_lowres"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        
         <activity
             android:name=".LoginActivity"
-            android:label="@string/title_activity_login"
             android:icon="@drawable/title_icon_lowres"
+            android:label="@string/title_activity_login"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
@@ -65,26 +64,37 @@
             android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_detail"
             android:launchMode="singleTop"
-            android:parentActivityName=".BrowseActivity"
             android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".CameraActivity"
             android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_camera"
-            android:launchMode="singleTop"
             android:parentActivityName=".DetailActivity"
-            android:screenOrientation="portrait" >
-        </activity>
-        <activity
-            android:name=".HelpActivity"
-            android:label="@string/title_activity_help"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".RegistrationActivity"
             android:icon="@drawable/title_icon_lowres"
             android:label="@string/title_activity_registration"
+            android:parentActivityName=".LoginActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:icon="@drawable/title_icon_lowres"
+            android:label="@string/title_activity_forgot_password"
+            android:parentActivityName=".LoginActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" >
+        </activity>
+        <activity
+            android:name=".AskQuestionActivity"
+            android:label="@string/title_activity_ask_question"
+            android:parentActivityName=".HomeActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" >
         </activity>
         <service

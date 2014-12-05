@@ -136,14 +136,22 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
             File filesDir = new File(studentDir, FILES_DIR_NAME);
             File cache = new File(filesDir, subpath + ".json");
             
-            BaseManifest manifest = subpath.equals("qs") ?
-                practiceManifest : schoolStuffManifest;
+            BaseManifest manifest = null;
+            int titleId;
+            if (subpath.equals(DOUBTS)) {
+                manifest = doubtManifest;
+                titleId = R.string.title_activity_ask_question;
+            } else if (subpath.equals(QUESTIONS)) {
+                manifest = practiceManifest;
+                titleId = R.string.title_activity_practise;
+            } else {
+                manifest = schoolStuffManifest;
+                titleId = R.string.title_activity_teacher;
+            }
+            
             Markers markers = new Markers(studentDir);
             int marker = markers.get(subpath) == null ? -1 :                
                 Integer.parseInt(markers.get(subpath));
-            int titleId = subpath.equals("qs") ?
-                R.string.title_activity_practise : 
-                R.string.title_activity_teacher;
             String title = getApplicationContext().getResources().getString(titleId);
             try {
                 JSONObject respObject = null;
@@ -154,7 +162,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                     cache.delete();
                 }
                 
-                if (cache.exists() && marker > 0) {
+                if (cache.exists()) {
                     FileReader fr = new FileReader(cache);
                     items = (JSONArray)jsonParser.parse(fr);
                     manifest.parse(items, false);
@@ -172,18 +180,16 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
                     marker = ((Long)respObject.get(MARKER_KEY)).intValue();
                     markers.set(subpath, String.valueOf(marker));
                     markers.commit();
-                    if (marker > 0) {
-                        FileWriter fw = new FileWriter(cache);
-                        fw.write(manifest.toJSONArray());
-                        fw.close();                    
-                    }
+                    
+                    FileWriter fw = new FileWriter(cache);
+                    fw.write(manifest.toJSONArray());
+                    fw.close();                    
                } else {
                     Toast.makeText(getApplicationContext(), 
                         "No Internet, continuing with cached content", 
                         Toast.LENGTH_LONG).show();
-                }
-                
-                launchListActivity(manifest.all(), title);                
+                }                
+                launchListActivity(manifest.all(), title);
             } catch (NullPointerException npe) {
                 handleError("Refresh task failed ", "Null Pointer Exception");
             } catch (Exception e) {
@@ -212,7 +218,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
             }
         } else if (requestCode == LIST_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                BaseManifest manifest = subpath.equals("qs") ?
+                BaseManifest manifest = subpath.equals(QUESTIONS) ?
                     practiceManifest : schoolStuffManifest;
                 try {
                     Parcelable[] parcels = data.getParcelableArrayExtra(TAG_ID);
@@ -236,14 +242,16 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         try {
             switch (v.getId()) {
             case R.id.btnBrowse:
-                subpath = "qs";
+                subpath = QUESTIONS;
                 refresh();
                 break;
             case R.id.btnSchool:
-                subpath = "ws";
+                subpath = WORKSHEETS;
                 refresh();
                 break;
             case R.id.btnAsk:
+                subpath = DOUBTS;
+                refresh();
                 break;
             default:
             }
@@ -253,12 +261,21 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     }
     
     private void launchListActivity(Quij[] items, String title) {
-        Intent listIntent = new Intent(getApplicationContext(),
-            com.gradians.collect.ListActivity.class);
-        listIntent.putExtra(NAME_KEY, studentDir.getPath());
-        listIntent.putExtra(TAG, items);
-        listIntent.putExtra(TAG_ID, title);
-        startActivityForResult(listIntent, LIST_ACTIVITY_REQUEST_CODE);
+        if (subpath.equals(DOUBTS)) {
+            Intent listIntent = new Intent(getApplicationContext(),
+                com.gradians.collect.AskQuestionActivity.class);
+            listIntent.putExtra(NAME_KEY, studentDir.getPath());
+            listIntent.putExtra(TAG, items[0].getQuestions());
+            listIntent.putExtra(TAG_ID, title);
+            startActivityForResult(listIntent, DOUBTS_ACTIVITY_REQUEST_CODE);
+        } else {
+            Intent listIntent = new Intent(getApplicationContext(),
+                com.gradians.collect.ListActivity.class);
+            listIntent.putExtra(NAME_KEY, studentDir.getPath());
+            listIntent.putExtra(TAG, items);
+            listIntent.putExtra(TAG_ID, title);
+            startActivityForResult(listIntent, LIST_ACTIVITY_REQUEST_CODE);
+        }
     }
     
     private void refresh() {
@@ -356,13 +373,14 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         school.setText(R.string.home_button_teacher, R.drawable.ic_action_sent);
         school.setEnabled(enrolled);
         ask.setText(R.string.home_button_aaq, R.drawable.ic_action_chat);
-        ask.setEnabled(false);
+        ask.setEnabled(true);
         
         topics = getTopics((JSONArray)respObject.get(TOPICS_KEY)); 
         saveResponse(json);
         
         practiceManifest = new QuestionManifest(studentDir, topics);
-        schoolStuffManifest = new QuizManifest(studentDir, topics);        
+        schoolStuffManifest = new QuizManifest(studentDir, topics);
+        doubtManifest = new DoubtManifest(studentDir, topics);
     }
 
     private void resetPreferences() {
@@ -409,7 +427,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         Log.e(TAG, error + " " + message);
     }
     
-    private BaseManifest practiceManifest, schoolStuffManifest;
+    private BaseManifest practiceManifest, schoolStuffManifest, doubtManifest;
  
     private File studentDir;
     private String subpath, name, email, token, id;
@@ -419,6 +437,7 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     private ProgressDialog refreshDialog;
     private final String filename = "init.json";
     
+    private final String QUESTIONS = "qs", WORKSHEETS = "ws", DOUBTS = "dbt";
     private final String REFRESH_URL = 
         "http://%s/tokens/refresh/%s?email=%s&token=%s&marker=%s";    
 }

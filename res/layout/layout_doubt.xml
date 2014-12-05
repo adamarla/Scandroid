@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:descendantFocusability="blocksDescendants" >
+          
+    <TextView
+        android:id="@+id/tvLabel"
+        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:padding="10dp"
+        android:layout_marginLeft="10dp" />
+   
+    <ImageView
+        android:id="@+id/ivState"
+        android:layout_height="match_parent"
+        android:layout_width="70dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:gravity="center"
+        android:contentDescription="@string/capture_button"
+        android:src="@drawable/ic_action_chat"
+        android:layout_marginRight="4dp"/>
+    
+</RelativeLayout>

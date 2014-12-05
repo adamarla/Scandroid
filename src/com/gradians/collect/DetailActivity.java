@@ -3,12 +3,18 @@ package com.gradians.collect;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Properties;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import com.viewpagerindicator.CirclePageIndicator;
+
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
 import android.annotation.SuppressLint;
@@ -83,13 +89,16 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         position = getIntent().getIntExtra(TAG_ID, 0);
         title = getIntent().getStringExtra(NAME_KEY);
         setTitle(title);
+        
         showing = QSN;
         adjustView();
+        
+        if (question.getName().equals("Q"))
+            purchase(null);
     }
     
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        // TODO Auto-generated method stub
         outState.putParcelable(TAG, question);
         super.onSaveInstanceState(outState);
     }
@@ -98,7 +107,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case android.R.id.home:
-            if (showing != QSN) {
+            if (!type.equals(DBT_TYPE) && showing != QSN) {
                 back();
                 return true;
             }
@@ -112,7 +121,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     
     @Override
     public void onBackPressed() {
-        if (showing != QSN) {
+        if (!type.equals(DBT_TYPE) && showing != QSN) {
             back();
             return;
         }
@@ -124,10 +133,10 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+        if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Question q = data.getParcelableExtra(TAG);
-                question.setPgMap(q.getPgMap());                
+                question.setPgMap(q.getPgMap());
                 
                 if (!question.getPgMap("").contains("0")) {
                     question.setState(CAPTURED);
@@ -143,7 +152,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 adjustView();
                 
                 if (question.getState() == CAPTURED)
-                    triggerUploads();
+                    triggerUpload();
             }
         }
     }
@@ -157,6 +166,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                     JSONParser jsonParser = new JSONParser();
                     JSONObject respObject = (JSONObject)jsonParser.parse(resultData);
                     String op = (String)respObject.get(OP_KEY);
+                    String id = String.valueOf((Long)respObject.get(ID_KEY));
                     balance = ((Long)respObject.get(BALANCE_KEY)).intValue();
                     
                     SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
@@ -164,7 +174,35 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                     edit.putInt(BALANCE_KEY, balance);
                     edit.commit();
                     
-                    if (op.equals(BUY_ANS)) {
+                    if (op.equals(ASK_DOUBT)) {
+                        question.setId(id);
+                        String name = new SimpleDateFormat
+                            ("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH).format(new Date());
+                        question.setName(name);
+                        question.setBotSoln(true);                        
+                        question.setState(CAPTURED);
+                        adjustView();
+                        
+                        File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
+                        File src = new File(questionsDir, "0.1");
+                        File target = new File(questionsDir, question.getId() + ".1");
+                        src.renameTo(target);
+                        
+                        triggerUpload();
+                        
+                        AlertDialog.Builder builder = null;
+                        try {
+                            builder = new AlertDialog.Builder(this,
+                                R.style.RobotoDialogTitleStyle);        
+                        } catch (NoSuchMethodError e) {
+                            builder =  new AlertDialog.Builder(this);
+                        }
+                        builder.setMessage("Your question has been received." + 
+                            " You'll hear back in 24 hours");
+                        builder.setPositiveButton(android.R.string.ok, null);
+                        builder.show().getWindow().setBackgroundDrawable(
+                            new ColorDrawable(Color.TRANSPARENT));
+                    } else if (op.equals(BUY_ANS)) {
                         question.setBotAns(true);
                         adjustView();
                         dlCode = DL_ANS;
@@ -221,13 +259,21 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         final Question qsn = question;
 
         int price = 0;
-        if (view.getId() == R.id.btnBuyAns) {
+        String action = null;
+        if (view == null) {
+            if (qsn.botSolution()) {
+                return;
+            }
+            price = SOLN_PRICE;
+            action = ASK_DOUBT;
+        } else if (view.getId() == R.id.btnBuyAns) {
             if (qsn.botAnswer() || qsn.botSolution()) {
                 dlCode = DL_ANS;
                 triggerDownloads(qsn);
                 return;
             }
             price = ANS_PRICE;
+            action = BUY_ANS;
         } else {
             if (qsn.canSeeSolution(type)) {
                 if (showing != SOLN) {
@@ -237,9 +283,10 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 return;
             }
             price = SOLN_PRICE;
+            action = BUY_SOLN;
         }
 
-        final boolean answer = view.getId() == R.id.btnBuyAns;
+        final String finalAction = action;
         AlertDialog.Builder builder = null;
         try {
             builder = new AlertDialog.Builder(this,
@@ -254,7 +301,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         builder.setPositiveButton(R.string.purchase_conf_text,
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    recordAction(qsn, answer ? BUY_ANS : BUY_SOLN);
+                    recordAction(qsn, finalAction);
                 }
             });
         builder.setNegativeButton(R.string.purchase_cancel_text,
@@ -271,15 +318,24 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     }
 
     public void activateCamera(View view) {
-        if (question.getState() == DOWNLOADED) {
-            launchCameraActivity(question);
-        } else if (question.hasScan()) {
-            if (showing == ATMPT)
-                showing = QSN;
-            else
-                showing = ATMPT;
-            adjustView();
-        }
+        if (type.equals(DBT_TYPE)) {
+            if (question.getScanLocn()[0] != null) {
+                showing = SOLN;
+                adjustView();
+            } else {
+                purchase(null);
+            }
+        } else {
+            if (question.getState() == DOWNLOADED) {
+                launchCameraActivity(question);
+            } else if (question.hasScan()) {
+                if (showing == ATMPT)
+                    showing = QSN;
+                else
+                    showing = ATMPT;
+                adjustView();
+            }
+        }            
     }
     
     public void showQuid(View v) {
@@ -293,36 +349,8 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         String[] paths = getPaths(question);
         ScrollView svCanvas = (ScrollView)findViewById(R.id.svCanvas);
         DullWebView dwvCanvas = (DullWebView)findViewById(R.id.wvCanvas);            
-        if (paths[0].contains(QUESTIONS_DIR_NAME) ||
-            paths[0].contains(SOLUTIONS_DIR_NAME)) {
-            dwvCanvas.setVisibility(View.GONE);
-            LinearLayout llCanvas = (LinearLayout)findViewById(R.id.llCanvas);
-            llCanvas.removeAllViews();
-            
-            final int MIN_WIDTH = 280, PAD = 5;
-            for (String path : paths) {                
-                Bitmap bimg = BitmapFactory.decodeFile(path);
-                StretchyImageView iv = 
-                    new StretchyImageView(getApplicationContext());
-                LinearLayout.LayoutParams lp = 
-                    new LinearLayout.LayoutParams(
-                    LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-                iv.setLayoutParams(lp);
-                iv.setAdjustViewBounds(true);
-                iv.setPadding(PAD, PAD, PAD, PAD);
-                
-                float density = getApplicationContext().getResources().
-                    getDisplayMetrics().density;
-                if (bimg.getWidth() < MIN_WIDTH) {
-                    int paddingX = MIN_WIDTH - bimg.getWidth();
-                    iv.setPadding((int)(paddingX/2*density), (int)(PAD*density), 
-                        (int)(paddingX/2*density), (int)(PAD*density));
-                }
-                iv.setImageBitmap(bimg);
-                llCanvas.addView(iv);
-            }
-            canvas = svCanvas;
-        } else {
+        if (paths[0].contains(ATTEMPTS_DIR_NAME) ||
+            paths[0].contains(DOUBTS_DIR_NAME)) {
             svCanvas.setVisibility(View.GONE);
             dwvCanvas.clearCache(true);
             dwvCanvas.getSettings().setBuiltInZoomControls(true);
@@ -379,16 +407,44 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 });
             }
             canvas = dwvCanvas;
+        } else {
+            dwvCanvas.setVisibility(View.GONE);
+            LinearLayout llCanvas = (LinearLayout)findViewById(R.id.llCanvas);
+            llCanvas.removeAllViews();
+            
+            final int MIN_WIDTH = 280, PAD = 5;
+            for (String path : paths) {                
+                Bitmap bimg = BitmapFactory.decodeFile(path);
+                StretchyImageView iv = 
+                    new StretchyImageView(getApplicationContext());
+                LinearLayout.LayoutParams lp = 
+                    new LinearLayout.LayoutParams(
+                    LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+                iv.setLayoutParams(lp);
+                iv.setAdjustViewBounds(true);
+                iv.setPadding(PAD, PAD, PAD, PAD);
+                
+                float density = getApplicationContext().getResources().
+                    getDisplayMetrics().density;
+                if (bimg.getWidth() < MIN_WIDTH) {
+                    int paddingX = MIN_WIDTH - bimg.getWidth();
+                    iv.setPadding((int)(paddingX/2*density), (int)(PAD*density), 
+                        (int)(paddingX/2*density), (int)(PAD*density));
+                }
+                iv.setImageBitmap(bimg);
+                llCanvas.addView(iv);
+            }
+            canvas = svCanvas;
         }
         canvas.setVisibility(View.VISIBLE);
     }
 
     private void adjustView() {
         if (showing == QSN) {
-            Button btnSelfChk = (Button) this.findViewById(R.id.btnSelfChk);
-            TextView btnBuyAns = (TextView) this.findViewById(R.id.btnBuyAns);
-            TextView btnBuySoln = (TextView) this.findViewById(R.id.btnBuySoln);
-            Button btnCamera = (Button) this.findViewById(R.id.btnCamera);
+            Button btnSelfChk = (Button)findViewById(R.id.btnSelfChk);
+            TextView btnBuyAns = (TextView)findViewById(R.id.btnBuyAns);
+            TextView btnBuySoln = (TextView)findViewById(R.id.btnBuySoln);
+            Button btnCamera = (Button)findViewById(R.id.btnCamera);
 
             TextView tvName = (TextView) findViewById(R.id.tvName);
             tvName.setText(String.format("%s", (position+1))); 
@@ -433,11 +489,18 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             if (question.canSeeSolution(type))
                 btnBuySoln.setText(R.string.bot_soln_text);
 
-            // Review (Camera) Button
-            if (question.hasScan()) {
-                btnCamera.setText("See Attempt");
+            // Review (Camera) Button            
+            if (type.equals(DBT_TYPE)) {
+                if (question.botSolution()) {
+                    btnCamera.setText("See Review");
+                    btnCamera.setEnabled(question.getScanLocn()[0] != null);
+                } else
+                    btnCamera.setText("Get Reviewed");
             } else {
-                btnCamera.setText("Get Review");
+                if (question.hasScan())
+                    btnCamera.setText("See Attempt");
+                else
+                    btnCamera.setText("Get Review");                
             }
 
             btnBuyAns.refreshDrawableState();
@@ -542,21 +605,24 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             ITaskResult.CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
     }
 
-    private void triggerUploads() {
+    private void triggerUpload() {
         File uploadsDir = new File(quizDir, UPLOAD_DIR_NAME);
         ArrayList<Question> toSend = new ArrayList<Question>();
         if (question.getState() == CAPTURED) {
-            toSend.add(question);
             int[] pages = question.getPgMap();
             for (int page : pages) {
                 try {
                     String filename = question.getId() + "." + page;
                     (new File(uploadsDir, filename)).createNewFile();
-                    question.setState(SENT);
-                    stateMap.put(question.getId(), question.toString());
-                    commit();
+                    toSend.add(question);                                        
+                    if (!type.equals(DBT_TYPE)) {
+                        question.setState(SENT);
+                        stateMap.put(question.getId(), question.toString());
+                        commit();
+                    }
                 } catch (Exception e) {
-                    Log.e(TAG, "Create file in uploadsDir failed: " + e.getMessage());
+                    Log.e(TAG, "Create file in uploadsDir failed: " 
+                        + e.getMessage());
                 }
             }
         } else if (question.getState() == SENT) {
@@ -566,14 +632,16 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 toSend.add(question);
             }
         }
-
-        Intent uploadIntent =
-            new Intent(getApplicationContext(),
-                com.gradians.collect.ImageUploadService.class);
-        uploadIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
-        uploadIntent.putExtra(TAG_ID, type);
-        uploadIntent.putExtra(TAG, toSend.toArray(new Question[toSend.size()]));
-        startService(uploadIntent);
+        
+        if (toSend.size() > 0) {
+            Intent uploadIntent =
+                new Intent(getApplicationContext(),
+                    com.gradians.collect.ImageUploadService.class);
+            uploadIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
+            uploadIntent.putExtra(TAG_ID, type);
+            uploadIntent.putExtra(TAG, toSend.toArray(new Question[toSend.size()]));
+            startService(uploadIntent);
+        }
     }
 
     private void displayAnswers(final Question qsn, boolean check) {
@@ -737,15 +805,17 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             getSharedPreferences(TAG, Context.MODE_PRIVATE);
         String studentId = prefs.getString(ID_KEY, null);
         Uri src = null;
-        if (type.equals(QSN_TYPE)) {
-            src =
-                Uri.parse(String.format(BILL_STAB_URL, WEB_APP_HOST_PORT,
-                    studentId, question.getQsnId(), question.getVersion(),
-                    op.equals(GUESS) ? guess : "-1", op));
+        if (type.equals(DBT_TYPE)) {
+            src = Uri.parse(String.format(BILL_STAB_URL, 
+                WEB_APP_HOST_PORT, studentId, "0", "0", "0", op));
+        } else if (type.equals(QSN_TYPE)) {
+            src = Uri.parse(String.format(BILL_STAB_URL, 
+                WEB_APP_HOST_PORT, studentId, question.getQsnId(), 
+                question.getVersion(), op.equals(GUESS) ? guess : "-1", op));
         } else {
-            src =
-                Uri.parse(String.format(BILL_ATTEMPT_URL, WEB_APP_HOST_PORT,
-                    question.getGRId(","), op.equals(GUESS) ? guess : "-1", op));
+            src = Uri.parse(String.format(BILL_ATTEMPT_URL, 
+                WEB_APP_HOST_PORT, question.getGRId(","), 
+                op.equals(GUESS) ? guess : "-1", op));
         }
         Download download = new Download(null, src, null);
         new HttpCallsAsyncTask(this, PURCHASE_TASK_REQUEST_CODE)
@@ -788,9 +858,14 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
 
     private String[] getQuestion(Question question) {
         File questionsDir = new File(quizDir, QUESTIONS_DIR_NAME);
-        String[] paths = new String[] { new File(questionsDir, 
-            "m." + question.getVersion() + "." + 
-            question.getId()).getPath() };
+        File file = null;
+        if (type.equals(DBT_TYPE)) {
+            file = new File(questionsDir, question.getId() + ".1");
+        } else {
+            file = new File(questionsDir, "m." + question.getVersion() 
+                + "." + question.getId());
+        }
+        String[] paths = new String[] { file.getPath() };
         return paths;
     }
 
@@ -857,7 +932,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     private final int DL_CODEX = 1, DL_ANS = 2, DL_SOLN = 3;
     private final String OP_KEY   = "op";
     private final String GUESS    = "guess", GET_FDBK = "grade",
-        BUY_ANS = "answer", BUY_SOLN = "solution";   
+        BUY_ANS = "answer", BUY_SOLN = "solution", ASK_DOUBT = "ask";   
     private final String        
         BILL_STAB_URL = "http://%s/tokens/record?s=%s&q=%s&v=%s&g=%s&op=%s",
         BILL_ATTEMPT_URL = "http://%s/tokens/record?id=%s&g=%s&op=%s",

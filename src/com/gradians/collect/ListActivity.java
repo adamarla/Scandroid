@@ -37,8 +37,8 @@ public class ListActivity extends Activity implements OnItemClickListener,
         Parcelable[] quizItems = getIntent().getParcelableArrayExtra(TAG);
         String path = getIntent().getStringExtra(NAME_KEY);
 
-        initialize(quizItems, path, getIntent().getIntExtra(ID_KEY, 0));
-        setTitle(getIntent().getStringExtra(TAG_ID));
+        initialize(quizItems, path);
+        setTitle(getIntent().getStringExtra(TAG_ID));        
     }
     
     @Override
@@ -63,7 +63,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == FLOW_ACTIVITY_REQUEST_CODE) {
+        if (requestCode == BROWSE_ACTIVITY_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 try {
                     Parcelable[] parcels = data.getParcelableArrayExtra(TAG);
@@ -88,7 +88,7 @@ public class ListActivity extends Activity implements OnItemClickListener,
         if (requestCode == DOWNLOAD_MONITOR_TASK_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Quij quiz = (Quij)adapter.getItem(selectedQuizPosition);
-                launchFlowActivity(quiz);
+                launchBrowseActivity(quiz);
             }
         }
     }
@@ -111,16 +111,16 @@ public class ListActivity extends Activity implements OnItemClickListener,
                     Toast.LENGTH_LONG).show();
             }
         } else {
-            launchFlowActivity(quiz);
+            launchBrowseActivity(quiz);
         }
     }
     
-    private void launchFlowActivity(Quij quiz) {
+    private void launchBrowseActivity(Quij quiz) {
         Intent browseIntent = new Intent(this.getApplicationContext(), 
             com.gradians.collect.BrowseActivity.class);
         browseIntent.putExtra(TAG, (Parcelable)quiz);
         browseIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
-        startActivityForResult(browseIntent, FLOW_ACTIVITY_REQUEST_CODE);
+        startActivityForResult(browseIntent, BROWSE_ACTIVITY_REQUEST_CODE);
     }
 
     private void setUpDownloads(DownloadMonitor dlm, 
@@ -263,12 +263,37 @@ public class ListActivity extends Activity implements OnItemClickListener,
         }
         markers.commit();
     }
+    
+    private void setUpUploads(Quij quiz) {
+        File uploadsDir = new File(quizDir, UPLOAD_DIR_NAME);
+        if (!uploadsDir.exists()) return;
+        
+        ArrayList<Question> toSend = new ArrayList<Question>();
+        for (Question question : quiz.getQuestions()) {
+            // check if really sent
+            File upload = new File(uploadsDir, question.getId() + ".1");
+            if (upload.exists()) {
+                toSend.add(question);
+            }
+        }        
+        if (toSend.size() > 0) {
+            Intent uploadIntent =
+                new Intent(getApplicationContext(),
+                    com.gradians.collect.ImageUploadService.class);
+            uploadIntent.putExtra(QUIZ_PATH_KEY, quizDir.getPath());
+            uploadIntent.putExtra(TAG_ID, quiz.getType());
+            uploadIntent.putExtra(TAG, toSend.toArray(new Question[toSend.size()]));
+            startService(uploadIntent);
+        }    
+    }
 
-    private void initialize(Parcelable[] quizItems, String path, int categoryId) {
+    private void initialize(Parcelable[] quizItems, String path) {
         studentDir = new File(path);        
         quizzes = new Quij[quizItems.length];
-        for (int i = 0; i < quizItems.length; i++)
+        for (int i = 0; i < quizItems.length; i++) {
             quizzes[i] = (Quij)quizItems[i];
+            setUpUploads(quizzes[i]);
+        }
         
         adapter = new QuizListAdapter(this, quizzes);
         ListView lv = (ListView) this.findViewById(R.id.lvQuiz);

@@ -157,6 +157,10 @@ class Question implements Parcelable, JSONAware, IConstants {
         return dirty;
     }
     
+    public void setId(String id) {
+        this.id = id;
+    }
+    
     public void setGRId(String grIds) {
         if (grIds != null) {
             String[] tokens = grIds.split(",");
