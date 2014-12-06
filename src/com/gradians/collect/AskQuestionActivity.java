@@ -139,6 +139,7 @@ public class AskQuestionActivity extends Activity implements OnItemClickListener
         Intent takePictureIntent = new Intent(this.getApplicationContext(),
             com.gradians.collect.CameraActivity.class);
         Question newdoubt = new Question("Q", "0", 0, "0", null, (short)0);
+        newdoubt.setState(DOWNLOADED);
         takePictureIntent.putExtra(TAG, newdoubt);
         takePictureIntent.putExtra(SCANS_KEY, questionsDir.getPath());
         startActivityForResult(takePictureIntent,

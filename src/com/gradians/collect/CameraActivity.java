@@ -55,6 +55,8 @@ public class CameraActivity extends Activity implements IConstants, OnClickListe
         
         llButtons = (LinearLayout)this.findViewById(R.id.llSelectorBtns);        
         createPartButtons(llButtons);
+        llButtons.setVisibility(question.getName().equals("Q") ? 
+            View.INVISIBLE : View.VISIBLE);
         
         if (Build.VERSION.SDK_INT < 11) {   // No vertical rotation below this level
             findViewById(R.id.tvVert1).setVisibility(View.INVISIBLE);

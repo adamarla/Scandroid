@@ -91,7 +91,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         adjustView();
         
         if (question.getName().equals("Q"))
-            purchase(null);
+            purchase(findViewById(R.id.btnBack));
     }
     
     @Override
@@ -255,11 +255,11 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
 
         int price = 0;
         String action = null;
-        if (view == null) {
+        if (view.getId() == R.id.btnBack) {
             if (qsn.botSolution()) {
                 return;
             }
-            price = SOLN_PRICE;
+            price = ASK_PRICE;
             action = ASK_DOUBT;
         } else if (view.getId() == R.id.btnBuyAns) {
             if (qsn.botAnswer() || qsn.botSolution()) {
@@ -313,29 +313,29 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     }
 
     public void activateCamera(View view) {
+        if (question.getState() == DOWNLOADED) {
+            launchCameraActivity(question);
+        } else if (question.hasScan()) {
+            if (showing == ATMPT)
+                showing = QSN;
+            else
+                showing = ATMPT;
+            adjustView();
+        }
+    }
+    
+    public void onHiddenClick(View v) {
         if (type.equals(DBT_TYPE)) {
-            if (question.getScanLocn()[0] != null) {
+            if (question.getState() == GRADED) {
                 showing = SOLN;
                 adjustView();
             } else {
-                purchase(null);
+                purchase(v);
             }
         } else {
-            if (question.getState() == DOWNLOADED) {
-                launchCameraActivity(question);
-            } else if (question.hasScan()) {
-                if (showing == ATMPT)
-                    showing = QSN;
-                else
-                    showing = ATMPT;
-                adjustView();
-            }
-        }            
-    }
-    
-    public void showQuid(View v) {
-        Toast.makeText(getApplicationContext(),
-            "lib:" + question.getImgLocn(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(),
+                "lib:" + question.getImgLocn(), Toast.LENGTH_LONG).show();
+        }
     }
     
     @SuppressLint("SetJavaScriptEnabled")
@@ -343,7 +343,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         View canvas = null;
         String[] paths = getPaths(question);
         ScrollView svCanvas = (ScrollView)findViewById(R.id.svCanvas);
-        DullWebView dwvCanvas = (DullWebView)findViewById(R.id.wvCanvas);            
+        DullWebView dwvCanvas = (DullWebView)findViewById(R.id.wvCanvas);
         if (paths[0].contains(ATTEMPTS_DIR_NAME) ||
             paths[0].contains(DOUBTS_DIR_NAME)) {
             svCanvas.setVisibility(View.GONE);
@@ -357,7 +357,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             dwvCanvas.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
             
             StringBuilder sbHtml = new StringBuilder();
-                sbHtml.append(HDR_ANS);
+                sbHtml.append(HEAD).append(BODY);
             String styleImgWidth = "";
             for (int i = 0; i < paths.length; i++) {
                 sbHtml.append(String.format(PARENT_DIV, i));
@@ -428,14 +428,33 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     }
 
     private void adjustView() {
-        if (showing == QSN) {
+        TextView tvName = (TextView)findViewById(R.id.tvName);            
+        tvName.setText(String.format("%s", (position+1))); 
+        if (type.equals(DBT_TYPE)) {
+            findViewById(R.id.llBtnBar).setVisibility(View.GONE);
+            
+            TextView tvMarks = (TextView)findViewById(R.id.tvMarks);
+            tvMarks.setText(question.getName());
+            tvMarks.setVisibility(View.VISIBLE);
+            
+            Button btnBack = (Button)findViewById(R.id.btnBack);            
+            btnBack.setBackgroundColor(getResources().getColor(R.color.blue));
+            if (question.getState() == GRADED) {
+                btnBack.setText(R.string.bot_ask_text);
+            } else if (question.getState() == DOWNLOADED) {
+                tvName.setVisibility(View.INVISIBLE);
+                tvMarks.setVisibility(View.INVISIBLE);
+                btnBack.setText(R.string.buy_ask_text);
+            } else {
+                btnBack.setVisibility(View.INVISIBLE);
+            } 
+            
+        } else if (showing == QSN) {
             Button btnSelfChk = (Button)findViewById(R.id.btnSelfChk);
             TextView btnBuyAns = (TextView)findViewById(R.id.btnBuyAns);
             TextView btnBuySoln = (TextView)findViewById(R.id.btnBuySoln);
             Button btnCamera = (Button)findViewById(R.id.btnCamera);
 
-            TextView tvName = (TextView) findViewById(R.id.tvName);
-            tvName.setText(String.format("%s", (position+1))); 
             if (question.tried() || question.botAnswer() ||
                 question.botSolution() || question.hasScan()) {
                 tvName.setBackgroundColor(getApplicationContext().
@@ -443,17 +462,19 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
             } else {
                 tvName.setBackgroundColor(getApplicationContext().
                     getResources().getColor(R.color.gray));
-            }
-            
+            }            
+        
             // Self Check Button
             int icon = R.drawable.ic_action_mic;
             btnSelfChk.setEnabled(question.hasCodex());
             btnSelfChk.setText("Self Check");
             if (question.tried()) {
-                icon = question.getGuess() == question.getVersion() ? 
-                    R.drawable.ic_action_accept : R.drawable.ic_action_cancel;
+                icon = question.getGuess() == question.getVersion() ?
+                    R.drawable.ic_action_accept : 
+                    R.drawable.ic_action_cancel;
             }
-            btnSelfChk.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0);
+            btnSelfChk.setCompoundDrawablesWithIntrinsicBounds
+                (0, icon, 0, 0);
 
             // Answer and Solution Buttons
             btnBuyAns.setText(R.string.buy_answer_text);
@@ -478,19 +499,11 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 btnBuySoln.setText(R.string.bot_soln_text);
 
             // Review (Camera) Button            
-            if (type.equals(DBT_TYPE)) {
-                if (question.botSolution()) {
-                    btnCamera.setText("See Review");
-                    btnCamera.setEnabled(question.getScanLocn()[0] != null);
-                } else
-                    btnCamera.setText("Get Reviewed");
-            } else {
-                if (question.hasScan())
-                    btnCamera.setText("See Attempt");
-                else
-                    btnCamera.setText("Get Review");                
-            }
-
+            if (question.hasScan())
+                btnCamera.setText("See Attempt");
+            else
+                btnCamera.setText("Get Review");                
+            
             btnBuyAns.refreshDrawableState();
             btnBuySoln.refreshDrawableState();
             btnSelfChk.refreshDrawableState();
@@ -916,7 +929,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     private CirclePageIndicator fdbkIndicator;
     private ProgressDialog peedee;
 
-    private final int ANS_PRICE = 2, SOLN_PRICE = 5;
+    private final int ANS_PRICE = 2, SOLN_PRICE = 5, ASK_PRICE = 4;
     private final int DL_CODEX = 1, DL_ANS = 2, DL_SOLN = 3;
     private final String OP_KEY   = "op";
     private final String GUESS    = "guess", GET_FDBK = "grade",
@@ -934,7 +947,8 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     private final String IMG_DIV = "<img src='%s' style='%s'/>";
     private final String MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #F88017;'>%s</div>";
     private final String NON_MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #676767;'>%s</div>";
-    private final String HDR_ANS = "<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>";
+    private final String HEAD = "<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>";
+    private final String BODY = "<body style='margin:0;padding:0;'>";
     private final String FTR = "</body></html>"; 
     
 }

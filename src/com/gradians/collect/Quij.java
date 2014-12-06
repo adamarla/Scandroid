@@ -2,6 +2,10 @@ package com.gradians.collect;
 
 import java.util.ArrayList;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
+
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -11,7 +15,7 @@ import android.os.Parcelable;
  * 
  * @author adamarla
  */
-class Quij extends ArrayList<Question> implements Parcelable, Comparable<Quij>, IConstants {
+class Quij extends ArrayList<Question> implements Parcelable, Comparable<Quij>, JSONAware, IConstants {
     
     public Quij(String name, String path, long id, int price, String type, String layout) {
         this.name = name;
@@ -188,5 +192,23 @@ class Quij extends ArrayList<Question> implements Parcelable, Comparable<Quij>, 
     private short state;
     
     private static final long serialVersionUID = 1L;
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public String toJSONString() {
+        JSONObject obj = new JSONObject();
+        obj.put(QUIZ_NAME_KEY, name);
+        obj.put(QUIZ_PATH_KEY, path);
+        obj.put(QUIZ_ID_KEY, id);
+        obj.put(QUIZ_PRICE_KEY, price);
+        obj.put(QUIZ_LAYOUT_KEY, layout);
+        
+        JSONArray array = new JSONArray();
+        for (Question q : this) {
+            array.add(q);
+        }
+        obj.put(QUESTIONS_KEY, array);
+        return obj.toString();
+    }
 
 }

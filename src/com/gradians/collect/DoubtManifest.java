@@ -38,6 +38,9 @@ public class DoubtManifest extends BaseManifest {
                 question.setExaminer(((Long)item.get(EXAMINER_KEY)).intValue());
             if (item.get(SCAN_KEY) != null) {
                 question.setScanLocn((String)item.get(SCAN_KEY));
+                question.setState(GRADED);
+            } else {
+                question.setState(SENT);
             }
             questionByIdMap.put(question.getId(), question);            
         }

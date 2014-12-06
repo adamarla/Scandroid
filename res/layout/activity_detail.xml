@@ -46,12 +46,15 @@
         <Button
             android:id="@+id/btnBack"
             android:layout_weight="1"
-            android:layout_height="match_parent"
             android:layout_width="0dp"
-            android:contentDescription="@string/capture_button"
+            android:layout_height="match_parent"
+            android:textColor="@color/white"
+            android:text=""
+            android:textSize="@dimen/small_font_size"
             android:background="@null"
-            android:onClick="showQuid"
-            android:gravity="center"/>
+            android:gravity="center"
+            android:clickable="true"
+            android:onClick="onHiddenClick"/>
         
     </LinearLayout>
     

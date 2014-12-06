@@ -117,6 +117,16 @@ public class QuizManifest extends BaseManifest {
         }
     }
     
+    @SuppressWarnings("unchecked")
+    @Override
+    public String toJSONArray() {
+        JSONArray array = new JSONArray();
+        for (Quij quiz : quizzes) {
+            array.add(quiz);
+        }
+        return array.toJSONString();
+    }
+    
     private Quij[] quizzes;
 
 
