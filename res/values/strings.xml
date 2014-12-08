@@ -21,8 +21,9 @@
     <string name="bot_answer_text"><big><big>0₲</big></big>\nSee Answer</string>
     <string name="buy_soln_text"><big><big>5₲</big></big>\nSee Solution</string>
     <string name="bot_soln_text"><big><big>0₲</big></big>\nSee Solution</string>
-    <string name="buy_ask_text"><big><big>4₲</big></big>\nSend Question</string>
-    <string name="bot_ask_text"><big><big>0₲</big></big>\nSee Feedback</string>
+    <string name="buy_ask_text"><big><big>4₲ Send Question</big></big></string>
+    <string name="bot_ask_text"><big><big>See Feedback</big></big></string>
+    <string name="bot_ask_text_flip"><big><big>See Question</big></big></string>
     <string name="purchase_conf_text"><big>Continue</big></string>
     <string name="purchase_cancel_text"><big>Cancel</big></string>
     <string name="action_sign_refresh">Refresh</string>
@@ -37,7 +38,7 @@
     <string name="instruction3">3. Go back &lt; to upload picture for review</string>
     <string name="reset_pwd_instruction">Enter the email address you registered with. We will reset\n 
         your password and send you the new password in an email.</string>
-    <string name="ask_a_ques_instruction">Activate the Camera to send us your question.</string>
+    <string name="ask_a_ques_instruction">Previously asked questions (None so far)</string>
     <string name="forgot_pwd_text"><u>Forgot Password?</u></string>
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
 

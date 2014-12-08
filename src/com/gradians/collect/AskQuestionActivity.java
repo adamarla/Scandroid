@@ -101,7 +101,7 @@ public class AskQuestionActivity extends Activity implements OnItemClickListener
         Question q = (Question)adapter.getItem(position);
         
         File questionsDir = new File(doubtsDir, QUESTIONS_DIR_NAME);
-        File solutionsDir = new File(doubtsDir, QUESTIONS_DIR_NAME);        
+        File solutionsDir = new File(doubtsDir, SOLUTIONS_DIR_NAME);        
         DownloadMonitor dlm = new DownloadMonitor(this);
         Uri src, dest;        
         File image = new File(questionsDir, q.getId() + ".1");

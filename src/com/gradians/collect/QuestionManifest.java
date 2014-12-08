@@ -86,6 +86,13 @@ public class QuestionManifest extends BaseManifest {
             if (item.containsKey(GUESSED_KEY) && item.get(GUESSED_KEY) != null)
                 question.setGuess(((Long)item.get(GUESSED_KEY)).intValue());
             
+            if (item.containsKey(GR_ID_KEY) && item.get(GR_ID_KEY) != null) {
+                if (remote)
+                    question.setGRId(new int[] {((Long)item.get(GR_ID_KEY)).intValue()});
+                else
+                    question.setGRId((String)item.get(GR_ID_KEY));
+            }
+            
             if (item.containsKey(DIRTY_KEY))
                 question.setDirty((Boolean)item.get(DIRTY_KEY));
             
@@ -101,12 +108,12 @@ public class QuestionManifest extends BaseManifest {
                     }
                 }
             } else {
-                state.remove(question.getId());                
+                state.remove(question.getId());
                 question.setPuzzle((Boolean)item.get(PZL_KEY));
                 question.setScanLocn((String)item.get(SCANS_KEY));
-                int[] grId = { ((Long)item.get(GR_ID_KEY)).intValue() };
-                question.setGRId(grId);
-                float marks = ((Long)item.get(MARKS_KEY)).floatValue();
+                float marks = remote ?
+                    ((Long)item.get(MARKS_KEY)).floatValue() : 
+                    ((Double)item.get(MARKS_KEY)).floatValue();
                 qState = marks < 0 ? RECEIVED : GRADED;
                 question.setMarks(marks);
             }            

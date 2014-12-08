@@ -350,14 +350,14 @@ class Question implements Parcelable, JSONAware, IConstants {
         obj.put(ID_KEY, id);
         obj.put(QUESN_ID_KEY, qsnId);
         obj.put(SBPRTS_ID_KEY, getSubpartId(","));
-        obj.put(GR_ID_KEY, grId[0] == 0 ? null : grId[0]);
+        obj.put(GR_ID_KEY, grId[0] == 0 ? null : getGRId(","));
         obj.put(PZL_KEY, puzzle);
         obj.put(NAME_KEY, name);
         obj.put(IMG_PATH_KEY, imgLocn);
         obj.put(IMG_SPAN_KEY, imgSpan);
         obj.put(SCANS_KEY, grId[0] == 0 ? null : TextUtils.join(",", scans));
         obj.put(OUT_OF_KEY, outof);
-        obj.put(MARKS_KEY, (int)marks);
+        obj.put(MARKS_KEY, marks);
         obj.put(EXAMINER_KEY, examiner == 0 ? null : examiner);
         obj.put(HAS_CODEX_KEY, hasCodex);
         obj.put(HAS_ANSWER_KEY, hasAns);

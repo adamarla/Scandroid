@@ -109,7 +109,6 @@ public class QuizManifest extends BaseManifest {
                         question.setMarks(marks);
                     }
                 }
-                
                 quizzes[i].add(question);
                 questionByIdMap.put(question.getId(), question);
             }

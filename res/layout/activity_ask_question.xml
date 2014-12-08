@@ -18,13 +18,15 @@
         android:textSize="18sp"
         android:text="@string/ask_a_ques_instruction"/>
     
-    <ImageButton
+    <Button
         android:id="@+id/btnCamera"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:onClick="launchCameraActivity"
         android:contentDescription="@string/capture_button"
-        android:src="@drawable/ic_action_camera" />
+        android:text="New Question"
+        android:drawableRight="@drawable/ic_action_camera"
+        android:drawablePadding="-20dp"/>
             
 </RelativeLayout>

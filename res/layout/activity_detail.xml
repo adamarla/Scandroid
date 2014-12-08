@@ -11,7 +11,7 @@
         android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@null"/>
+        android:background="#000000"/>
     
     <LinearLayout
         android:id="@+id/llTopBar"
@@ -152,6 +152,18 @@
             android:orientation="vertical">
         </LinearLayout>
     </ScrollView>
+    
+    <TextView
+        android:id="@+id/btnBar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="2dp"
+        android:background="@color/blue"
+        android:clickable="true"
+        android:gravity="center"
+        android:onClick="purchase"
+        android:text="@string/buy_ask_text" />
     
     <android.support.v4.view.ViewPager
         android:id="@+id/vpFeedback"

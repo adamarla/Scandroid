@@ -249,14 +249,17 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     public void onPageSelected(int position) {
         display(position);
     }
-
+    
     public void purchase(View view) {
         final Question qsn = question;
-
         int price = 0;
         String action = null;
-        if (view.getId() == R.id.btnBack) {
+        if (view.getId() == R.id.btnBar) {
             if (qsn.botSolution()) {
+                if (question.getState() == GRADED) {
+                    showing = showing == QSN ? SOLN : QSN;
+                    adjustView();
+                }
                 return;
             }
             price = ASK_PRICE;
@@ -428,33 +431,33 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     }
 
     private void adjustView() {
-        TextView tvName = (TextView)findViewById(R.id.tvName);            
-        tvName.setText(String.format("%s", (position+1))); 
         if (type.equals(DBT_TYPE)) {
             findViewById(R.id.llBtnBar).setVisibility(View.GONE);
+            findViewById(R.id.tvName).setVisibility(View.INVISIBLE);
             
             TextView tvMarks = (TextView)findViewById(R.id.tvMarks);
             tvMarks.setText(question.getName());
             tvMarks.setVisibility(View.VISIBLE);
             
-            Button btnBack = (Button)findViewById(R.id.btnBack);            
-            btnBack.setBackgroundColor(getResources().getColor(R.color.blue));
-            if (question.getState() == GRADED) {
-                btnBack.setText(R.string.bot_ask_text);
-            } else if (question.getState() == DOWNLOADED) {
-                tvName.setVisibility(View.INVISIBLE);
+            TextView btnBar = (TextView)findViewById(R.id.btnBar);
+            if (question.getState() == DOWNLOADED) {
+                btnBar.setText(R.string.buy_ask_text);
                 tvMarks.setVisibility(View.INVISIBLE);
-                btnBack.setText(R.string.buy_ask_text);
             } else {
-                btnBack.setVisibility(View.INVISIBLE);
-            } 
-            
+                btnBar.setText(showing == QSN ? 
+                    R.string.bot_ask_text : R.string.bot_ask_text_flip);
+                btnBar.setEnabled(question.getState() == GRADED);
+            }
         } else if (showing == QSN) {
+            findViewById(R.id.btnBar).setVisibility(View.GONE);
+            
             Button btnSelfChk = (Button)findViewById(R.id.btnSelfChk);
             TextView btnBuyAns = (TextView)findViewById(R.id.btnBuyAns);
             TextView btnBuySoln = (TextView)findViewById(R.id.btnBuySoln);
             Button btnCamera = (Button)findViewById(R.id.btnCamera);
 
+            TextView tvName = (TextView)findViewById(R.id.tvName);            
+            tvName.setText(String.format("%s", (position+1))); 
             if (question.tried() || question.botAnswer() ||
                 question.botSolution() || question.hasScan()) {
                 tvName.setBackgroundColor(getApplicationContext().
@@ -886,11 +889,17 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
 
     private String[] getSolution(Question question) {
         File solutionsDir = new File(quizDir, SOLUTIONS_DIR_NAME);
-        String[] paths = new String[question.getImgSpan()];
-        for (int i = 0; i < paths.length; i++) {
-            paths[i] = (new File(solutionsDir, 
-                "m." + question.getVersion() + "." +
-                question.getId() + "." + (i + 1))).getPath();
+        String[] paths = null;
+        if (type.equals(DBT_TYPE)) {
+            paths = new String[1];
+            paths[0] = new String((new File(solutionsDir, 
+                question.getId() + ".1").getPath()));
+        } else {
+            paths = new String[question.getImgSpan()];
+            for (int i = 0; i < paths.length; i++)
+                paths[i] = (new File(solutionsDir, 
+                    "m." + question.getVersion() + "." +
+                    question.getId() + "." + (i + 1))).getPath();
         }
         return paths;
     }
@@ -945,9 +954,17 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     private final String PARENT_DIV = "<div id='pg%s' style='position: relative; '>";
     private final String PARENT_DIV_CLS = "</div>";
     private final String IMG_DIV = "<img src='%s' style='%s'/>";
-    private final String MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #F88017;'>%s</div>";
-    private final String NON_MARKER_DIV = "<div style='font-size: 11px ; text-align : center ; width: 15px ; border-radius : 10px ; padding: 4px ; color: white ; position:absolute; top:%s%%; left: %s%%; background: #676767;'>%s</div>";
-    private final String HEAD = "<html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></meta></head><body>";
+    private final String MARKER_DIV = "<div style='font-size: 11px ; "
+        + "text-align : center ; width: 15px ; border-radius : 10px ; " 
+        + "padding: 4px ; color: white ; position:absolute; top:%s%%; " 
+        + "left: %s%%; background: #F88017;'>%s</div>";
+    private final String NON_MARKER_DIV = "<div style='font-size: 11px ; " 
+        + "text-align : center ; width: 15px ; border-radius : 10px ; " 
+        + "padding: 4px ; color: white ; position:absolute; top:%s%%; " 
+        + "left: %s%%; background: #676767;'>%s</div>";
+    private final String HEAD = "<html><head>" 
+        + "<meta name=\"viewport\" " 
+        + " content=\"width=device-width, initial-scale=1\"></meta></head><body>";
     private final String BODY = "<body style='margin:0;padding:0;'>";
     private final String FTR = "</body></html>"; 
     
