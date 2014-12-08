@@ -93,7 +93,7 @@ public class QuestionManifest extends BaseManifest {
                     question.setGRId((String)item.get(GR_ID_KEY));
             }
             
-            if (item.containsKey(DIRTY_KEY))
+            if (item.containsKey(DIRTY_KEY) && item.get(DIRTY_KEY) != null)
                 question.setDirty((Boolean)item.get(DIRTY_KEY));
             
             short qState = DOWNLOADED;

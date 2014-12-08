@@ -38,7 +38,7 @@
     <string name="instruction3">3. Go back &lt; to upload picture for review</string>
     <string name="reset_pwd_instruction">Enter the email address you registered with. We will reset\n 
         your password and send you the new password in an email.</string>
-    <string name="ask_a_ques_instruction">Previously asked questions (None so far)</string>
+    <string name="ask_a_ques_instruction">--no prior questions--</string>
     <string name="forgot_pwd_text"><u>Forgot Password?</u></string>
     <string name="message_could_not_enroll">You are registered on Gradians.com but we could not enroll you in your group. Please contact us at help@gradians.com</string>
 
