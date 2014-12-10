@@ -7,10 +7,10 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -134,7 +134,16 @@ public class AskQuestionActivity extends Activity implements OnItemClickListener
         }
     }
     
-    public void launchCameraActivity(View view) {        
+    public void launchCameraActivity(View view) {
+        SharedPreferences prefs = getSharedPreferences(TAG, Context.MODE_PRIVATE);
+        int balance = prefs.getInt(BALANCE_KEY, 0);
+        if (balance < ASK_PRICE) {
+            Toast.makeText(getApplicationContext(), 
+                "Your balance: " + balance + 
+                    "₲, Minimum required: " + ASK_PRICE + "₲. Please top up.", 
+                Toast.LENGTH_LONG).show();
+        }
+        
         File questionsDir = new File(doubtsDir, QUESTIONS_DIR_NAME);        
         Intent takePictureIntent = new Intent(this.getApplicationContext(),
             com.gradians.collect.CameraActivity.class);

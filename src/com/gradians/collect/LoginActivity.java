@@ -14,6 +14,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -262,11 +263,21 @@ public class LoginActivity extends Activity implements IConstants {
             String result = null;
             String hostport = params[0];
             try {                
+                boolean hasMonochrome = false;
+                Camera c = Camera.open();
+                if (c != null) {
+                    for (String s : c.getParameters().getSupportedColorEffects()) {
+                        if (s.equals(Camera.Parameters.EFFECT_MONO)) {
+                            hasMonochrome = true; break;
+                        }                        
+                    }
+                }
+                c.release();
                 PackageManager pm = getApplicationContext().getPackageManager();
-                String signature = String.format("OS=Android %s; AppVers=%s; Autofocus=%s", 
+                String signature = String.format("OS=Android %s; AppVers=%s; Autofocus=%s; Monchrome=%s", 
                     Build.VERSION.SDK_INT,
                     pm.getPackageInfo(getApplicationContext().getPackageName(), 0).versionName,
-                    pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS));
+                    pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS), hasMonochrome);
                 
                 String charset = Charset.defaultCharset().name();
                 URL createToken = new URL(String.format("http://%s/tokens", hostport));

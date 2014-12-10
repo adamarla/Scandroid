@@ -80,6 +80,8 @@ public interface IConstants {
     String STATE_FILE = "state.txt";
     String MARKER_FILE = "markers.txt";
     
+    int ANS_PRICE = 2, SOLN_PRICE = 5, ASK_PRICE = 4;
+    
     // States: Question
     short LOCKED = 0,
           DOWNLOADED = 1,

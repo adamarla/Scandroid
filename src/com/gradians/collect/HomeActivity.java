@@ -5,10 +5,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -18,9 +22,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.hardware.Camera;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -328,8 +336,28 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
         splashDialog.setCancelable(false);
         splashDialog.show();
         
-        String refreshUrl = "http://%s/tokens/verify?email=%s&token=%s";
-        Uri src = Uri.parse(String.format(refreshUrl, WEB_APP_HOST_PORT, email, token));
+        String signature = "";
+        PackageManager pm = getApplicationContext().getPackageManager();
+        try {
+            boolean hasMonochrome = false;
+            Camera c = Camera.open();
+            if (c != null) {
+                for (String s : c.getParameters().getSupportedColorEffects()) {
+                    if (s.equals(Camera.Parameters.EFFECT_MONO)) {
+                        hasMonochrome = true; break;
+                    }                        
+                }
+            }
+            c.release();
+            signature = String.format("OS=Android %s; AppVers=%s; Autofocus=%s; Monochrome=%s", 
+                Build.VERSION.SDK_INT,
+                pm.getPackageInfo(getApplicationContext().getPackageName(), 0).versionName,
+                pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_AUTOFOCUS), hasMonochrome);
+            signature = URLEncoder.encode(signature, Charset.defaultCharset().name());
+        } catch (Exception e) { }
+        
+        Uri src = Uri.parse(String.format(VERIFY_URL,
+            WEB_APP_HOST_PORT, email, token, signature));
         Download download = new Download(null, src, null);
         new HttpCallsAsyncTask(this, REFRESH_TASK_REQUEST_CODE).
             execute(new Download[] { download });
@@ -438,8 +466,9 @@ public class HomeActivity extends Activity implements IConstants, ITaskResult {
     private final String filename = "init.json";
     
     private final String QUESTIONS = "qs", WORKSHEETS = "ws", DOUBTS = "dbt";
-    private final String REFRESH_URL = 
-        "http://%s/tokens/refresh/%s?email=%s&token=%s&marker=%s";    
+    private final String 
+        REFRESH_URL = "http://%s/tokens/refresh/%s?email=%s&token=%s&marker=%s",
+        VERIFY_URL = "http://%s/tokens/verify?email=%s&token=%s&signature=%s";
 }
 
 class HugeButton extends RelativeLayout {

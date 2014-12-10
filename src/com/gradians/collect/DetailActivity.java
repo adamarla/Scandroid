@@ -91,7 +91,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
         adjustView();
         
         if (question.getName().equals("Q"))
-            purchase(findViewById(R.id.btnBack));
+            purchase(findViewById(R.id.btnBar));
     }
     
     @Override
@@ -171,7 +171,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                     edit.putInt(BALANCE_KEY, balance);
                     edit.commit();
                     
-                    if (op.equals(ASK_DOUBT)) {
+                    if (op.equals(BUY_ASK)) {
                         question.setId(id);
                         question.setName((String)respObject.get(NAME_KEY));
                         question.setBotSoln(true);                        
@@ -263,7 +263,7 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
                 return;
             }
             price = ASK_PRICE;
-            action = ASK_DOUBT;
+            action = BUY_ASK;
         } else if (view.getId() == R.id.btnBuyAns) {
             if (qsn.botAnswer() || qsn.botSolution()) {
                 dlCode = DL_ANS;
@@ -328,17 +328,8 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     }
     
     public void onHiddenClick(View v) {
-        if (type.equals(DBT_TYPE)) {
-            if (question.getState() == GRADED) {
-                showing = SOLN;
-                adjustView();
-            } else {
-                purchase(v);
-            }
-        } else {
-            Toast.makeText(getApplicationContext(),
-                "lib:" + question.getImgLocn(), Toast.LENGTH_LONG).show();
-        }
+        Toast.makeText(getApplicationContext(),
+            "lib:" + question.getImgLocn(), Toast.LENGTH_LONG).show();
     }
     
     @SuppressLint("SetJavaScriptEnabled")
@@ -938,11 +929,10 @@ public class DetailActivity extends Activity implements ViewPager.OnPageChangeLi
     private CirclePageIndicator fdbkIndicator;
     private ProgressDialog peedee;
 
-    private final int ANS_PRICE = 2, SOLN_PRICE = 5, ASK_PRICE = 4;
     private final int DL_CODEX = 1, DL_ANS = 2, DL_SOLN = 3;
     private final String OP_KEY   = "op";
     private final String GUESS    = "guess", GET_FDBK = "grade",
-        BUY_ANS = "answer", BUY_SOLN = "solution", ASK_DOUBT = "ask";   
+        BUY_ANS = "answer", BUY_SOLN = "solution", BUY_ASK = "ask";   
     private final String        
         BILL_STAB_URL = "http://%s/tokens/record?s=%s&q=%s&v=%s&g=%s&op=%s",
         BILL_ATTEMPT_URL = "http://%s/tokens/record?id=%s&g=%s&op=%s",
